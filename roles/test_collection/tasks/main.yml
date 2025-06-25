@@ -1,4 +1,0 @@
----
-- name: Print debug message
-  ansible.builtin.debug:
-    msg: "Hello from the test collection role"
