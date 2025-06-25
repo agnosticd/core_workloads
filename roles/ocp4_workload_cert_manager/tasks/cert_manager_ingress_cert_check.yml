@@ -34,11 +34,11 @@
 
   - name: Set retry count
     ansible.builtin.set_fact:
-      _ocp4_workload_cert_manager_retry_count: "{{ _ocp4_workload_cert_manager_retry_count | int + 1 }}"
+      _ocp4_workload_cert_manager_ingress_retry_count: "{{ _ocp4_workload_cert_manager_ingress_retry_count | int + 1 }}"
 
   - name: Report fail on ingress certificate failure
     when:
-    - (_ocp4_workload_cert_manager_retry_count | int > ocp4_workload_cert_manager_ingress_cert_max_retries | int)
+    - (_ocp4_workload_cert_manager_ingress_retry_count | int > ocp4_workload_cert_manager_ingress_cert_max_retries | int)
     - r_certificate_ingress is failed
     block:
     - name: Print error message if requesting certificates failed
