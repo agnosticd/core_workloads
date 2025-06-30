@@ -1,15 +1,15 @@
 ---
-# - name: Get IngressController
-#   kubernetes.core.k8s_info:
-#     api_version: operator.openshift.io/v1
-#     kind: IngressController
-#     name: default
-#     namespace: openshift-ingress-operator
-#   register: r_ingress_controller
+- name: Get IngressController
+  kubernetes.core.k8s_info:
+    api_version: operator.openshift.io/v1
+    kind: IngressController
+    name: default
+    namespace: openshift-ingress-operator
+  register: r_ingress_controller
 
-# - name: Set _ocp4_workload_openshift_gitops_domain
-#   ansible.builtin.set_fact:
-#     _ocp4_workload_openshift_gitops_domain: "{{ r_ingress_controller.resources[0].status.domain }}"
+- name: Set _ocp4_workload_openshift_gitops_domain
+  ansible.builtin.set_fact:
+    _ocp4_workload_openshift_gitops_domain: "{{ r_ingress_controller.resources[0].status.domain }}"
 
 - name: Install OpenShift GitOps operator
   ansible.builtin.include_role:
@@ -33,15 +33,6 @@
   kubernetes.core.k8s:
     state: present
     definition: "{{ lookup('file', 'clusterrolebinding.yaml') | from_yaml }}"
-
-# - name: Set api version to beta for stable channel
-#   when: not (ocp4_workload_openshift_gitops_channel == "stable" or ocp4_workload_openshift_gitops_channel is version_compare("gitops-1.13", ">="))
-#   ansible.builtin.set_fact:
-#     _ocp4_workload_openshift_gitops_api_version: v1alpha1
-
-# - name: Debug version
-#   ansible.builtin.debug:
-#     msg: "API Version: {{ ocp4_workload_openshift_gitops_api_version }}"
 
 - name: Wait until openshift-gitops ArgoCD instance has been created
   kubernetes.core.k8s_info:
@@ -89,7 +80,7 @@
       owner: root
       group: root
       mode: ug=rwx,o=rx
-    retries: 5
+    retries: 10
     delay: 5
     ignore_errors: true
 
@@ -98,7 +89,7 @@
   block:
   - name: Print project information
     agnosticd.core.agnosticd_user_info:
-      msg: "OpenShift GitOps ArgoCD: https://openshift-gitops-server-openshift-gitops.{{ openshift_cluster_ingress_domain }}"
+      msg: "OpenShift GitOps ArgoCD: https://openshift-gitops-server-openshift-gitops.{{ _ocp4_workload_openshift_gitops_domain }}"
       data:
-        openshift_gitops_server: "https://openshift-gitops-server-openshift-gitops.{{ openshift_cluster_ingress_domain }}"
+        openshift_gitops_server: "https://openshift-gitops-server-openshift-gitops.{{ _ocp4_workload_openshift_gitops_domain }}"
 # yamllint enable rule:line-length
