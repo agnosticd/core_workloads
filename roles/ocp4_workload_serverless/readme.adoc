@@ -1,0 +1,3 @@
+= ocp4_workload_serverless - Install and configure Red Hat OpenShift Serverless
+
+See defaults/main.yml for variables to set.

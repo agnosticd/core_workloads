@@ -1,0 +1,3 @@
+= ocp4_workload_minio - Install MinIO on the cluster
+
+See defaults/main.yml for variables to set.
