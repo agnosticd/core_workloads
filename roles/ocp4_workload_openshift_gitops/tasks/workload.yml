@@ -1,15 +1,7 @@
 ---
-- name: Get IngressController
-  kubernetes.core.k8s_info:
-    api_version: operator.openshift.io/v1
-    kind: IngressController
-    name: default
-    namespace: openshift-ingress-operator
-  register: r_ingress_controller
-
 - name: Set _ocp4_workload_openshift_gitops_domain
   ansible.builtin.set_fact:
-    _ocp4_workload_openshift_gitops_domain: "{{ r_ingress_controller.resources[0].status.domain }}"
+    _ocp4_workload_openshift_gitops_domain: "{{ openshift_cluster_ingress_domain }}"
 
 - name: Install OpenShift GitOps operator
   ansible.builtin.include_role:
@@ -72,6 +64,7 @@
 
   - name: Try to install the ArgoCD CLI
     become: true
+    delegate_to: "{{ groups['bastions'][0] }}"
     ansible.builtin.get_url:
       url: >-
         https://{{ r_openshift_gitops_server_route.resources[0].spec.host }}/download/argocd-linux-amd64

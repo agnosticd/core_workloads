@@ -1,30 +1,12 @@
 ---
-- name: Retrieve OpenShift Ingress
-  kubernetes.core.k8s_info:
-    api_version: config.openshift.io/v1
-    kind: Ingress
-    name: cluster
-  register: r_ingress_config
-  until:
-  - r_ingress_config.resources.0 is defined
-  - r_ingress_config.resources | length  > 0
-  delay: 15
-  retries: 60
-
-- name: Retrieve API server configuration (for API endpoint)
-  kubernetes.core.k8s_info:
-    api_version: config.openshift.io/v1
-    kind: Infrastructure
-    name: cluster
-  register: r_cluster
 
 - name: Save OpenShift access facts
   vars:
     _ingress_config: "{{ r_ingress_config.resources[0] }}"
   ansible.builtin.set_fact:
-    _ocp4_workload_authentication_htpasswd_cluster_ingress_domain: "{{ _ingress_config.spec.domain }}"
-    _ocp4_workload_authentication_htpasswd_console_route: "https://console-openshift-console.{{ _ingress_config.spec.domain }}"
-    _ocp4_workload_authentication_htpasswd_api_server: "{{ r_cluster.resources[0].status.apiServerURL }}"
+    _ocp4_workload_authentication_htpasswd_cluster_ingress_domain: "{{ openshift_cluster_ingress_domain }}"
+    _ocp4_workload_authentication_htpasswd_console_route: "https://console-openshift-console.{{ openshift_cluster_ingress_domain }}"
+    _ocp4_workload_authentication_htpasswd_api_server: "{{ openshift_api_url }}"
 
 - name: Setup htpasswd authentication
   ansible.builtin.include_tasks: setup_htpasswd.yml

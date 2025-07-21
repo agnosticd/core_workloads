@@ -1,0 +1,3 @@
+= ocp4_workload_openshift_data_foundation - Install Red Hat OpenShift Data Foundation
+
+See defaults/main.yml for variables to set.

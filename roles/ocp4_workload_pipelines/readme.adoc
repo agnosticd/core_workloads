@@ -1,0 +1,3 @@
+= ocp4_workload_pipelines - Install Red Hat OpenShift Pipelines
+
+See defaults/main.yml for variables to set.

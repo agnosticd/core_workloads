@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: {{ ocp4_workload_minio_project }}
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+      - name: minio
+        image: {{ ocp4_workload_minio_image }}:{{ ocp4_workload_minio_image_tag }}
+        args:
+        - server
+        - /storage
+        - "--console-address=:9001"
+        env:
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              key: minio_root_user
+              name: minio-keys
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: minio_root_password
+              name: minio-keys
+        ports:
+        - name: minio
+          containerPort: 9000
+        - name: console
+          containerPort: 9001
+        resources:
+          requests:
+            cpu: "{{ ocp4_workload_minio_requests_cpu }}"
+            memory: "{{ ocp4_workload_minio_requests_memory}}"
+        volumeMounts:
+        - name: storage
+          mountPath: "/storage"
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: minio-pv-claim

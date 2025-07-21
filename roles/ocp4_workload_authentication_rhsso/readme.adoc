@@ -1,0 +1,3 @@
+= ocp4_workload_authentication_rhsso - Set up Authentication on OpenShift Container Platform using Red Hat SSO (KeyCloak)
+
+See defaults/main.yml for variables to set.

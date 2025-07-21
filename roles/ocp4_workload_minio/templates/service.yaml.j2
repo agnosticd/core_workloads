@@ -1,0 +1,20 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: {{ ocp4_workload_minio_project }}
+spec:
+  ports:
+  - name: minio
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  - name: console
+    port: 9001
+    protocol: TCP
+    targetPort: 9001
+  selector:
+    app: minio
+  sessionAffinity: None
+  type: ClusterIP

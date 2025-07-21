@@ -1,0 +1,43 @@
+---
+ocp4_workload_minio_project: minio
+ocp4_workload_minio_project_display: Minio Object Storage
+
+# Port for the LoadBalancer Service
+ocp4_workload_minio_port: 9000
+ocp4_workload_minio_storage_size: "25Gi"
+
+ocp4_workload_minio_requests_memory: 1Gi
+ocp4_workload_minio_requests_cpu: 2
+
+# Create Route objects for the Minio Services
+ocp4_workload_minio_expose_route: true
+
+# Access credentials. Not necessary when doing a modern image (set root vars below instead)
+# Should be overwritten via Global Variables !!!
+ocp4_workload_minio_access_key: "minio_access_key"
+ocp4_workload_minio_secret_key: "minio_secret_key"
+
+ocp4_workload_minio_image: quay.io/minio/minio
+ocp4_workload_minio_image_tag: RELEASE.2025-07-18T21-56-31Z
+
+# Access Credentials for Minio
+# Should be overwritten via Global Variables from Secrets !!!
+ocp4_workload_minio_root_user: "root_user"
+ocp4_workload_minio_root_password: "root_password"
+ocp4_workload_minio_root_policy: readwrite
+
+# Name of the MinIO instance to set up
+ocp4_workload_minio_name: localminio
+
+# Create minio Bucket after installation
+ocp4_workload_minio_bucket_setup: false
+# Set up one bucket for each user
+ocp4_workload_minio_bucket_multi_user: false
+# Single-user Bucket Name
+ocp4_workload_minio_bucket_name:
+- s3-storage
+
+# Multi-User:
+ocp4_workload_minio_bucket_base: s3-
+ocp4_workload_minio_bucket_num_users: 1
+ocp4_workload_minio_bucket_userbase: user

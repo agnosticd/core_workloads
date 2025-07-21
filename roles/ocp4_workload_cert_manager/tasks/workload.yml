@@ -26,27 +26,12 @@
     state: present
     definition: "{{ lookup('template', 'certmanager.yaml.j2') }}"
 
-- name: Determine API server URL
-  kubernetes.core.k8s_info:
-    api_version: config.openshift.io/v1
-    kind: Infrastructure
-    name: cluster
-  register: r_api_url
-
-- name: Determine cluster wildcard domain
-  kubernetes.core.k8s_info:
-    api_version: operator.openshift.io/v1
-    kind: IngressController
-    name: default
-    namespace: openshift-ingress-operator
-  register: r_ingress_controller
-
 - name: Set DNS facts
   ansible.builtin.set_fact:
     _ocp4_workload_cert_manager_api_hostname: >-
-      {{ r_api_url.resources[0].status.apiServerURL | urlsplit('hostname') }}
+      {{ openshift_api_url | urlsplit('hostname') }}
     _ocp4_workload_cert_manager_wildcard_domain: >-
-      {{ r_ingress_controller.resources[0].status.domain }}
+      {{ openshift_cluster_ingress_domain }}
 
 - name: Print API and wildcard domain
   ansible.builtin.debug:

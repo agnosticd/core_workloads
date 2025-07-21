@@ -1,0 +1,3 @@
+= ocp4_workload_web_terminal - Install Red Hat OpenShift web Terminal
+
+See defaults/main.yml for variables to set.

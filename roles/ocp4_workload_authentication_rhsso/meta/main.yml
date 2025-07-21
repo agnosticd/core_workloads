@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_authentication_rhsso
+  author: Red Hat, Wolfgang Kulhanek (wkulhane@redhat.com)
+  description: |
+    Set up Authentication on OpenShift Container Platform using Red Hat SSO (KeyCloak)
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms:
+  - linux
+  galaxy_tags:
+  - ocp
+  - openshift
+dependencies: []
