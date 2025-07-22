@@ -21,7 +21,7 @@
       ) }}
 
 - name: Use provided admin password
-  when: ocp4_workload_authentication_htpasswd_admin_password | default('') | length > 0
+  when: ocp4_workload_authentication_rhsso_admin_password | default('') | length > 0
   ansible.builtin.set_fact:
     _ocp4_workload_authentication_rhsso_admin_password: >-
       {{ ocp4_workload_authentication_rhsso_admin_password }}
@@ -35,7 +35,7 @@
       ) }}
 
 - name: Use provided user password
-  when: ocp4_workload_authentication_htpasswd_user_password | default('') | length > 0
+  when: ocp4_workload_authentication_rhsso_user_password | default('') | length > 0
   ansible.builtin.set_fact:
     _ocp4_workload_authentication_rhsso_user_password: >-
       {{ ocp4_workload_authentication_rhsso_user_password }}
