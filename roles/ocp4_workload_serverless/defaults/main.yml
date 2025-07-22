@@ -27,6 +27,10 @@ ocp4_workload_serverless_install_serving: true
 # Install KNative Eventing
 ocp4_workload_serverless_install_eventing: true
 
+# Install the CLI tools on the Bastion. This only works when the workload is invoked as
+# part of a openshift-cluster deployment. When just deploying the workload no bastions are available.
+ocp4_workload_serverless_install_cli_tools: false
+
 # --------------------------------
 # Operator Catalog Snapshot Settings
 # --------------------------------
