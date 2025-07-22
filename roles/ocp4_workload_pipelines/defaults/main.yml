@@ -19,6 +19,10 @@ ocp4_workload_pipelines_automatic_install_plan_approval: true
 ocp4_workload_pipelines_starting_csv: ""
 # ocp4_workload_pipelines_starting_csv: "openshift-pipelines-operator-rh.v1.8.0"
 
+# Install the CLI tools on the Bastion. This only works when the workload is invoked as
+# part of a openshift-cluster deployment. When just deploying the workload no bastions are available.
+ocp4_workload_pipelines_install_cli_tools: false
+
 # --------------------------------
 # Operator Catalog Snapshot Settings
 # --------------------------------
