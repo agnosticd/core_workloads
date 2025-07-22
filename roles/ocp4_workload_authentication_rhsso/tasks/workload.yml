@@ -12,6 +12,34 @@
     install_operator_catalogsource_image: "{{ ocp4_workload_authentication_rhsso_catalogsource_image }}"
     install_operator_catalogsource_image_tag: "{{ ocp4_workload_authentication_rhsso_catalogsource_tag }}"
 
+- name: Generate cluster admin password
+  when: ocp4_workload_authentication_rhsso_admin_password | default('') | length == 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_authentication_rhsso_admin_password: >-
+      {{ lookup('password', '/dev/null chars=ascii_letters,digits '
+          ~ 'length=' ~ ocp4_workload_authentication_rhsso_admin_password_length
+      ) }}
+
+- name: Use provided admin password
+  when: ocp4_workload_authentication_htpasswd_admin_password | default('') | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_authentication_rhsso_admin_password: >-
+      {{ ocp4_workload_authentication_rhsso_admin_password }}
+
+- name: Generate user password
+  when: ocp4_workload_authentication_rhsso_user_password | default('') | length == 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_authentication_rhsso_user_password: >-
+      {{ lookup('password', '/dev/null chars=ascii_letters,digits '
+          ~ 'length=' ~ ocp4_workload_authentication_rhsso_user_password_length
+      ) }}
+
+- name: Use provided user password
+  when: ocp4_workload_authentication_htpasswd_user_password | default('') | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_authentication_rhsso_user_password: >-
+      {{ ocp4_workload_authentication_rhsso_user_password }}
+
 - name: Set facts
   ansible.builtin.set_fact:
     ocp4_workload_authentication_rhsso_ingress_domain: >-
@@ -88,7 +116,7 @@
       definition: "{{ lookup('template', 'rhsso-user-openshift.yml.j2') }}"
     vars:
       username: "{{ ocp4_workload_authentication_rhsso_admin_username }}"
-      password: "{{ ocp4_workload_authentication_rhsso_admin_password }}"
+      password: "{{ _ocp4_workload_authentication_rhsso_admin_password }}"
 
   - name: Create cluster admin role binding
     kubernetes.core.k8s:
@@ -102,7 +130,7 @@
     definition: "{{ lookup('template', 'rhsso-user-openshift.yml.j2') }}"
   vars:
     username: "{{ ocp4_workload_authentication_rhsso_user_name_base }}{{ n + 1 }}"
-    password: "{{ ocp4_workload_authentication_rhsso_user_password }}"
+    password: "{{ _ocp4_workload_authentication_rhsso_user_password }}"
   loop: "{{ range(0, ocp4_workload_authentication_rhsso_user_count | int) | list }}"
   loop_control:
     loop_var: n
@@ -152,11 +180,11 @@
   agnosticd.core.agnosticd_user_info:
     msg: >-
       User '{{ ocp4_workload_authentication_rhsso_admin_username }}'
-      with password '{{ ocp4_workload_authentication_rhsso_admin_password }}'
+      with password '{{ _ocp4_workload_authentication_rhsso_admin_password }}'
       is cluster admin.
     data:
       openshift_cluster_admin_username: "{{ ocp4_workload_authentication_rhsso_admin_username }}"
-      openshift_cluster_admin_password: "{{ ocp4_workload_authentication_rhsso_admin_password }}"
+      openshift_cluster_admin_password: "{{ _ocp4_workload_authentication_rhsso_admin_password }}"
 
 - name: Print user information
   when: ocp4_workload_authentication_rhsso_user_count | int > 0
@@ -164,21 +192,21 @@
     msg: >-
       Users `{{ ocp4_workload_authentication_rhsso_user_name_base }}1` ..
       `{{ ocp4_workload_authentication_rhsso_user_name_base ~ ocp4_workload_authentication_rhsso_user_count }}`
-      created with password `{{ ocp4_workload_authentication_rhsso_user_password }}`
+      created with password `{{ _ocp4_workload_authentication_rhsso_user_password }}`
 
 - name: Save user information for user access
   agnosticd.core.agnosticd_user_info:
     user: "{{ ocp4_workload_authentication_rhsso_user_name_base }}{{ n + 1 }}"
     data:
       user: "{{ ocp4_workload_authentication_rhsso_user_name_base }}{{ n + 1 }}"
-      password: "{{ ocp4_workload_authentication_rhsso_user_password }}"
+      password: "{{ _ocp4_workload_authentication_rhsso_user_password }}"
       console_url: "{{ ocp4_workload_authentication_rhsso_rhsso_openshift_console_url }}"
       openshift_console_url: "https://{{ ocp4_workload_authentication_rhsso_rhsso_openshift_console_url }}"
       openshift_cluster_ingress_domain: "{{ ocp4_workload_authentication_rhsso_ingress_domain }}"
       login_command: >-
         oc login --insecure-skip-tls-verify=false
-        -u {{ ocp4_workload_authentication_rhsso_user_name_base }}{{ n + 1 }}
-        -p {{ ocp4_workload_authentication_rhsso_user_password }}
+        --username {{ ocp4_workload_authentication_rhsso_user_name_base }}{{ n + 1 }}
+        --password {{ _ocp4_workload_authentication_rhsso_user_password }}
         {{ ocp4_workload_authentication_rhsso_rhsso_openshift_api_url }}
   loop: "{{ range(0, ocp4_workload_authentication_rhsso_user_count | int) | list }}"
   loop_control:
