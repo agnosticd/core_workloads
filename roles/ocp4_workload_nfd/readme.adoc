@@ -1,0 +1,3 @@
+= ocp4_workload_nfd - Install Red Hat OpenShift NFD Operator
+
+See defaults/main.yml for variables to set.

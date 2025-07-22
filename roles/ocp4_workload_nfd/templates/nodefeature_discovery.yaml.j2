@@ -1,0 +1,18 @@
+---
+kind: NodeFeatureDiscovery
+apiVersion: nfd.openshift.io/v1
+metadata:
+  name: nfd-instance
+  namespace: openshift-nfd
+spec:
+{% if ocp4_workload_nfd_operator_operand_image | default('') | length > 0 %}
+  operand:
+    image: {{ ocp4_workload_nfd_operator_operand_image }}
+    imagePullPolicy: IfNotPresent
+    servicePort: 12000
+{% endif %}
+{% if ocp4_workload_nfd_worker_config | default('') | length > 0 %}
+  workerConfig:
+    configData: |
+      {{ ocp4_workload_nfd_worker_config | to_nice_yaml | indent(6, first=False) }}
+{% endif %}
