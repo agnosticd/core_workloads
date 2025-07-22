@@ -17,8 +17,9 @@ ocp4_workload_openshift_gitops_automatic_install_plan_approval: true
 ocp4_workload_openshift_gitops_starting_csv: ""
 # ocp4_workload_openshift_gitops_starting_csv: "openshift-gitops-operator.v1.16.2"
 
-# Install the argocd CLI on the bastion
-ocp4_workload_openshift_gitops_install_cli: true
+# Install the CLI tools on the Bastion. This only works when the workload is invoked as
+# part of a openshift-cluster deployment. When just deploying the workload no bastions are available.
+ocp4_workload_openshift_gitops_install_cli_tools: false
 
 # Grant cluster-admin permission to the default ArgoCD service account
 # Enable with care

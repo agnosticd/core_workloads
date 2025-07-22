@@ -52,7 +52,7 @@
     definition: "{{ lookup('template', 'openshift-gitops.yaml.j2') | from_yaml }}"
 
 - name: Attempt to install the ArgoCD CLI to the bastion
-  when: ocp4_workload_openshift_gitops_install_cli | bool
+  when: ocp4_workload_openshift_gitops_install_cli_tools | bool
   block:
   - name: Get the OpenShift Gitops ArgoCD server route
     kubernetes.core.k8s_info:
