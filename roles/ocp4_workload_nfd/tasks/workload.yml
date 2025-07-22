@@ -4,7 +4,7 @@
     name: install_operator
   vars:
     install_operator_action: install
-    install_operator_name: nfd-operator
+    install_operator_name: nfd
     install_operator_namespace: openshift-nfd
     install_operator_channel: "{{ ocp4_workload_nfd_operator_channel }}"
     install_operator_catalog: redhat-operators

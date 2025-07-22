@@ -2,7 +2,7 @@
 # Defaults values below are for latest channel
 
 # Channel to use for the OpenShift NFD Operator subscription
-ocp4_workload_nfd_channel: stable
+ocp4_workload_nfd_operator_channel: stable
 
 # Set automatic InstallPlan approval. If set to false it is also suggested
 # to set the starting_csv to pin a specific version
