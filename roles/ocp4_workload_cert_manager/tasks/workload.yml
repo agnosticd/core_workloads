@@ -29,7 +29,7 @@
 - name: Set DNS facts
   ansible.builtin.set_fact:
     _ocp4_workload_cert_manager_api_hostname: >-
-      {{ openshift_api_url | urlsplit('hostname') }}
+      {{ openshift_api_url }}
     _ocp4_workload_cert_manager_wildcard_domain: >-
       {{ openshift_cluster_ingress_domain }}
 
