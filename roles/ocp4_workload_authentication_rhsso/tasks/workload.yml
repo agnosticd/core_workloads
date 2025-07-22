@@ -159,13 +159,13 @@
       openshift_cluster_admin_username: "{{ ocp4_workload_authentication_rhsso_admin_username }}"
       openshift_cluster_admin_password: "{{ ocp4_workload_authentication_rhsso_admin_password }}"
 
-  - name: Print user information
-    when: ocp4_workload_authentication_rhsso_user_count | int > 0
-    agnosticd.core.agnosticd_user_info:
-      msg: >-
-        Users `{{ ocp4_workload_authentication_rhsso_user_name_base }}1` ..
-        `{{ ocp4_workload_authentication_rhsso_user_name_base ~ ocp4_workload_authentication_rhsso_user_count }}`
-        created with password `{{ ocp4_workload_authentication_rhsso_user_password }}`
+- name: Print user information
+  when: ocp4_workload_authentication_rhsso_user_count | int > 0
+  agnosticd.core.agnosticd_user_info:
+    msg: >-
+      Users `{{ ocp4_workload_authentication_rhsso_user_name_base }}1` ..
+      `{{ ocp4_workload_authentication_rhsso_user_name_base ~ ocp4_workload_authentication_rhsso_user_count }}`
+      created with password `{{ ocp4_workload_authentication_rhsso_user_password }}`
 
 - name: Save user information for user access
   agnosticd.core.agnosticd_user_info:
