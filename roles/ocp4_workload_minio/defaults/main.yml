@@ -18,7 +18,8 @@ ocp4_workload_minio_access_key: "minio_access_key"
 ocp4_workload_minio_secret_key: "minio_secret_key"
 
 ocp4_workload_minio_image: quay.io/minio/minio
-ocp4_workload_minio_image_tag: RELEASE.2025-07-18T21-56-31Z
+# Don't use a later image - the license changed after 7/15/2025
+ocp4_workload_minio_image_tag: RELEASE.2025-06-13T11-33-47Z
 
 # Access Credentials for Minio
 # Should be overwritten via Global Variables from Secrets !!!
