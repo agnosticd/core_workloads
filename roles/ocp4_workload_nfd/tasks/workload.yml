@@ -26,3 +26,16 @@
   until: r_nfd is not failed
   retries: 30
   delay: 20
+
+- name: Wait for NodeFeatureDiscovery to be Available
+  kubernetes.core.k8s_info:
+    api_version: nfd.openshift.io/v1
+    kind: NodeFeatureDiscovery
+    name: nfd-instance
+    namespace: openshift-nfd
+    wait: true
+    wait_condition:
+      type: Available
+      status: "True"
+      reason: AllInstanceComponentsAreDeployedSuccessfuly
+    wait_timeout: 600
