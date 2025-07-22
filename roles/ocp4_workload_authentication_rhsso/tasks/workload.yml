@@ -14,16 +14,15 @@
 
 - name: Set facts
   ansible.builtin.set_fact:
-    ocp4_workload_authentication_rhsso_ingress_domain: "{{ openshift_cluster_ingress_domain }}"
-    ocp4_workload_authentication_rhsso_openshift_redirect_host: "oauth-openshift.{{
-     r_ingress_config.resources[0].spec.domain }}"
-    ocp4_workload_authentication_rhsso_rhsso_host: "keycloak-{{
-      ocp4_workload_authentication_rhsso_namespace }}.{{
-      r_ingress_config.resources[0].spec.domain }}"
-    ocp4_workload_authentication_rhsso_rhsso_openshift_console_url: console-openshift-console.{{
-      r_ingress_config.resources[0].spec.domain }}
-    ocp4_workload_authentication_rhsso_rhsso_openshift_api_url: "{{
-      openshift_api_url }}"
+    ocp4_workload_authentication_rhsso_ingress_domain: >-
+      {{ openshift_cluster_ingress_domain }}
+    ocp4_workload_authentication_rhsso_openshift_redirect_host: >-
+      oauth-openshift.{{ openshift_cluster_ingress_domain }}
+    ocp4_workload_authentication_rhsso_rhsso_host: >-
+      keycloak-{{ ocp4_workload_authentication_rhsso_namespace }}.{{ openshift_cluster_ingress_domain }}
+    ocp4_workload_authentication_rhsso_rhsso_openshift_console_url: >-
+      console-openshift-console.{{ openshift_cluster_ingress_domain }}
+    ocp4_workload_authentication_rhsso_rhsso_openshift_api_url: "{{ openshift_api_url }}"
 
 - name: Create RHSSO resources
   kubernetes.core.k8s:
