@@ -3,31 +3,34 @@
 - name: Block to determine AWS AMI if instance ami_architecture is set
   when: machineset_group.aws_instance_ami_architecture is defined
   block:
-  - name: Get comprehensive cluster information
+  - name: Get cluster version information
     kubernetes.core.k8s_info:
-      api_version: "{{ item.api_version }}"
-      kind: "{{ item.kind }}"
-      name: "{{ item.name }}"
-      namespace: "{{ item.namespace | default(omit) }}"
-    register: r_cluster_info
-    loop:
-    - api_version: config.openshift.io/v1
+      api_version: config.openshift.io/v1
       kind: ClusterVersion
       name: version
-    - api_version: config.openshift.io/v1
+    register: r_cluster_version
+
+  - name: Get cluster infrastructure information
+    kubernetes.core.k8s_info:
+      api_version: config.openshift.io/v1
       kind: Infrastructure
       name: cluster
-    - api_version: machine.openshift.io/v1beta1
+    register: r_infrastructure
+
+  - name: Get all MachineSets
+    kubernetes.core.k8s_info:
+      api_version: machine.openshift.io/v1beta1
       kind: MachineSet
       namespace: openshift-machine-api
+    register: r_machinesets
 
   - name: Extract all relevant information
     ansible.builtin.set_fact:
-      openshift_version: "{{ r_cluster_info.results[0].resources[0].status.desired.version }}"
-      cluster_platform: "{{ r_cluster_info.results[1].resources[0].status.platform }}"
-      cluster_region: "{{ r_cluster_info.results[1].resources[0].status.platformStatus.aws.region }}"
-      current_ami_id: "{{ r_cluster_info.results[2].resources[0].spec.template.spec.providerSpec.value.ami.id }}"
-      instance_type: "{{ r_cluster_info.results[2].resources[0].spec.template.spec.providerSpec.value.instanceType }}"
+      openshift_version: "{{ r_cluster_version.resources[0].status.desired.version }}"
+      cluster_platform: "{{ r_infrastructure.resources[0].status.platform }}"
+      cluster_region: "{{ r_infrastructure.resources[0].status.platformStatus.aws.region }}"
+      current_ami_id: "{{ r_machinesets.resources[0].spec.template.spec.providerSpec.value.ami.id }}"
+      instance_type: "{{ r_machinesets.resources[0].spec.template.spec.providerSpec.value.instanceType }}"
 
   - name: Debug cluster information
     ansible.builtin.debug:
@@ -44,18 +47,18 @@
     - label: "Instance Type"
       value: "{{ instance_type }}"
 
-  # - name: Gather CoreOS stream json
-  #   ansible.builtin.command: "openshift-install coreos print-stream-json"
-  #   register: stream_json
+    # - name: Gather CoreOS stream json
+    #   ansible.builtin.command: "openshift-install coreos print-stream-json"
+    #   register: stream_json
 
-  # - name: Format output
-  #   ansible.builtin.set_fact:
-  #     prepare_stream_json: "{{ stream_json.stdout | to_json | from_json }}"
+    # - name: Format output
+    #   ansible.builtin.set_fact:
+    #     prepare_stream_json: "{{ stream_json.stdout | to_json | from_json }}"
 
-  - name: Overwrite aws_coreos_ami_id
-    ansible.builtin.set_fact:
-      # yamllint disable-line rule:line-length
-      custom_aws_coreos_ami_id: "{{ prepare_stream_json.architectures[machineset_group.aws_instance_ami_architecture].images.aws.regions[aws_region].image }}"
+    - name: Overwrite aws_coreos_ami_id
+      ansible.builtin.set_fact:
+        # yamllint disable-line rule:line-length
+        custom_aws_coreos_ami_id: "{{ prepare_stream_json.architectures[machineset_group.aws_instance_ami_architecture].images.aws.regions[aws_region].image }}"
 
 - name: Define {{ machineset_group.name }} machinesets
   kubernetes.core.k8s:
