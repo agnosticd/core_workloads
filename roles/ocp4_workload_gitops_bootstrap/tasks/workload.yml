@@ -79,7 +79,7 @@
   - cm_userinfo.resources | length | int > 0
   block:
   - name: Add to agnosticd_user_info all data from ConfigMaps except configmap.data.users_json data
-    agnosticd_user_info:
+    agnosticd.core.agnosticd_user_info:
       data: >-
         {{ item | dict2items | selectattr('key', 'ne', 'users_json') | items2dict }}
     loop: "{{ cm_userinfo.resources | map(attribute='data') }}"
@@ -102,7 +102,7 @@
         msg: "{{ data_users_json }}"
 
     - name: Add to agnosticd_user_info all configmap.data.users_json ConfigMap data
-      agnosticd_user_info:
+      agnosticd.core.agnosticd_user_info:
         user: "{{ item.key }}"
         data:
           "{{ item.value }}"

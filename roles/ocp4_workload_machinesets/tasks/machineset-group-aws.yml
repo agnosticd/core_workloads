@@ -29,6 +29,21 @@
       current_ami_id: "{{ r_cluster_info.results[2].resources[0].spec.template.spec.providerSpec.value.ami.id }}"
       instance_type: "{{ r_cluster_info.results[2].resources[0].spec.template.spec.providerSpec.value.instanceType }}"
 
+  - name: Debug cluster information
+    ansible.builtin.debug:
+      msg: "{{ item.label }}: {{ item.value }}"
+    loop:
+    - label: "OpenShift Version"
+      value: "{{ openshift_version }}"
+    - label: "Cluster Platform"
+      value: "{{ cluster_platform }}"
+    - label: "Cluster Region"
+      value: "{{ cluster_region }}"
+    - label: "Current AMI ID"
+      value: "{{ current_ami_id }}"
+    - label: "Instance Type"
+      value: "{{ instance_type }}"
+
   # - name: Gather CoreOS stream json
   #   ansible.builtin.command: "openshift-install coreos print-stream-json"
   #   register: stream_json

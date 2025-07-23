@@ -8,8 +8,7 @@
     label: "{{ machineset.name }}"
 
 - name: Configure OpenShift MachineSets
-  ansible.builtin.include_tasks:
-    name: machineset-setup.yml
+  ansible.builtin.include_tasks: machineset-setup.yml
   # vars:
   #   ocp4_workload_machinesets_machineset_groups: "{{ ocp4_workload_machinesets_machineset_groups }}"
   #   ocp4_workload_machinesets_disable_default_machinesets: >-
