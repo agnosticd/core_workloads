@@ -1,0 +1,3 @@
+= ocp4_workload_machinesets - Create OpenShift 4 MachineSets
+
+See defaults/main.yml for variables to set.
