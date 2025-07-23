@@ -55,10 +55,11 @@
     #   ansible.builtin.set_fact:
     #     prepare_stream_json: "{{ stream_json.stdout | to_json | from_json }}"
 
-    - name: Overwrite aws_coreos_ami_id
-      ansible.builtin.set_fact:
-        # yamllint disable-line rule:line-length
-        custom_aws_coreos_ami_id: "{{ prepare_stream_json.architectures[machineset_group.aws_instance_ami_architecture].images.aws.regions[aws_region].image }}"
+  - name: Overwrite aws_coreos_ami_id
+    ansible.builtin.set_fact:
+      # yamllint disable-line rule:line-length
+      # custom_aws_coreos_ami_id: "{{ prepare_stream_json.architectures[machineset_group.aws_instance_ami_architecture].images.aws.regions[aws_region].image }}"
+      custom_aws_coreos_ami_id: "{{ current_ami_id }}"
 
 - name: Define {{ machineset_group.name }} machinesets
   kubernetes.core.k8s:
