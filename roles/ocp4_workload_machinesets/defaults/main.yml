@@ -1,8 +1,6 @@
 ---
 ocp4_machineset_config_domain: agnosticd.redhat.com
 ocp4_machineset_config_group_label: "{{ ocp4_machineset_config_domain }}/machineset-group"
-ocp4_workload_machinesets_machineset_groups: []
-ocp4_workload_machinesets_disable_default_machinesets: false
 
 ocp4_machineset_config_default_aws_instance_type: m5a.4xlarge
 ocp4_machineset_config_default_aws_root_volume_size: 120
