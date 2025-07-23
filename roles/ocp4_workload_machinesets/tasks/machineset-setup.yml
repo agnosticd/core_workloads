@@ -1,0 +1,15 @@
+---
+- name: Set MachineSet facts
+  ansible.builtin.include_tasks: machineset-set-facts.yml
+
+- name: Disable base worker MachineSets
+  when: ocp4_workload_machinesets_disable_default_machinesets | bool
+  ansible.builtin.include_tasks: machineset-disable-base-worker-machinesets.yml
+
+- name: Configure MachineSets for cloud provider
+  ansible.builtin.include_tasks: "machineset-{{ cloud_provider_platform }}.yml"
+
+- name: Enable cluster autoscaler
+  ansible.builtin.include_tasks: machineset-enable-cluster-autoscaler.yml
+  when: >-
+    ocp4_workload_machinesets_machineset_groups | json_query('[?autoscale]')
