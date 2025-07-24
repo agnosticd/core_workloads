@@ -39,7 +39,7 @@
 - name: Set up a MinIO bucket
   when: ocp4_workload_minio_bucket_setup | bool
   block:
-  - name: "Get MinIO Pod for {{ ocp4_workload_minio_name }}"
+  - name: Get MinIO Pod
     kubernetes.core.k8s_info:
       api_version: v1
       kind: Pod
@@ -47,10 +47,6 @@
       label_selectors:
       - "app = {{ ocp4_workload_minio_name }}"
     register: r_minio_pod
-
-  - name: Debug MinIO Pod
-    ansible.builtin.debug:
-      var: r_minio_pod
 
   # Set up MinIO with a bucket
   # POD=$(oc get pod -n minio -lapp=minio -o jsonpath='{range.items[*]}{.metadata.name}{"\n"}{end}')
