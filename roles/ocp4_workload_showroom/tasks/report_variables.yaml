@@ -15,7 +15,7 @@
 - name: Output agnosticd_user_data for showroom
   vars:
     _showroom_url: "https://{{ r_showroom_route.resources[0].spec.host }}/"
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     msg: "Lab instructions: {{ _showroom_url }}"
     data:
       lab_ui_url: "{{ _showroom_url }}"
