@@ -4,7 +4,7 @@
     msg: "Setting up showroom in namespace {{ _showroom_namespace }}"
 
 - name: Setup Namespace
-  ansible.builtin.include_tasks: setup-namespace.yaml
+  ansible.builtin.include_tasks: setup_namespace.yaml
 
 - name: Render helm chart with values
   environment:
