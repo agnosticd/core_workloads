@@ -1,0 +1,13 @@
+---
+apiVersion: operator.authorino.kuadrant.io/v1beta1
+kind: Authorino
+metadata:
+  name: {{ ocp4_workload_authorino_operator_authorino_name }}
+  namespace: {{ ocp4_workload_authorino_operator_namespace }}
+spec:
+  listener:
+    tls:
+      enabled: false
+  oidcServer:
+    tls:
+      enabled: false

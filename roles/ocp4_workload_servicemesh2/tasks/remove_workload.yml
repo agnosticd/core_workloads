@@ -1,0 +1,4 @@
+---
+- name: Print unsupported message
+  ansible.builtin.debug:
+    msg: "Removing Service Mesh 2 is not implemented."

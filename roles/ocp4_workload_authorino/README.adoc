@@ -1,0 +1,3 @@
+= ocp4_workload_authorino - Set up the Authorino operator OpenShift Container Platform
+
+See defaults/main.yml for variables to set.
