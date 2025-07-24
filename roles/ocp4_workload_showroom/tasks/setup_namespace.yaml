@@ -4,7 +4,7 @@
 # Though this is an error, it's the condition we hope to achieve.
 # These are the limitations of the ProjectRequest and self-provisioner
 
-- name: Get showroom namespace
+- name: Get Showroom namespace
   kubernetes.core.k8s_info:
     kubeconfig: "{{ _showroom_kubeconfig | default(omit) }}"
     api_version: project.openshift.io/v1
@@ -32,10 +32,10 @@
   retries: 10
   delay: 5
   ignore_errors: true
+
 - name: Test the self-provisioner
   when: ocp4_workload_showroom_test_self_provisioner | default(false) | bool
   block:
-
   - name: Create a test object in the showroom namespace to validate self-provisioner with retries
     kubernetes.core.k8s:
       kubeconfig: "{{ _showroom_kubeconfig | default(omit) }}"
