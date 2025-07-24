@@ -89,7 +89,7 @@
       msg: "Prepare data_user_json to add to agnosticd_user_info"
 
   - name: Merge list of all users_json data from all ConfigMaps that have data.users_json
-    set_fact:
+    ansible.builtin.set_fact:
       data_users_json: "{{ data_users_json | default([]) | combine(item.data.users_json | from_json, recursive=True) }}"
     loop: "{{ cm_userinfo.resources }}"
     when: item.data.users_json is defined
