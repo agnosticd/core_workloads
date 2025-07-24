@@ -110,7 +110,7 @@ This is only possible for the `wetty` terminal.
 [source,yaml]
 ----
 - name: Provide installed bastion data
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     data:
       bastion_ssh_command: "ssh {{ remote_user }}@bastion.{{ guid }}.{{ azure_root_dns_zone }}"
       bastion_public_hostname: "bastion.{{ guid }}.{{ cluster_dns_zone }}"
