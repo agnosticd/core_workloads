@@ -1,0 +1,95 @@
+---
+# First target is OCP with bastion
+#
+# if we're using the shared cluster
+# .. create a kubeconfig file
+# .. get the user-data.yaml
+# .. create the namespace
+# .. run the helm chart
+#
+# for a shared cluster with a serviceaccount user
+# must create namespace here because
+# helm chart cannot create the namespace
+# because it doesn't respect ProjectRequest
+#
+# use _showroom_kubeconfig if showroom user was setup
+# otherwise use default
+
+- name: If deploying to a remote OCP write kubeconfig if requested
+  when:
+  - showroom_openshift_api_ca_cert is defined
+  - showroom_openshift_api_token is defined
+  - showroom_openshift_api_url is defined
+  block:
+  - name: Create temporary file for kubeconfig
+    ansible.builtin.tempfile:
+      suffix: .kubeconfig
+    register: r_kubeconfig_tempfile
+
+  - name: Set _showroom_kubeconfig
+    ansible.builtin.set_fact:
+      _showroom_kubeconfig: "{{ r_kubeconfig_tempfile.path }}"
+
+  - name: Write content to kubeconfig
+    ansible.builtin.copy:
+      dest: "{{ _showroom_kubeconfig }}"
+      mode: ugo=rw
+      content: |
+        apiVersion: v1
+        kind: Config
+        clusters:
+        - name: cluster
+          cluster:
+            server: {{ showroom_openshift_api_url | to_json }}
+            certificate-authority-data: {{ showroom_openshift_api_ca_cert | b64encode | to_json }}
+        contexts:
+        - name: context
+          context:
+            cluster: cluster
+            user: user
+        current-context: context
+        users:
+        - name: user
+          user:
+            token: {{ showroom_openshift_api_token | to_json }}
+
+- name: Prepare Variables
+  ansible.builtin.include_tasks: prepare_variables.yaml
+
+- name: Deploy showroom (single user)
+  when: not _showroom_user_data.users is defined
+  vars:
+    _showroom_namespace: "{{ ocp4_workload_showroom_namespace }}"
+    _showroom_vars: "{{ _showroom_user_data | combine({'guid': guid}) }}"
+  ansible.builtin.include_tasks: deploy_showroom.yaml
+
+- name: Deploy showroom (multi user)
+  when: _showroom_user_data.users is defined
+  vars:
+    _showroom_user: "{{ _showroom_users_item.key }}"
+    _showroom_namespace: "{{ ocp4_workload_showroom_namespace }}-{{ _showroom_user }}"
+    _showroom_vars: "{{ _showroom_users_item.value | combine({'guid': guid, 'user': _showroom_user}) }}"
+  ansible.builtin.include_tasks: deploy_showroom.yaml
+  loop: "{{ _showroom_user_data.users | dict2items }}"
+  loop_control:
+    loop_var: _showroom_users_item
+    label: "{{ _showroom_users_item.key }}"
+
+- name: Report Variables to user_data (single user)
+  when: not _showroom_user_data.users is defined
+  vars:
+    _showroom_vars: "{{ _showroom_user_data | combine({'guid': guid}) }}"
+    _showroom_namespace: "{{ ocp4_workload_showroom_namespace }}"
+  ansible.builtin.include_tasks: report_variables.yaml
+
+- name: Report Variables to user_data (multi user)
+  when: _showroom_user_data.users is defined
+  vars:
+    _showroom_user: "{{ _showroom_users_item.key }}"
+    _showroom_namespace: "{{ ocp4_workload_showroom_namespace }}-{{ _showroom_user }}"
+    _showroom_vars: "{{ _showroom_users_item.value | combine({'guid': guid, 'user': _showroom_user}) }}"
+  ansible.builtin.include_tasks: report_variables.yaml
+  loop: "{{ _showroom_user_data.users | dict2items }}"
+  loop_control:
+    loop_var: _showroom_users_item
+    label: "{{ _showroom_users_item.key }}"
