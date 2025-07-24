@@ -18,13 +18,13 @@
     install_operator_manage_namespaces:
       - "{{ ocp4_workload_authorino_operator_namespace }}"
 
-# - name: Deploy Authorino
-#   when: ocp4_workload_authorino_operator_deploy_authorino
-#   block:
-#   - name: Install Authorino
-#     kubernetes.core.k8s:
-#       state: present
-#       template: "authorino.yaml.j2"
+- name: Deploy Authorino
+  when: ocp4_workload_authorino_operator_deploy_authorino
+  block:
+  - name: Install Authorino
+    kubernetes.core.k8s:
+      state: present
+      template: "authorino.yaml.j2"
 
   # - name: Wait for Authorino to be ready
   #   kubernetes.core.k8s_info:
