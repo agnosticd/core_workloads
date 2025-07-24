@@ -1,0 +1,23 @@
+---
+ocp4_workload_servicemesh2_catalogsource_setup: true
+ocp4_workload_servicemesh2_catalogsource_image: ""
+ocp4_workload_servicemesh2_catalogsource_tag: ""
+
+# Elasticsearch
+ocp4_workload_servicemesh2_es: true
+ocp4_workload_servicemesh2_es_channel: stable
+ocp4_workload_servicemesh2_es_startingcsv: ""
+
+# Jaeger
+ocp4_workload_servicemesh2_jaeger: true
+ocp4_workload_servicemesh2_jaeger_channel: stable
+ocp4_workload_servicemesh2_jaeger_startingcsv: ""
+
+# Kiali
+ocp4_workload_servicemesh2_kiali: true
+ocp4_workload_servicemesh2_kiali_channel: stable
+ocp4_workload_servicemesh2_kiali_startingcsv: ""
+
+# Service Mesh
+ocp4_workload_servicemesh2_servicemesh_channel: stable
+ocp4_workload_servicemesh2_servicemesh_startingcsv: ""

@@ -1,0 +1,8 @@
+= Red Hat OpenShift Service Mesh (OSSM) 2
+
+== Role overview
+
+This role installs Red Hat OpenShift Service Mesh (OSSM) 2 (and optionally prerequisites) into an OpenShift Cluster. It does not configure Service Mesh at all.
+
+See defaults/main.yml for variables to set.
+
