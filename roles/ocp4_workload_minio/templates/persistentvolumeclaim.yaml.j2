@@ -2,15 +2,17 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: minio-pv-claim
+  name: {{ ocp4_workload_minio_name }}
   namespace: {{ ocp4_workload_minio_project }}
   labels:
-    app: minio-storage-claim
+    app: {{ ocp4_workload_minio_name }}
 spec:
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
       storage: "{{ ocp4_workload_minio_storage_size }}"
-  # Uncomment and add storageClass specific to your requirements if not using the default storage class.
-  # storageClassName:
+{% if ocp4_workload_minio_storage_class_name | length > 0 %}      
+  storageClassName: "{{ ocp4_workload_minio_storage_class_name }}
+{% endif %}
+    

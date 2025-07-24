@@ -1,8 +1,15 @@
 ---
+- name: Assert that root user and password are set
+  ansible.builtin.assert:
+    that:
+    - ocp4_workload_minio_root_user | default("") | length > 0
+    - ocp4_workload_minio_root_password | default("") | length > 0
+    fail_msg: "ocp4_workload_minio_root_user and ocp4_workload_minio_root_password must be set"
+
 - name: Create OpenShift objects for MinIO object storage
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', item) | from_yaml }}"
+    template: "{{ item }}"
   loop:
   - ./templates/namespace.yaml.j2
   - ./templates/secret.yaml.j2
@@ -14,31 +21,31 @@
   when: ocp4_workload_minio_expose_route | bool
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', item) | from_yaml }}"
+    template: "{{ item }}"
   loop:
   - ./templates/route_minio.yaml.j2
   - ./templates/route_console.yaml.j2
 
+- name: Wait until MinIO Deployment is running
+  kubernetes.core.k8s_info:
+    api_version: "apps/v1"
+    kind: Deployment
+    name: "{{ ocp4_workload_minio_name }}"
+    namespace: "{{ ocp4_workload_minio_project }}"
+    wait: true
+    wait_sleep: 10
+    wait_timeout: 360
+
 - name: Set up a MinIO bucket
   when: ocp4_workload_minio_bucket_setup | bool
   block:
-  - name: Wait until MinIO Deployment is running
-    kubernetes.core.k8s_info:
-      api_version: "apps/v1"
-      kind: Deployment
-      name: minio
-      namespace: "{{ ocp4_workload_minio_project }}"
-      wait: true
-      wait_sleep: 10
-      wait_timeout: 360
-
   - name: Get MinIO Pod
     kubernetes.core.k8s_info:
       api_version: v1
       kind: Pod
       namespace: "{{ ocp4_workload_minio_project }}"
       label_selectors:
-      - app = minio
+      - "app = {{ ocp4_workload_minio_name }}"
     register: r_minio_pod
 
   # Set up MinIO with a bucket
