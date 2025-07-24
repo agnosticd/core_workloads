@@ -9,7 +9,7 @@ spec:
     targetPort: 9001
   to:
     kind: Service
-    name: minio
+    name: {{ ocp4_workload_minio_name }}
     weight: 100
   wildcardPolicy: None
   tls:

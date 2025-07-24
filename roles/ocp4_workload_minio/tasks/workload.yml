@@ -1,8 +1,15 @@
 ---
+- name: Assert that root user and password are set
+  ansible.builtin.assert:
+    that:
+    - ocp4_workload_minio_root_user | default("") | length > 0
+    - ocp4_workload_minio_root_password | default("") | length > 0
+    fail_msg: "ocp4_workload_minio_root_user and ocp4_workload_minio_root_password must be set"
+
 - name: Create OpenShift objects for MinIO object storage
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', item) | from_yaml }}"
+    template: "{{ item }}"
   loop:
   - ./templates/namespace.yaml.j2
   - ./templates/secret.yaml.j2
@@ -14,7 +21,7 @@
   when: ocp4_workload_minio_expose_route | bool
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', item) | from_yaml }}"
+    template: "{{ item }}"
   loop:
   - ./templates/route_minio.yaml.j2
   - ./templates/route_console.yaml.j2
