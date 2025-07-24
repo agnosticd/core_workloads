@@ -1,5 +1,5 @@
 ---
-ocp4_workload_servicemesh2_catalogsource_setup: true
+ocp4_workload_servicemesh2_catalogsource_setup: false
 ocp4_workload_servicemesh2_catalogsource_image: ""
 ocp4_workload_servicemesh2_catalogsource_tag: ""
 
