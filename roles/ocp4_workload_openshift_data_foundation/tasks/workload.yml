@@ -62,17 +62,17 @@
   when: ocp4_workload_openshift_data_foundation_catalogsource_setup | bool
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'catalogsource.yaml.j2') | from_yaml }}"
+    template: catalogsource.yaml.j2
 
 - name: Create OperatorGroup
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'operatorgroup.yaml.j2') | from_yaml }}"
+    template: operatorgroup.yaml.j2
 
 - name: Create operator subscription
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'subscription.yaml.j2') | from_yaml }}"
+    template: subscription.yaml.j2
 
 - name: Wait for the CRD storagesystems to become available
   kubernetes.core.k8s_info:
@@ -122,12 +122,12 @@
 - name: Create the ODF StorageCluster
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'storagecluster.yaml.j2') | from_yaml }}"
+    template: storagecluster.yaml.j2
 
 - name: Create the ODF StorageSystem
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'storagesystem.yaml.j2') | from_yaml }}"
+    template: storagesystem.yaml.j2
   register: r_k8s_run
   until: r_k8s_run is not failed
   delay: 10
@@ -167,7 +167,7 @@
   - name: Update Config Map rook-ceph-operator-config
     kubernetes.core.k8s:
       state: present
-      definition: "{{ lookup('template', 'configmap-rook-ceph-operator-config.yaml.j2') | from_yaml }}"
+      template: configmap-rook-ceph-operator-config.yaml.j2
 
   - name: Delete DaemonSets to pick up modified ConfigMap
     kubernetes.core.k8s:
@@ -243,4 +243,4 @@
   when: ocp4_workload_openshift_data_foundation_install_toolbox | bool
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'toolbox.yaml.j2') }}"
+    template: toolbox.yaml.j2

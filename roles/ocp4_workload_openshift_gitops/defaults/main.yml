@@ -136,9 +136,6 @@ ocp4_workload_openshift_gitops_kustomize_plugin_env: []
 # https://argo-cd.readthedocs.io/en/latest/user-guide/resource_tracking/
 ocp4_workload_openshift_gitops_resource_tracking_method: ""
 
-# Define the api_version (i.e v1alpha1 or v1beta1
-# ocp4_workload_openshift_gitops_api_version: "{{ _ocp4_workload_openshift_gitops_api_version }}"
-
 # --------------------------------
 # Operator Catalog Snapshot Settings
 # --------------------------------

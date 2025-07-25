@@ -11,11 +11,11 @@
     state: present
     template: "{{ item }}"
   loop:
-  - ./templates/namespace.yaml.j2
-  - ./templates/secret.yaml.j2
-  - ./templates/persistentvolumeclaim.yaml.j2
-  - ./templates/deployment.yaml.j2
-  - ./templates/service.yaml.j2
+  - namespace.yaml.j2
+  - secret.yaml.j2
+  - persistentvolumeclaim.yaml.j2
+  - deployment.yaml.j2
+  - service.yaml.j2
 
 - name: Create OpenShift routes for MinIO object storage
   when: ocp4_workload_minio_expose_route | bool
@@ -23,8 +23,8 @@
     state: present
     template: "{{ item }}"
   loop:
-  - ./templates/route_minio.yaml.j2
-  - ./templates/route_console.yaml.j2
+  - route_minio.yaml.j2
+  - route_console.yaml.j2
 
 - name: Wait until MinIO Deployment is running
   kubernetes.core.k8s_info:

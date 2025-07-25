@@ -3,6 +3,7 @@ apiVersion: keycloak.org/v1alpha1
 kind: KeycloakRealm
 metadata:
   name: openshift
+  namespace: {{ ocp4_workload_authentication_rhsso_namespace }}
   labels:
     app: openshift
 spec:

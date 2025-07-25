@@ -55,8 +55,7 @@
 - name: Create RHSSO resources
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', item) }}"
-    namespace: "{{ ocp4_workload_authentication_rhsso_namespace }}"
+    template: "{{ item }}"
   loop:
   - rhsso-instance.yml.j2
   - rhsso-realm-openshift.yml.j2
@@ -89,7 +88,7 @@
   when: ocp4_workload_authentication_rhsso_config != 'rosa'
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', item) | from_yaml }}"
+    template: "{{ item }}"
   loop:
   - openshift-openid-client-secret.yml.j2
   - openshift-oauth.yml.j2
@@ -113,7 +112,7 @@
   - name: Creating admin user
     kubernetes.core.k8s:
       state: present
-      definition: "{{ lookup('template', 'rhsso-user-openshift.yml.j2') }}"
+      template: rhsso-user-openshift.yml.j2
     vars:
       username: "{{ ocp4_workload_authentication_rhsso_admin_username }}"
       password: "{{ _ocp4_workload_authentication_rhsso_admin_password }}"
@@ -121,13 +120,13 @@
   - name: Create cluster admin role binding
     kubernetes.core.k8s:
       state: present
-      definition: "{{ lookup('template', 'openshift-admin-crb.yml.j2') | from_yaml }}"
+      template: openshift-admin-crb.yml.j2
 
 - name: Create users
   when: ocp4_workload_authentication_rhsso_user_count | int > 0
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'rhsso-user-openshift.yml.j2') }}"
+    template: rhsso-user-openshift.yml.j2
   vars:
     username: "{{ ocp4_workload_authentication_rhsso_user_name_base }}{{ n + 1 }}"
     password: "{{ _ocp4_workload_authentication_rhsso_user_password }}"

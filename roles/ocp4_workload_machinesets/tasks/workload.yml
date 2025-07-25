@@ -36,7 +36,7 @@
       state: present
       merge_type:
       - merge
-      definition: "{{ lookup('template', '{{ item }}') }}"
+      template: "{{ item }}"
     loop:
     - ingress-controller.yaml.j2
     - image-registry.yaml.j2
@@ -44,4 +44,4 @@
   - name: Create ConfigMap for Cluster Monitoring
     kubernetes.core.k8s:
       state: present
-      definition: "{{ lookup('file', 'cluster-monitoring-config.yaml') }}"
+      src: cluster-monitoring-config.yaml

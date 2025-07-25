@@ -22,12 +22,12 @@
   - name: Create knative-serving namespace
     kubernetes.core.k8s:
       state: present
-      definition: "{{ lookup('file', 'ns-knative-serving.yaml') | from_yaml }}"
+      src: ns-knative-serving.yaml
 
   - name: Create KNative Serving object
     kubernetes.core.k8s:
       state: present
-      definition: "{{ lookup('template', 'knative_serving.yaml.j2') | from_yaml }}"
+      template: knative_serving.yaml.j2
 
   - name: Wait until KNative Serving installation is complete
     when: ocp4_workload_serverless_wait_for_deploy | bool
@@ -55,12 +55,12 @@
   - name: Create knative-eventing namespace
     kubernetes.core.k8s:
       state: present
-      definition: "{{ lookup('file', 'ns-knative-eventing.yaml') | from_yaml }}"
+      src: ns-knative-eventing.yaml
 
   - name: Create knative-eventing namespace and KNative Eventing object
     kubernetes.core.k8s:
       state: present
-      definition: "{{ lookup('template', 'knative_eventing.yaml.j2') | from_yaml }}"
+      template: knative_eventing.yaml.j2
 
   - name: Wait until KNative Eventing installation is complete
     when: ocp4_workload_serverless_wait_for_deploy | bool

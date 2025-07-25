@@ -5,6 +5,7 @@ metadata:
   labels:
     app: openshift
   name: openshift
+  namespace: {{ ocp4_workload_authentication_rhsso_namespace }}
 spec:
   client:
     clientAuthenticatorType: client-secret

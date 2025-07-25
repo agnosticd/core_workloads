@@ -14,7 +14,7 @@
 - name: Create Namespace and DevWorkspace
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', resource | from_yaml) }}"
+    template: "{{ resource }}"
   loop:
   - namespace.yaml.j2
   - rolebinding.yaml.j2

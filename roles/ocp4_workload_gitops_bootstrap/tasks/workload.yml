@@ -13,7 +13,7 @@
 - name: Create bootstrap ArgoCD application
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'application.yaml.j2') | from_yaml }}"
+    template: application.yaml.j2
 
 - name: Wait until bootstrap ArgoCD application is healthy and synced
   kubernetes.core.k8s_info:

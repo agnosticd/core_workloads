@@ -18,7 +18,7 @@
   when: ocp4_workload_openshift_gitops_setup_cluster_admin | bool
   kubernetes.core.k8s:
     state: absent
-    definition: "{{ lookup('file', 'clusterrolebinding.yaml') | from_yaml }}"
+    src: clusterrolebinding.yaml
 
 - name: Remove openshift-gitops namespace
   kubernetes.core.k8s:

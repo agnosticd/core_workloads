@@ -14,7 +14,7 @@
 - name: Set up cluster admin users
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'cluster_role_binding.yaml.j2') | from_yaml }}"
+    template: cluster_role_binding.yaml.j2
   register: r_cluster_admin_role_binding
   until: r_cluster_admin_role_binding is successful
   delay: 15

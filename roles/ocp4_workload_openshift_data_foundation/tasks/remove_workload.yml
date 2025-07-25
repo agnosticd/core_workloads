@@ -20,12 +20,12 @@
   when: ocp4_workload_openshift_data_foundation_install_toolbox | bool
   kubernetes.core.k8s:
     state: absent
-    definition: "{{ lookup('template', 'toolbox.yaml.j2') }}"
+    template: toolbox.yaml.j2
 
 - name: Remove Storage System
   kubernetes.core.k8s:
     state: absent
-    definition: "{{ lookup('template', 'storagesystem.yaml.j2') }}"
+    template: storagesystem.yaml.j2
 
 - name: Wait until Storage System has been deleted
   kubernetes.core.k8s_info:

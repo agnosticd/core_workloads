@@ -64,7 +64,7 @@
 - name: Define {{ machineset_group.name }} machinesets
   kubernetes.core.k8s:
     state: present
-    template: "machineset-aws.j2"
+    template: machineset-aws.yaml.j2
   # Iterate through availability zones in reverse order as it makes the math
   # easier to scale zone "a" before "b" to match expected behavior.
   loop: "{{ aws_worker_availability_zones[::-1] }}"
@@ -108,7 +108,7 @@
   - machineset_group.total_replicas_max | int > 0
   kubernetes.core.k8s:
     state: present
-    template: "machineautoscaler.yml.j2"
+    template: machineautoscaler.yaml.j2
   # Iterate through availability zones in reverse order as it makes the math
   # easier to scale zone "a" before "b" to match expected behavior.
   loop: "{{ aws_worker_availability_zones[::-1] }}"

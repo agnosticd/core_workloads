@@ -21,7 +21,7 @@
 - name: Create NodeFeatureDiscovery Custom Resource
   kubernetes.core.k8s:
     state: present
-    template: "nodefeature_discovery.yaml.j2"
+    template: nodefeature_discovery.yaml.j2
   register: r_nfd
   until: r_nfd is not failed
   retries: 30

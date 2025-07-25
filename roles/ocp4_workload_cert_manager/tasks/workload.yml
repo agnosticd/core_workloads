@@ -24,7 +24,7 @@
     ocp4_workload_cert_manager_cloud_provider in ["aws", "gcp", "azure"]
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'certmanager.yaml.j2') }}"
+    template: certmanager.yaml.j2
 
 - name: Set DNS facts
   ansible.builtin.set_fact:
@@ -56,7 +56,7 @@
   when: ocp4_workload_cert_manager_provider == "zerossl"
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'secret-zerossl-credentials.yaml.j2') }}"
+    template: secret-zerossl-credentials.yaml.j2
 
 - name: Set up cloud provider specific prerequisites for cert manager
   ansible.builtin.include_tasks: "cert_manager_{{ ocp4_workload_cert_manager_cloud_provider }}.yml"
@@ -64,7 +64,7 @@
 - name: Set up ClusterIssuer and request certificates
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', item) }}"
+    template: "{{ item }}"
   loop:
   - clusterissuer.yaml.j2
   - certificate-ingress.yaml.j2
@@ -85,7 +85,7 @@
     when: not r_certificate_ingress is failed
     kubernetes.core.k8s:
       state: present
-      definition: "{{ lookup('template', 'default-ingress-controller.yaml.j2') }}"
+      template: default-ingress-controller.yaml.j2
 
 - name: Install API Server certificate
   when: ocp4_workload_cert_manager_install_api_certificates | bool
@@ -100,7 +100,7 @@
     - name: Update API server to use certificate
       kubernetes.core.k8s:
         state: present
-        definition: "{{ lookup('template', 'api-server.yaml.j2') }}"
+        template: api-server.yaml.j2
 
     # It takes about 4 minutes per API Server to
     # restart with certificates (due to AWS

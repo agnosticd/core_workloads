@@ -22,7 +22,7 @@
   - name: Install Authorino
     kubernetes.core.k8s:
       state: present
-      template: "authorino.yaml.j2"
+      template: authorino.yaml.j2
 
   - name: Wait for Authorino to be ready
     kubernetes.core.k8s_info:

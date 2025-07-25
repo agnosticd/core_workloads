@@ -6,9 +6,9 @@
 - name: Create MachineConfigPool
   kubernetes.core.k8s:
     state: present
-    template: "machineconfigpool.yaml.j2"
+    template: machineconfigpool.yaml.j2
 
 - name: Create custom Kubelet Config
   kubernetes.core.k8s:
     state: present
-    template: "kubeletconfig.yaml.j2"
+    template: kubeletconfig.yaml.j2

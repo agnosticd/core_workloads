@@ -28,4 +28,4 @@
 - name: Create AWS credentials secret for cert manager
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'secret-aws-credentials.yaml.j2') }}"
+    template: secret-aws-credentials.yaml.j2

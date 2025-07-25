@@ -24,7 +24,7 @@
   when: ocp4_workload_openshift_gitops_setup_cluster_admin | bool
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('file', 'clusterrolebinding.yaml') | from_yaml }}"
+    src: clusterrolebinding.yaml
 
 - name: Wait until openshift-gitops ArgoCD instance has been created
   kubernetes.core.k8s_info:
@@ -44,12 +44,12 @@
   when: ocp4_workload_openshift_gitops_kustomize_plugin | bool
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('file', 'cm-kustomize-envvar.yaml') | from_yaml }}"
+    src: cm-kustomize-envvar.yaml
 
 - name: Update the openshift-gitops ArgoCD instance
   kubernetes.core.k8s:
     state: patched
-    definition: "{{ lookup('template', 'openshift-gitops.yaml.j2') | from_yaml }}"
+    template: openshift-gitops.yaml.j2
 
 - name: Attempt to install the ArgoCD CLI to the bastion
   when: ocp4_workload_openshift_gitops_install_cli_tools | bool
