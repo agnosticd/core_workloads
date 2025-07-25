@@ -156,4 +156,4 @@ ocp4_workload_openshift_gitops_catalogsource_name: redhat-operators-snapshot-git
 ocp4_workload_openshift_gitops_catalog_snapshot_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
 
 # Catalog snapshot image tag
-ocp4_workload_openshift_gitops_catalog_snapshot_image_tag: v4.19_2025_06_30
+ocp4_workload_openshift_gitops_catalog_snapshot_image_tag: v4.19_2025_07_21

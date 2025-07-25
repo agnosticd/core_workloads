@@ -86,7 +86,7 @@ ocp4_workload_cert_manager_starting_csv: ""
 
 ocp4_workload_cert_manager_use_catalog_snapshot: false
 ocp4_workload_cert_manager_catalogsource_name: ""
-ocp4_workload_cert_manager_catalog_snapshot_image: ""
-ocp4_workload_cert_manager_catalog_snapshot_image_tag: ""
+ocp4_workload_cert_manager_catalog_snapshot_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
+ocp4_workload_cert_manager_catalog_snapshot_image_tag: v4.19_2025_07_21
 # ocp4_workload_cert_manager_starting_csv: cert-manager-operator.v1.15.0
 ocp4_workload_cert_manager_automatic_install_plan_approval: true
