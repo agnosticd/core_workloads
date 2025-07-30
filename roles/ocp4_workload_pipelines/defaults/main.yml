@@ -4,9 +4,7 @@
 # Channel to use for the OpenShift pipelines subscription
 ocp4_workload_pipelines_channel: latest
 
-# Set automatic InstallPlan approval. If set to false it is also suggested
-# to set the starting_csv to pin a specific version
-# This variable has no effect when using a catalog snapshot (always true)
+# Set automatic InstallPlan approval. Must be set to false when specifying a starting_csv
 ocp4_workload_pipelines_automatic_install_plan_approval: true
 
 # Set a starting ClusterServiceVersion.

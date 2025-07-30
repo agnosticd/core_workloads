@@ -7,17 +7,21 @@ ocp4_workload_servicemesh2_catalogsource_tag: v4.19_2025_07_21
 ocp4_workload_servicemesh2_es: true
 ocp4_workload_servicemesh2_es_channel: stable
 ocp4_workload_servicemesh2_es_startingcsv: ""
+ocp4_workload_servicemesh2_es_automatic_install_plan_approval: true
 
 # Jaeger
 ocp4_workload_servicemesh2_jaeger: true
 ocp4_workload_servicemesh2_jaeger_channel: stable
 ocp4_workload_servicemesh2_jaeger_startingcsv: ""
+ocp4_workload_servicemesh2_jaeger_automatic_install_plan_approval: true
 
 # Kiali
 ocp4_workload_servicemesh2_kiali: true
 ocp4_workload_servicemesh2_kiali_channel: stable
 ocp4_workload_servicemesh2_kiali_startingcsv: ""
+ocp4_workload_servicemesh2_kiali_automatic_install_plan_approval: true
 
 # Service Mesh
 ocp4_workload_servicemesh2_servicemesh_channel: stable
 ocp4_workload_servicemesh2_servicemesh_startingcsv: ""
+ocp4_workload_servicemesh2_servicemesh_automatic_install_plan_approval: true

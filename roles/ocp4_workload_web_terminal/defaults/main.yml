@@ -18,9 +18,7 @@ ocp4_workload_web_terminal_namespace: admin-terminal
 ocp4_workload_web_terminal_user_format: "user%d"
 ocp4_workload_web_terminal_namespace_format: "{{ ocp4_workload_web_terminal_user_format }}-terminal"
 
-# Set automatic InstallPlan approval. If set to false it is also suggested
-# to set the starting_csv to pin a specific version
-# This variable has no effect when using a catalog snapshot (always true)
+# Set automatic InstallPlan approval. Must be set to false when specifying a starting_csv
 ocp4_workload_web_terminal_automatic_install_plan_approval: true
 
 # Set a starting ClusterServiceVersion.

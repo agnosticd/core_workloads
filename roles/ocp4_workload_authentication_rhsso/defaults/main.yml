@@ -4,7 +4,8 @@ ocp4_workload_authentication_rhsso_target_namespaces: ["rhsso"]
 ocp4_workload_authentication_rhsso_channel: stable
 ocp4_workload_authentication_rhsso_starting_csv: ""
 # ocp4_workload_authentication_rhsso_starting_csv: rhsso-operator.7.6.3-opr-002
-ocp4_workload_authentication_rhsso_use_catalog_source: true
+ocp4_workload_authentication_rhsso_automatic_install_plan_approval: true
+ocp4_workload_authentication_rhsso_use_catalog_source: false
 ocp4_workload_authentication_rhsso_catalogsource_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
 ocp4_workload_authentication_rhsso_catalogsource_tag: v4.19_2025_07_21
 
