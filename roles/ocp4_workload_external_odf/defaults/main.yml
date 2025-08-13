@@ -1,6 +1,5 @@
 ---
-become_override: false
-odf_channel: stable-4.18
+ocp4_workload_external_odf_channel: stable-4.18
 
 ocp4_workload_external_odf_registry_size: 100Gi
 ocp4_workload_external_odf_ceph_storage_system_deploy_timeout: 500
