@@ -18,7 +18,7 @@ parameters:
   imageFeatures: layering,deep-flatten,exclusive-lock,object-map,fast-diff
   imageFormat: "2"
   pool: {{ ocp4_workload_external_odf_guest_pool }}
-  volumeNamePrefix: {{ env_type }}-{{ guid }}-
+  volumeNamePrefix: {{ config }}-{{ guid }}-
 provisioner: openshift-storage.rbd.csi.ceph.com
 reclaimPolicy: Delete
 allowVolumeExpansion: true
