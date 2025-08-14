@@ -29,7 +29,7 @@
   register: r_storagecluster
   until: r_storagecluster is success
   retries: 30
-  delay: 30
+  delay: 5
   loop:
   - secret.yaml.j2
   - storagecluster.yaml.j2
@@ -43,7 +43,7 @@
   register: r_storagecluster
   until: r_storagecluster is success
   retries: 30
-  delay: 30
+  delay: 5
 
 - name: Wait for StorageCluster to be available
   kubernetes.core.k8s_info:
@@ -60,8 +60,8 @@
       type: Available
   register: r_storage_cluster_info
   until: r_storage_cluster_info is success
-  retries: 30
-  delay: 10
+  retries: 3
+  delay: 5
 
 - name: Create PVC for image registry
   kubernetes.core.k8s:
@@ -70,7 +70,7 @@
   register: r_pvc
   until: r_pvc is success
   retries: 30
-  delay: 30
+  delay: 5
 
 - name: Configure registry
   kubernetes.core.k8s:
