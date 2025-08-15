@@ -57,7 +57,7 @@
     wait_condition:
       reason: ReconcileCompleted
       status: "True"
-      type: Available
+      type: ReconcileComplete
   register: r_storage_cluster_info
   until: r_storage_cluster_info is success
   retries: 3
