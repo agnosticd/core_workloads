@@ -14,6 +14,16 @@
       kind: DNS
       name: cluster
     register: r_hostedzoneid
+    retries: 5
+    delay: 5
+    until:
+    - r_hostedzoneid.resources is defined
+    - r_hostedzoneid.resources | length > 0
+    - r_hostedzoneid.resources[0].spec.publicZone.id is defined
+
+  - name: Debug HostedZoneID result
+    ansible.builtin.debug:
+      msg: "{{ r_hostedzoneid }}"
 
   - name: Set HostedZoneID fact
     ansible.builtin.set_fact:
