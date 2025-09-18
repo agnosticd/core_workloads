@@ -129,7 +129,12 @@
     state: present
     template: rhsso-user-openshift.yml.j2
   vars:
-    username: "{{ ocp4_workload_authentication_rhsso_user_name_base }}{{ n + 1 }}"
+    username: >-
+      {%- if ocp4_workload_authentication_rhsso_user_count | int == 1 -%}
+      {{ ocp4_workload_authentication_rhsso_user_name }}
+      {%- else -%}
+      {{ ocp4_workload_authentication_rhsso_user_name_base }}{{ n + 1 }}
+      {%- endif -%}
     password: "{{ _ocp4_workload_authentication_rhsso_user_password }}"
   loop: "{{ range(0, ocp4_workload_authentication_rhsso_user_count | int) | list }}"
   loop_control:
@@ -175,19 +180,27 @@
       openshift_cluster_user_base: "{{ ocp4_workload_authentication_rhsso_user_name_base }}"
       openshift_cluster_user_count: "{{ ocp4_workload_authentication_rhsso_user_count | int }}"
 
-- name: Save admin information
-  when: ocp4_workload_authentication_rhsso_admin_create | bool
+- name: Print admin information
+  when:
+  - ocp4_workload_authentication_rhsso_admin_create | bool
+  - ocp4_workload_authentication_rhsso_enable_user_info_messages | bool
   agnosticd.core.agnosticd_user_info:
     msg: >-
       User '{{ ocp4_workload_authentication_rhsso_admin_username }}'
       with password '{{ _ocp4_workload_authentication_rhsso_admin_password }}'
       is cluster admin.
+
+- name: Save admin information
+  when: ocp4_workload_authentication_rhsso_admin_create | bool 
+  agnosticd.core.agnosticd_user_info:
     data:
       openshift_cluster_admin_username: "{{ ocp4_workload_authentication_rhsso_admin_username }}"
       openshift_cluster_admin_password: "{{ _ocp4_workload_authentication_rhsso_admin_password }}"
 
 - name: Print user information
-  when: ocp4_workload_authentication_rhsso_user_count | int > 0
+  when: 
+  - ocp4_workload_authentication_rhsso_user_count | int > 0
+  - ocp4_workload_authentication_rhsso_enable_user_info_messages | bool
   agnosticd.core.agnosticd_user_info:
     msg: >-
       Users `{{ ocp4_workload_authentication_rhsso_user_name_base }}1` ..
