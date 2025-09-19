@@ -8,7 +8,9 @@
 
 - name: Render helm chart with values
   environment:
-    KUBECONFIG: "{{ _showroom_kubeconfig | default(omit) }}"
+    K8S_AUTH_HOST: "{{ ocp4_workload_showroom_openshift_api_url | default(omit) }}"
+    K8S_AUTH_API_KEY: "{{ ocp4_workload_showroom_openshift_api_token | default(omit) }}"
+    K8S_AUTH_VERIFY_SSL: false
   kubernetes.core.helm_template:
     chart_repo_url: "{{ ocp4_workload_showroom_chart_package_url }}"
     chart_ref: "{{ ocp4_workload_showroom_deployer_chart_name }}"
@@ -26,7 +28,6 @@
         contentOnly: "{{ ocp4_workload_showroom_content_only | bool | string | lower }}"
         zero_touch_bundle: "{{  ocp4_workload_showroom_zero_touch_bundle }}"
         zero_touch_ui_enabled: "{{ ocp4_workload_showroom_zero_touch_ui_enabled | string | lower }}"
-
       guid: "{{ guid }}"
       deployer:
         domain: "{{ openshift_cluster_ingress_domain }}"
@@ -79,10 +80,11 @@
           limits:
             cpu: "{{ ocp4_workload_showroom_novnc_limits_cpu }}"
             memory: "{{ ocp4_workload_showroom_novnc_limits_memory }}"
-
   register: r_helm_templates
 
 - name: Deploy rendered manifests to OpenShift
   kubernetes.core.k8s:
-    kubeconfig: "{{ _showroom_kubeconfig | default(omit) }}"
+    host: "{{ ocp4_workload_showroom_openshift_api_url | default(omit) }}"
+    api_key: "{{ ocp4_workload_showroom_openshift_api_token | default(omit) }}"
+    validate_certs: false
     definition: "{{ r_helm_templates.stdout | from_yaml_all }}"

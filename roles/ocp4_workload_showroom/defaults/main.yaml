@@ -1,6 +1,7 @@
 ---
-tmp_dir: /tmp/{{ guid }}
-tmp_kubeconfig: "{{ tmp_dir }}/.kube/config"
+# Connection to cluster to deploy to. Only set when deploying to a remote cluster.
+# ocp4_workload_showroom_openshift_api_token: "{{ cluster_admin_agnosticd_sa_token }}"
+# ocp4_workload_showroom_openshift_api_url: "{{ sandbox_openshift_api_url}}"
 
 ocp4_workload_showroom_name: showroom
 ocp4_workload_showroom_namespace: "showroom-{{ guid | default('00000') }}"

@@ -1,7 +1,9 @@
 ---
 - name: Get the Showroom route
   kubernetes.core.k8s_info:
-    kubeconfig: "{{ _showroom_kubeconfig | default(omit) }}"
+    host: "{{ ocp4_workload_showroom_openshift_api_url | default(omit) }}"
+    api_key: "{{ ocp4_workload_showroom_openshift_api_token | default(omit) }}"
+    validate_certs: false
     api_version: route.openshift.io/v1
     kind: Route
     name: "{{ ocp4_workload_showroom_service_name }}"
@@ -18,6 +20,5 @@
   agnosticd.core.agnosticd_user_info:
     msg: "Lab instructions: {{ _showroom_url }}"
     data:
-      lab_ui_url: "{{ _showroom_url }}"
       showroom_primary_view_url: "{{ _showroom_url }}"
     user: "{{ _showroom_user | default(omit) }}"

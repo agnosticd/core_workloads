@@ -4,60 +4,83 @@
 # Though this is an error, it's the condition we hope to achieve.
 # These are the limitations of the ProjectRequest and self-provisioner
 
-- name: Get Showroom namespace
-  kubernetes.core.k8s_info:
-    kubeconfig: "{{ _showroom_kubeconfig | default(omit) }}"
-    api_version: project.openshift.io/v1
-    kind: Project
-    name: "{{ _showroom_namespace }}"
-  register: r_get_showroom_namespace
-  failed_when: false
-
-# Takes advantage of self-provisioner, if present
-- name: Create showroom namespace
-  when: r_get_showroom_namespace.resources | default([]) | length == 0
+- name: Create Showroom namespace
   kubernetes.core.k8s:
-    kubeconfig: "{{ _showroom_kubeconfig | default(omit) }}"
+    host: "{{ ocp4_workload_showroom_openshift_api_url | default(omit) }}"
+    api_key: "{{ ocp4_workload_showroom_openshift_api_token | default(omit) }}"
+    validate_certs: false
     definition:
-      apiVersion: project.openshift.io/v1
-      kind: ProjectRequest
+      apiVersion: v1
+      kind: Namespace
       metadata:
         name: "{{ _showroom_namespace }}"
+        labels:
+          guid: {{ guid }}
+          creator: agnosticd.core_workloads.ocp4_workload_showroom
   register: r_create_showroom_namespace
-  # Work around https://github.com/ansible-collections/kubernetes.core/issues/623
-  failed_when: >-
-    r_create_showroom_namespace is failed and
-    'AlreadyExists' not in r_create_showroom_namespace.msg | default('')
-  until: r_create_showroom_namespace is successful
-  retries: 10
-  delay: 5
-  ignore_errors: true
 
-- name: Test the self-provisioner
-  when: ocp4_workload_showroom_test_self_provisioner | default(false) | bool
-  block:
-  - name: Create a test object in the showroom namespace to validate self-provisioner with retries
-    kubernetes.core.k8s:
-      kubeconfig: "{{ _showroom_kubeconfig | default(omit) }}"
-      state: present
-      definition:
-        apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: test
-          namespace: "{{ _showroom_namespace }}"
-    register: r_create_test_object
-    until: r_create_test_object is successful
-    retries: 5
-    delay: 10
+# - name: Get Showroom namespace
+#   kubernetes.core.k8s_info:
+#     host: "{{ ocp4_workload_showroom_openshift_api_url | default(omit) }}"
+#     api_key: "{{ ocp4_workload_showroom_openshift_api_token | default(omit) }}"
+#     validate_certs: false
+#     api_version: project.openshift.io/v1
+#     kind: Project
+#     name: "{{ _showroom_namespace }}"
+#   register: r_get_showroom_namespace
+#   failed_when: false
 
-  - name: Remove test object
-    kubernetes.core.k8s:
-      kubeconfig: "{{ _showroom_kubeconfig | default(omit) }}"
-      state: absent
-      definition:
-        apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: test
-          namespace: "{{ _showroom_namespace }}"
+# # Takes advantage of self-provisioner, if present
+# - name: Create showroom namespace
+#   when: r_get_showroom_namespace.resources | default([]) | length == 0
+#   kubernetes.core.k8s:
+#     host: "{{ ocp4_workload_showroom_openshift_api_url | default(omit) }}"
+#     api_key: "{{ ocp4_workload_showroom_openshift_api_token | default(omit) }}"
+#     validate_certs: false
+#     definition:
+#       apiVersion: project.openshift.io/v1
+#       kind: ProjectRequest
+#       metadata:
+#         name: "{{ _showroom_namespace }}"
+#   register: r_create_showroom_namespace
+#   # Work around https://github.com/ansible-collections/kubernetes.core/issues/623
+#   failed_when: >-
+#     r_create_showroom_namespace is failed and
+#     'AlreadyExists' not in r_create_showroom_namespace.msg | default('')
+#   until: r_create_showroom_namespace is successful
+#   retries: 10
+#   delay: 5
+#   ignore_errors: true
+
+# - name: Test the self-provisioner
+#   when: ocp4_workload_showroom_test_self_provisioner | default(false) | bool
+#   block:
+#   - name: Create a test object in the showroom namespace to validate self-provisioner with retries
+#     kubernetes.core.k8s:
+#       host: "{{ ocp4_workload_showroom_openshift_api_url | default(omit) }}"
+#       api_key: "{{ ocp4_workload_showroom_openshift_api_token | default(omit) }}"
+#       validate_certs: false
+#       state: present
+#       definition:
+#         apiVersion: v1
+#         kind: ConfigMap
+#         metadata:
+#           name: test
+#           namespace: "{{ _showroom_namespace }}"
+#     register: r_create_test_object
+#     until: r_create_test_object is successful
+#     retries: 5
+#     delay: 10
+
+#   - name: Remove test object
+#     kubernetes.core.k8s:
+#       host: "{{ ocp4_workload_showroom_openshift_api_url | default(omit) }}"
+#       api_key: "{{ ocp4_workload_showroom_openshift_api_token | default(omit) }}"
+#       validate_certs: false
+#       state: absent
+#       definition:
+#         apiVersion: v1
+#         kind: ConfigMap
+#         metadata:
+#           name: test
+#           namespace: "{{ _showroom_namespace }}"
