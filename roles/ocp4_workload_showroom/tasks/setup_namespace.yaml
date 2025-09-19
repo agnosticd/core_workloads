@@ -15,7 +15,7 @@
       metadata:
         name: "{{ _showroom_namespace }}"
         labels:
-          guid: {{ guid }}
+          guid: "{{ guid }}"
           creator: agnosticd.core_workloads.ocp4_workload_showroom
   register: r_create_showroom_namespace
 
