@@ -15,12 +15,12 @@
 # use _showroom_kubeconfig if showroom user was setup
 # otherwise use default
 
-- name: If deploying to a remote OCP write kubeconfig if requested
-  when:
-  # - showroom_openshift_api_ca_cert is defined
-  - ocp4_workload_showroom_openshift_api_token is defined
-  - ocp4_workload_showroom_openshift_api_url is defined
-  block:
+# - name: If deploying to a remote OCP write kubeconfig if requested
+#   when:
+#   # - showroom_openshift_api_ca_cert is defined
+#   - ocp4_workload_showroom_openshift_api_token is defined
+#   - ocp4_workload_showroom_openshift_api_url is defined
+#   block:
   # - name: Create temporary file for kubeconfig
   #   ansible.builtin.tempfile:
   #     suffix: .kubeconfig
