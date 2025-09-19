@@ -1,8 +1,8 @@
 ---
 - name: Prepare Variables
-  ansible.builtin.include_tasks: prepare-variables.yaml
+  ansible.builtin.include_tasks: prepare_variables.yaml
 
-- name: Remove Projects (single user)
+- name: Remove Namespace (single user)
   when: not _showroom_user_data.users is defined
   kubernetes.core.k8s:
     host: "{{ ocp4_workload_showroom_openshift_api_url | default(omit) }}"
@@ -10,13 +10,13 @@
     validate_certs: false
     state: absent
     definition:
-      apiVersion: project.openshift.io/v1
-      kind: Project
+      apiVersion: v1
+      kind: Namespace
       metadata:
         name: "{{ ocp4_workload_showroom_namespace }}"
   ignore_errors: true
 
-- name: Remove Projects (multi user)
+- name: Remove Namespaces (multi user)
   when: _showroom_user_data.users is defined
   vars:
     _showroom_user: "{{ _showroom_users_item.key }}"
@@ -27,8 +27,8 @@
     validate_certs: false
     state: absent
     definition:
-      apiVersion: project.openshift.io/v1
-      kind: Project
+      apiVersion: v1
+      kind: Namespace
       metadata:
         name: "{{ _showroom_namespace }}"
   ignore_errors: true
