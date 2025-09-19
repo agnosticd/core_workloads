@@ -30,7 +30,7 @@
         zero_touch_ui_enabled: "{{ ocp4_workload_showroom_zero_touch_ui_enabled | string | lower }}"
       guid: "{{ guid }}"
       deployer:
-        domain: "{{ openshift_cluster_ingress_domain }}"
+        domain: "{{ openshift_cluster_ingress_domain | default(sandbox_openshift_apps_domain) }}"
       stacked_terminals:
         setup: "{{ ocp4_workload_showroom_stacked_terminals_enable | bool | string | lower }}"
         display_name: "{{ ocp4_workload_showroom_stacked_terminals_display_name }}"
