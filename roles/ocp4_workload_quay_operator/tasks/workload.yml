@@ -164,17 +164,6 @@
         namespace: "{{ ocp4_workload_quay_operator_registry_namespace }}"
       register: r_config_editor_secret
 
-    - name: Save user data for Quay config editor
-      agnosticd_user_info:
-        msg: >-
-          "Red Hat Quay Config is available at {{ r_quay_registry.resources[0].status.configEditorEndpoint }}."
-          "- Config User: quayconfig."
-          "- Config Password: {{ r_config_editor_secret.resources[0].data.password | b64decode }}."
-        data:
-          quay_config_url: "{{ r_quay_registry.resources[0].status.configEditorEndpoint }}"
-          quay_config_username: "quayconfig"
-          quay_config_password: "{{ r_config_editor_secret.resources[0].data.password | b64decode }}"
-
 # Leave this as the last task in the playbook.
 - name: Workload tasks complete
   ansible.builtin.debug:
