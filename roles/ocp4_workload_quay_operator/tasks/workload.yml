@@ -1,8 +1,4 @@
 ---
-- name: Setting up workload for user {{ ocp_username }}
-  ansible.builtin.debug:
-    msg: "Setting up workload for user ocp_username = {{ ocp_username }}"
-
 # Quay needs OpenShift Container Storage (Noobaa in particular)
 # Check that the correct storage class exists on the cluster
 - name: Retrieve Bucket Class
