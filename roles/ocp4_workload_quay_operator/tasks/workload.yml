@@ -163,9 +163,3 @@
         name: "{{ r_quay_registry.resources[0].status.configEditorCredentialsSecret }}"
         namespace: "{{ ocp4_workload_quay_operator_registry_namespace }}"
       register: r_config_editor_secret
-
-# Leave this as the last task in the playbook.
-- name: Workload tasks complete
-  ansible.builtin.debug:
-    msg: "Workload Tasks completed successfully."
-  when: not silent|bool
