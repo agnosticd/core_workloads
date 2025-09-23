@@ -18,5 +18,23 @@
           guid: "{{ guid }}"
           creator: agnosticd.core_workloads.ocp4_workload_showroom
   register: r_create_showroom_namespace
-  retries: 5
-  delay: 5
+  ignore_errors: true
+
+# For shared clusters where the service account does not have permission
+# to create namespaces.
+- name: Attempt to create Showroom project if namespace failed
+  when: r_create_showroom_namespace is failed
+  kubernetes.core.k8s:
+    kubeconfig: "{{ _showroom_kubeconfig | default(omit) }}"
+    definition:
+      apiVersion: project.openshift.io/v1
+      kind: ProjectRequest
+      metadata:
+        name: "{{ _showroom_namespace }}"
+        labels:
+          guid: "{{ guid }}"
+          creator: agnosticd.core_workloads.ocp4_workload_showroom
+  register: r_create_showroom_project
+  failed_when: >-
+    r_create_showroom_project is failed and
+    'AlreadyExists' not in r_create_showroom_project.msg | default('')
