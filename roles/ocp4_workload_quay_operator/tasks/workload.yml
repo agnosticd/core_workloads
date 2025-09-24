@@ -135,14 +135,14 @@
         definition: "{{ lookup('template', 'quay-admin-token-secret.yml.j2') | from_yaml }}"
 
   - name: Save user data for Quay console URL
-    agnosticd_user_info:
+    agnosticd.core.agnosticd_user_info:
       msg: "Red Hat Quay is available at {{ r_quay_registry.resources[0].status.registryEndpoint }}"
       data:
         quay_console_url: "{{ r_quay_registry.resources[0].status.registryEndpoint }}"
 
   - name: Save user data for Quay admin user
     when: ocp4_workload_quay_operator_registry_configure_admin | bool
-    agnosticd_user_info:
+    agnosticd.core.agnosticd_user_info:
       msg: >-
         "A Quay Super User '{{ ocp4_workload_quay_operator_registry_admin_user }}' has been created."
         "The super user password is {{ _ocp4_workload_quay_operator_registry_admin_password }}".
