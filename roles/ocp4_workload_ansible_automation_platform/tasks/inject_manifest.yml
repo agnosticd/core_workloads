@@ -15,8 +15,8 @@
     validate_certs: true
   register: r_aap_license
   until: not r_aap_license.failed
-  retries: 30
-  delay: 30
+  retries: 3
+  delay: 5
 
 - name: Remove AAP manifest
   ansible.builtin.file:
