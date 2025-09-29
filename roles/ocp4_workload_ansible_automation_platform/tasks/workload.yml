@@ -54,67 +54,73 @@
     state: present
     template: aap.yaml.j2
 
-# - name: Wait until the Ansible Automation Platform is fully deployed
-#   kubernetes.core.k8s_info:
-#     api_version: aap.ansible.com/v1alpha1
-#     kind: AnsibleAutomationPlatform
-#     name: "{{ ocp4_workload_ansible_automation_platform_app_name }}"
-#     namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
-#   register: r_aap
-
-- name: Wait until the Automation Controller Manager is running
+- name: Wait until the Ansible Automation Platform is fully deployed
   kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Deployment
-    name: automation-controller-operator-controller-manager
-    namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
-    wait: true
-    wait_timeout: 300
-  register: r_aap_controller_manager_operator
-
-- name: Wait until the Automation Hub Manager is running
-  kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Deployment
-    name: automation-hub-operator-controller-manager
-    namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
-    wait: true
-    wait_timeout: 300
-  register: r_aap_hub_manager_operator
-
-- name: Wait until the Automation Resource Manager is running
-  kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Deployment
-    name: resource-operator-controller-manager
-    namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
-    wait: true
-    wait_timeout: 300
-  register: r_aap_resource_manager_operator
-
-- name: Retrieve created route
-  kubernetes.core.k8s_info:
-    api_version: route.openshift.io/v1
-    kind: Route
+    api_version: aap.ansible.com/v1alpha1
+    kind: AnsibleAutomationPlatform
     name: "{{ ocp4_workload_ansible_automation_platform_app_name }}"
     namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
-  register: r_route
-  until: r_route.resources[0].spec.host is defined
-  retries: 30
-  delay: 5
+    wait: true
+    wait_condition:
+      type: Successful
+      reason: Successful
+      status: "True"
+    wait_timeout: 1800
+  register: r_aap
 
-- name: Get automation_controller route hostname
-  ansible.builtin.set_fact:
-    automation_controller_hostname: "{{ r_route.resources[0].spec.host }}"
+# - name: Wait until the Automation Controller Manager is running
+#   kubernetes.core.k8s_info:
+#     api_version: v1
+#     kind: Deployment
+#     name: automation-controller-operator-controller-manager
+#     namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+#     wait: true
+#     wait_timeout: 300
+#   register: r_aap_controller_manager_operator
 
-- name: Wait for automation_controller to be running
-  ansible.builtin.uri:
-    url: http://{{ automation_controller_hostname }}/api/controller/v2/ping/
-    status_code: 200
-  register: r_result
-  until: r_result.json.version is defined
-  retries: 600
-  delay: 5
+# - name: Wait until the Automation Hub Manager is running
+#   kubernetes.core.k8s_info:
+#     api_version: v1
+#     kind: Deployment
+#     name: automation-hub-operator-controller-manager
+#     namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+#     wait: true
+#     wait_timeout: 300
+#   register: r_aap_hub_manager_operator
+
+# - name: Wait until the Automation Resource Manager is running
+#   kubernetes.core.k8s_info:
+#     api_version: v1
+#     kind: Deployment
+#     name: resource-operator-controller-manager
+#     namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+#     wait: true
+#     wait_timeout: 300
+#   register: r_aap_resource_manager_operator
+
+# - name: Retrieve created route
+#   kubernetes.core.k8s_info:
+#     api_version: route.openshift.io/v1
+#     kind: Route
+#     name: "{{ ocp4_workload_ansible_automation_platform_app_name }}"
+#     namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+#   register: r_route
+#   until: r_route.resources[0].spec.host is defined
+#   retries: 30
+#   delay: 5
+
+# - name: Get automation_controller route hostname
+#   ansible.builtin.set_fact:
+#     automation_controller_hostname: "{{ r_route.resources[0].spec.host }}"
+
+# - name: Wait for automation_controller to be running
+#   ansible.builtin.uri:
+#     url: http://{{ automation_controller_hostname }}/api/controller/v2/ping/
+#     status_code: 200
+#   register: r_result
+#   until: r_result.json.version is defined
+#   retries: 600
+#   delay: 5
 
 - name: Inject AAP Manifest
   when: ocp4_workload_ansible_automation_platform_inject_manifest | bool
@@ -139,10 +145,10 @@
 - name: Print & save AAP access information
   agnosticd.core.agnosticd_user_info:
     msg: >-
-      "Automation Controller URL: https://{{ automation_controller_hostname }}"
+      "Automation Controller URL: {{ r_aap.status.URL }}"
       "Automation Controller admin username: admin"
       "Automation Controller admin password: {{ _ocp4_workload_ansible_automation_platform_admin_password }}"
     data:
-      aap_controller_web_url: "https://{{ automation_controller_hostname }}"
+      aap_controller_web_url: "{{ r_aap.status.URL }}"
       aap_controller_admin_user: "admin"
       aap_controller_admin_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
