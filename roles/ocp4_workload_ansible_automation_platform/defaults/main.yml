@@ -9,7 +9,7 @@ ocp4_workload_ansible_automation_platform_operator_channel: stable-2.5
 ocp4_workload_ansible_automation_platform_operator_csv_nameprefix: aap-operator
 ocp4_workload_ansible_automation_platform_operator_catalog: redhat-operators
 ocp4_workload_ansible_automation_platform_starting_csv: ""
-# ocp4_workload_ansible_automation_platform_starting_csv: aap-operator.v2.5.0-0.1729741547
+# ocp4_workload_ansible_automation_platform_starting_csv: aap-operator.v2.5.0-0.1758147230
 ocp4_workload_ansible_automation_platform_automatic_install_plan_approval: true
 
 ocp4_workload_ansible_automation_platform_use_catalog_snapshot: false
