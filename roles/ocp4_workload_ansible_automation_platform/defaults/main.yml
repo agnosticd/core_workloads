@@ -20,7 +20,6 @@ ocp4_workload_ansible_automation_platform_catalog_snapshot_image_tag: v4.19_2025
 # ---------------------------------------------------------------
 # Ansible Automation Platform Configuration
 # ---------------------------------------------------------------
-ocp4_workload_ansible_automation_platform_admin_username: admin
 ocp4_workload_ansible_automation_platform_admin_password: ""
 ocp4_workload_ansible_automation_platform_admin_password_length: 16
 ocp4_workload_ansible_automation_platform_disable_controller: false

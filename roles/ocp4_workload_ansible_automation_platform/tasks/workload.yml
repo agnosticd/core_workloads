@@ -144,9 +144,9 @@
   agnosticd.core.agnosticd_user_info:
     msg: >-
       "Automation Controller URL: https://{{ automation_controller_hostname }}"
-      "Automation Controller admin username: {{ ocp4_workload_ansible_automation_platform_admin_username }}"
+      "Automation Controller admin username: admin"
       "Automation Controller admin password: {{ _ocp4_workload_ansible_automation_platform_admin_password }}"
   data:
     aap_controller_web_url: "https://{{ automation_controller_hostname }}"
-    aap_controller_admin_user: "{{ ocp4_workload_ansible_automation_platform_admin_username }}"
+    aap_controller_admin_user: "admin"
     aap_controller_admin_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
