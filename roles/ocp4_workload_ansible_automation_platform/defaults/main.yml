@@ -40,8 +40,7 @@ ocp4_workload_ansible_automation_platform_ocp_token_lifecycle: 1209600
 # ---------------------------------------------------------------
 ocp4_workload_ansible_automation_platform_inject_manifest: false
 # Location of manifests to inject. Username/password are optional for public URLs.
-ocp4_workload_ansible_automation_platform_manifest:
-  url: https://d3s3zqyaz8cp2d.cloudfront.net/aap/manifest.zip
+ocp4_workload_ansible_automation_platform_manifest: []
 # ocp4_workload_ansible_automation_platform_manifest:
 #   url: <url>
 #   username: <username>
