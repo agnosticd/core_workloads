@@ -30,6 +30,20 @@
     install_operator_catalogsource_image_tag: >-
       {{ ocp4_workload_ansible_automation_platform_catalog_snapshot_image_tag }}
 
+- name: Generate AAP admin password
+  when: ocp4_workload_ansible_automation_platform_admin_password | default('') | length == 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_ansible_automation_platform_admin_password: >-
+      {{ lookup('password', '/dev/null chars=ascii_letters,digits '
+          ~ 'length=' ~ ocp4_workload_ansible_automation_platform_admin_password_length
+      ) }}
+
+- name: Use provided admin password
+  when: ocp4_workload_ansible_automation_platform_admin_password | default('') | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_ansible_automation_platform_admin_password: >-
+      {{ ocp4_workload_ansible_automation_platform_admin_password }}
+
 - name: Create Ansible Automation Platform admin secret
   kubernetes.core.k8s:
     state: present
@@ -126,23 +140,13 @@
     prompt: "Added extra wait time to ensure Ansible Automation Platform 2.5 is fully up and running before proceeding"
     minutes: "{{ ocp4_workload_ansible_automation_platform_extra_wait_minutes }}"
 
-- name: Set facts for Access information
-  ansible.builtin.set_fact:
+- name: Print & save AAP access information
+  agnosticd.core.agnosticd_user_info:
+    msg: >-
+      "Automation Controller URL: https://{{ automation_controller_hostname }}"
+      "Automation Controller admin username: {{ ocp4_workload_ansible_automation_platform_admin_username }}"
+      "Automation Controller admin password: {{ _ocp4_workload_ansible_automation_platform_admin_password }}"
+  data:
     aap_controller_web_url: "https://{{ automation_controller_hostname }}"
-    aap_controller_admin_user: "{{ ocp4_workload_ansible_automation_platform_admin_username | default('admin') }}"
-    aap_controller_admin_password: "{{ ocp4_workload_ansible_automation_platform_admin_password }}"
-
-- name: Print Access information
-  agnosticd_user_info:
-    msg: "{{ item }}"
-  loop:
-    - "Automation Controller URL: {{ aap_controller_web_url }}"
-    - "Automation Controller Admin Login: {{ aap_controller_admin_user }}"
-    - "Automation Controller Admin Password: {{ aap_controller_admin_password }}"
-
-- name: Print Access information
-  agnosticd_user_info:
-    data:
-      aap_controller_web_url: "{{ aap_controller_web_url }}"
-      aap_controller_admin_user: "{{ aap_controller_admin_user }}"
-      aap_controller_admin_password: "{{ aap_controller_admin_password }}"
+    aap_controller_admin_user: "{{ ocp4_workload_ansible_automation_platform_admin_username }}"
+    aap_controller_admin_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
