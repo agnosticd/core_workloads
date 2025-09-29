@@ -72,6 +72,10 @@
   ansible.builtin.set_fact:
     automation_controller_hostname: "{{ r_aap.resources[0].status.URL }}"
 
+- name: Debug automation_controller_hostname
+  ansible.builtin.debug:
+    msg: "Automation Controller hostname: {{ automation_controller_hostname }}"
+
 - name: Inject AAP Manifest
   when: ocp4_workload_ansible_automation_platform_inject_manifest | bool
   ansible.builtin.include_tasks: inject_manifest.yml
