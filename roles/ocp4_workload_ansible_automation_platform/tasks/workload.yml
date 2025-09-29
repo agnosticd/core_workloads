@@ -79,9 +79,7 @@
 
 - name: Inject AAP Manifest
   when: ocp4_workload_ansible_automation_platform_inject_manifest | bool
-  ansible.builtin.include_role:
-    name: infra.aap_configuration.configure_controller
-  vars:
+  infra.aap_configuration.configure_controller:
     controller_hostname: "{{ automation_controller_url | regex_replace('^https?://') }}"
     controller_username: admin
     controller_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
