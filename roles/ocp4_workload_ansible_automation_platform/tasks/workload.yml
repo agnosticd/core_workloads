@@ -88,12 +88,14 @@
       password: "{{ ocp4_workload_ansible_automation_platform_manifest.password | default(omit) }}"
 
   - name: Inject AAP2 Controller manifest
-    infra.controller_configuration.license:
-      manifest_file: /tmp/aap-manifest.zip
+    infra.aap_configuration.controller_license:
       aap_hostname: "{{ automation_controller_hostname }}"
       aap_username: admin
       aap_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
       aap_validate_certs: true
+      controller_license:
+        manifest_file: /tmp/aap-manifest.zip
+
     register: r_aap_license
     until: not r_aap_license.failed
     retries: 3
