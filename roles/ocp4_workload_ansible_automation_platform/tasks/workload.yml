@@ -70,11 +70,11 @@
 
 - name: Set automation_controller route hostname
   ansible.builtin.set_fact:
-    automation_controller_hostname: "{{ r_aap.resources[0].status.URL }}"
+    automation_controller_url: "{{ r_aap.resources[0].status.URL }}"
 
-- name: Debug automation_controller_hostname
+- name: Debug automation_controller_url
   ansible.builtin.debug:
-    msg: "Automation Controller hostname: {{ automation_controller_hostname }}"
+    msg: "Automation Controller hostname: {{ automation_controller_url }}"
 
 - name: Inject AAP Manifest
   when: ocp4_workload_ansible_automation_platform_inject_manifest | bool
@@ -94,10 +94,10 @@
 - name: Print & save AAP access information
   agnosticd.core.agnosticd_user_info:
     msg: >-
-      "Automation Controller URL: {{ automation_controller_hostname }}"
+      "Automation Controller URL: {{ automation_controller_url }}"
       "Automation Controller admin username: admin"
       "Automation Controller admin password: {{ _ocp4_workload_ansible_automation_platform_admin_password }}"
     data:
-      aap_controller_web_url: "{{ automation_controller_hostname }}"
+      aap_controller_web_url: "{{ automation_controller_url }}"
       aap_controller_admin_user: "admin"
       aap_controller_admin_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
