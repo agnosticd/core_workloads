@@ -70,7 +70,7 @@
 
 - name: Set automation_controller route hostname
   ansible.builtin.set_fact:
-    automation_controller_hostname: "{{ r_aap.status.URL }}"
+    automation_controller_hostname: "{{ r_aap.resources[0].status.URL }}"
 
 - name: Inject AAP Manifest
   when: ocp4_workload_ansible_automation_platform_inject_manifest | bool
