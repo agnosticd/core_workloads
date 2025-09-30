@@ -99,16 +99,18 @@
   block:
   - name: Download license manifest zip
     ansible.builtin.get_url:
-      url: "{{ license_url }}"
-      dest: "{{ license_dest }}"
-      mode: '0640'
+      url: "{{ ocp4_workload_ansible_automation_platform_manifest.url }}"
+      dest: /tmp/aap-manifest.zip
+      username: "{{ ocp4_workload_ansible_automation_platform_manifest.username | default(omit) }}"
+      password: "{{ ocp4_workload_ansible_automation_platform_manifest.password | default(omit) }}"
+      mode: ug=rw,o=r
 
   - name: Set AAP license
     awx.awx.license:
-      manifest: "{{ license_dest }}"
-      controller_host: "{{ controller_host }}"
-      username: "{{ controller_username }}"
-      password: "{{ controller_password }}"
+      manifest: /tmp/aap-manifest.zip
+      controller_host: "{{ automation_controller_url }}"
+      username: admin
+      password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
       force: true
 
 # Make sure to inject the manifest before creating the rolebinding;
