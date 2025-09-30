@@ -93,26 +93,23 @@
 #       manifest_password: "{{ ocp4_workload_ansible_automation_platform_manifest.password | default(omit) }}"
 #   # register: r_aap_license
 
-
 - name: Inject AAP Manifest
   when: ocp4_workload_ansible_automation_platform_inject_manifest | bool
-  block:
-  - name: Download license manifest zip
-    ansible.builtin.get_url:
-      url: "{{ ocp4_workload_ansible_automation_platform_manifest.url }}"
-      dest: /tmp/aap-manifest.zip
-      username: "{{ ocp4_workload_ansible_automation_platform_manifest.username | default(omit) }}"
-      password: "{{ ocp4_workload_ansible_automation_platform_manifest.password | default(omit) }}"
-      mode: ug=rw,o=r
+  infra.aap_configuration.controller_license
+    controller_dependency_check: true
+    controller_hostname: "{{ automation_controller_url | regex_replace('^https?://') }}"
+    controller_username: admin
+    controller_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
+    controller_validate_certs: true
+    controller_license:
+      manifest_url: "{{ ocp4_workload_ansible_automation_platform_manifest.url }}"
+      manifest_username: "{{ ocp4_workload_ansible_automation_platform_manifest.username | default(omit) }}"
+      manifest_password: "{{ ocp4_workload_ansible_automation_platform_manifest.password | default(omit) }}"
+  register: r_aap_license
 
-  - name: Set AAP license
-    awx.awx.license:
-      manifest: /tmp/aap-manifest.zip
-      controller_host: "{{ automation_controller_hostname }}"
-      controller_username: admin
-      controller_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
-      validate_certs: true
-      force: true
+- name: Debug AAP license
+  ansible.builtin.debug:
+    msg: "AAP license: {{ r_aap_license }}"
 
 # Make sure to inject the manifest before creating the rolebinding;
 # otherwise, Ansible Automation Platform will fail during the manifest
