@@ -109,8 +109,9 @@
     awx.awx.license:
       manifest: /tmp/aap-manifest.zip
       controller_host: "{{ automation_controller_url }}"
-      username: admin
-      password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
+      controller_username: admin
+      controller_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
+      validate_certs: true
       force: true
 
 # Make sure to inject the manifest before creating the rolebinding;
