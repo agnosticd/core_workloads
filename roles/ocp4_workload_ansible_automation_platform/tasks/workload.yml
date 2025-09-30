@@ -1,0 +1,123 @@
+---
+- name: Extend OCP Bearer Token life for AAP cred use
+  kubernetes.core.k8s:
+    state: present
+    template: ocp_bearer_token_lifecycle.yaml.j2
+  register: r_extend_token_lifecycle
+  until: r_extend_token_lifecycle is succeeded
+  retries: 5
+
+- name: Install Red Hat Ansible Automation Platform
+  ansible.builtin.include_role:
+    name: install_operator
+  vars:
+    install_operator_action: install
+    install_operator_namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+    install_operator_name: "{{ ocp4_workload_ansible_automation_platform_operator_name }}"
+    install_operator_csv_nameprefix: "{{ ocp4_workload_ansible_automation_platform_operator_csv_nameprefix }}"
+    install_operator_manage_namespaces:
+    - "{{ ocp4_workload_ansible_automation_platform_project }}"
+    install_operator_channel: "{{ ocp4_workload_ansible_automation_platform_operator_channel }}"
+    install_operator_catalog: "{{ ocp4_workload_ansible_automation_platform_operator_catalog }}"
+    install_operator_automatic_install_plan_approval: >-
+      {{ ocp4_workload_ansible_automation_platform_automatic_install_plan_approval }}
+    install_operator_starting_csv: "{{ ocp4_workload_ansible_automation_platform_starting_csv }}"
+    install_operator_catalogsource_setup: "{{ ocp4_workload_ansible_automation_platform_use_catalog_snapshot }}"
+    install_operator_catalogsource_name: "{{ ocp4_workload_ansible_automation_platform_catalogsource_name }}"
+    install_operator_catalogsource_namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+    install_operator_catalogsource_image: >-
+      {{ ocp4_workload_ansible_automation_platform_catalog_snapshot_image }}
+    install_operator_catalogsource_image_tag: >-
+      {{ ocp4_workload_ansible_automation_platform_catalog_snapshot_image_tag }}
+
+- name: Generate AAP admin password
+  when: ocp4_workload_ansible_automation_platform_admin_password | default('') | length == 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_ansible_automation_platform_admin_password: >-
+      {{ lookup('password', '/dev/null chars=ascii_letters,digits '
+          ~ 'length=' ~ ocp4_workload_ansible_automation_platform_admin_password_length
+      ) }}
+
+- name: Use provided AAP admin password
+  when: ocp4_workload_ansible_automation_platform_admin_password | default('') | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_ansible_automation_platform_admin_password: >-
+      {{ ocp4_workload_ansible_automation_platform_admin_password }}
+
+- name: Create Ansible Automation Platform admin secret
+  kubernetes.core.k8s:
+    state: present
+    template: admin_secret.yaml.j2
+
+- name: Create Ansible Automation Platform
+  kubernetes.core.k8s:
+    state: present
+    template: aap.yaml.j2
+
+- name: Wait until the Ansible Automation Platform is fully deployed
+  kubernetes.core.k8s_info:
+    api_version: aap.ansible.com/v1alpha1
+    kind: AnsibleAutomationPlatform
+    name: "{{ ocp4_workload_ansible_automation_platform_app_name }}"
+    namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+    wait: true
+    wait_condition:
+      type: Successful
+      reason: Successful
+      status: "True"
+    wait_timeout: 1800
+  register: r_aap
+
+- name: Set automation_controller route hostname
+  ansible.builtin.set_fact:
+    automation_controller_url: "{{ r_aap.resources[0].status.URL }}"
+    automation_controller_hostname: "{{ r_aap.resources[0].status.URL | urlsplit('hostname') }}"
+
+- name: Inject AAP Manifest
+  when: ocp4_workload_ansible_automation_platform_inject_manifest | bool
+  block:
+  - name: Fetch Automation Controller manifest file
+    ansible.builtin.get_url:
+      url: "{{ ocp4_workload_ansible_automation_platform_manifest.url }}"
+      dest: /tmp/aap-manifest.zip
+      username: "{{ ocp4_workload_ansible_automation_platform_manifest.username | default(omit) }}"
+      password: "{{ ocp4_workload_ansible_automation_platform_manifest.password | default(omit) }}"
+
+  - name: Inject AAP2 Controller manifest
+    ansible.controller.license:
+      manifest: /tmp/aap-manifest.zip
+      controller_host: "{{ automation_controller_hostname }}"
+      controller_username: admin
+      controller_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
+      validate_certs: true
+    register: r_aap_license
+    until: not r_aap_license.failed
+    retries: 3
+    delay: 5
+
+  - name: Remove AAP manifest
+    ansible.builtin.file:
+      path: /tmp/aap-manifest.zip
+      state: absent
+
+# Make sure to inject the manifest before creating the rolebinding;
+# otherwise, Ansible Automation Platform will fail during the manifest
+# upload process from the console.
+- name: Create Rolebinding for Rulebook Activations for OpenShift events
+  when:
+  - ocp4_workload_ansible_automation_platform_inject_manifest | bool
+  - ocp4_workload_ansible_automation_platform_create_eda_rolebinding | bool
+  kubernetes.core.k8s:
+    state: present
+    template: eda_cluster_rolebinding.yaml.j2
+
+- name: Print & save AAP access information
+  agnosticd.core.agnosticd_user_info:
+    msg: >-
+      "Automation Controller URL: {{ automation_controller_url }}"
+      "Automation Controller admin username: admin"
+      "Automation Controller admin password: {{ _ocp4_workload_ansible_automation_platform_admin_password }}"
+    data:
+      aap_controller_web_url: "{{ automation_controller_url }}"
+      aap_controller_admin_user: "admin"
+      aap_controller_admin_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
