@@ -20,6 +20,9 @@ ocp4_workload_cert_manager_wait_after_api_cert_setup: 12
 # In the future change to check the cluster operators instead of just pausing
 ocp4_workload_cert_manager_wait_for_rollout: false
 
+# How many seconds wait till the certificate is issued
+ocp4_workload_cert_manager_wait_timeout: 600
+
 # Set to the cloud provider to be used:
 # Valid values are: aws, azure, gcp
 ocp4_workload_cert_manager_cloud_provider: "{{ cloud_provider if cloud_provider in ['gcp', 'azure'] else 'aws' }}"
@@ -29,6 +32,12 @@ ocp4_workload_cert_manager_provider: letsencrypt
 
 # This is the default API for letsencrypt
 ocp4_workload_cert_manager_acme_url: https://acme-v02.api.letsencrypt.org/directory
+
+# Set to either letsencrypt or zerossl for fallback
+ocp4_workload_cert_manager_provider_fallback: ""
+
+# Acme URL for fallback provider
+ocp4_workload_cert_manager_acme_url_fallback: ""
 
 # ---------------------------------------------------------------
 # Retries (and restart cert manager if failed)
