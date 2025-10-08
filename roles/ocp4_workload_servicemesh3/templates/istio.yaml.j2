@@ -1,0 +1,11 @@
+---
+apiVersion: sailoperator.io/v1
+kind: Istio
+metadata:
+  name: default
+spec:
+  namespace: "{{ ocp4_workload_servicemesh3_istio_namespace }}"
+  updateStrategy:
+    type: InPlace
+    inactiveRevisionDeletionGracePeriodSeconds: 30
+  version: "{{ ocp4_workload_servicemesh3_istio_version }}"
