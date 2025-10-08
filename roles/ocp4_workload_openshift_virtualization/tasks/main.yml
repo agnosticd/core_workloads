@@ -1,11 +1,11 @@
 ---
+# --------------------------------------------------
 # Do not modify this file
-- name: Running Workload tasks
+# --------------------------------------------------
+- name: Running workload provision tasks
   when: ACTION == "provision"
-  ansible.builtin.include_tasks:
-    file: workload.yml
+  ansible.builtin.include_tasks: workload.yml
 
-- name: Running Workload removal tasks
+- name: Running workload removal tasks
   when: ACTION == "destroy"
-  ansible.builtin.include_tasks:
-    file: remove_workload.yml
+  ansible.builtin.include_tasks: remove_workload.yml
