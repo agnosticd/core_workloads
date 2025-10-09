@@ -29,3 +29,4 @@ ocp4_workload_servicemesh3_catalog_snapshot_image_tag: ""
 ocp4_workload_servicemesh3_istio_version: v1.26.4
 ocp4_workload_servicemesh3_istio_namespace: istio-system
 ocp4_workload_servicemesh3_istio_cni_namespace: istio-cni
+ocp4_workload_servicemesh3_istio_monitoring: true
