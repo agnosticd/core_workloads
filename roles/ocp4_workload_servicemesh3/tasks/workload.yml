@@ -45,7 +45,7 @@
       status: "True"
     wait_timeout: 120
 
-- name: Enable and verify user workload monitoring
+- name: Enable Istio user workload monitoring
   when: ocp4_workload_servicemesh3_istio_monitoring | bool
   block:
     - name: Enable user workload monitoring
@@ -54,7 +54,7 @@
         api_version: v1
         kind: ConfigMap
         name: cluster-monitoring-config
-        namespace: openshift-user-workload-monitoring
+        namespace: openshift-monitoring
         definition:
           data:
             config.yaml: |
