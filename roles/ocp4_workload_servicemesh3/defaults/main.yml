@@ -1,5 +1,5 @@
 ---
-# Channel to use for the Service Mesh 3 Kubernetes subscription
+# Channel to use for the OpenShift Service Mesh 3 Subscription
 ocp4_workload_servicemesh3_channel: stable
 
 # Set a starting ClusterServiceVersion.
