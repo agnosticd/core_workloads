@@ -1,0 +1,8 @@
+---
+apiVersion: sailoperator.io/v1
+kind: IstioCNI
+metadata:
+  name: default
+spec:
+  namespace: "{{ ocp4_workload_servicemesh3_istio_cni_namespace }}"
+  version: "{{ ocp4_workload_servicemesh3_istio_version }}"
