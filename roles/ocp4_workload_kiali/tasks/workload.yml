@@ -52,3 +52,18 @@
       loop: "{{ r_monitoring_pods.resources }}"
       loop_control:
         label: "{{ item.metadata.name }}"
+
+- name: Create the Kiali RBAC
+  kubernetes.core.k8s:
+    state: present
+    template: kiali-rbac.yaml.j2
+
+- name: Create the Kiali resource
+  kubernetes.core.k8s:
+    state: present
+    template: kiali.yaml.j2
+    wait: true
+    wait_condition:
+      type: Successful
+      status: "True"
+    wait_timeout: 120

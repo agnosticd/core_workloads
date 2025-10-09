@@ -1,8 +1,13 @@
 ---
-# - name: Remove the Kiali resource
-#   kubernetes.core.k8s:
-#     state: absent
-#     template: kiali.yaml.j2
+- name: Remove the Kiali resource
+  kubernetes.core.k8s:
+    state: absent
+    template: kiali.yaml.j2
+
+- name: Remove the Kiali RBAC
+  kubernetes.core.k8s:
+    state: absent
+    template: kiali-rbac.yaml.j2
 
 - name: Remove Kiali Operator
   ansible.builtin.include_role:
