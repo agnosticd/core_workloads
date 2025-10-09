@@ -20,8 +20,6 @@ ocp4_workload_servicemesh3_automatic_install_plan_approval: true
 # See https://github.com/redhat-cop/agnosticd/blob/development/docs/Operator_Catalog_Snapshots.adoc
 # for instructions on how to set up catalog snapshot images
 ocp4_workload_servicemesh3_use_catalog_snapshot: false
-ocp4_workload_servicemesh3_catalogsource_name: redhat-operators
-ocp4_workload_servicemesh3_catalogsource_namespace: openshift-marketplace
 ocp4_workload_servicemesh3_catalog_snapshot_image: ""
 ocp4_workload_servicemesh3_catalog_snapshot_image_tag: ""
 
