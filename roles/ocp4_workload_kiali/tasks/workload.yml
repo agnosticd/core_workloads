@@ -66,4 +66,24 @@
     wait_condition:
       type: Successful
       status: "True"
-    wait_timeout: 120
+    wait_timeout: 180
+
+- name: Get the Kiali Route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: kiali
+    namespace: "{{ ocp4_workload_kiali_namespace }}"
+  register: r_kiali_route
+  failed_when: r_kiali_route.resources | default([]) | length != 1
+  until: r_kiali_route is successful
+  retries: 5
+  delay: 10
+
+- name: Save agnosticd user info
+  block:
+  - name: Print project information
+    agnosticd.core.agnosticd_user_info:
+      msg: "Kiali URL: https://{{ r_kiali_route.resources[0].spec.host }}"
+      data:
+        openshift_kiali_url: "https://{{ r_kiali_route.resources[0].spec.host }}"
