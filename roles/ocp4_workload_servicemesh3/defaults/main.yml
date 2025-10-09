@@ -1,5 +1,5 @@
 ---
-# Channel to use for the Red Hat Advanced Cluster Management for Kubernetes subscription
+# Channel to use for the Service Mesh 3 Kubernetes subscription
 ocp4_workload_servicemesh3_channel: stable
 
 # Set a starting ClusterServiceVersion.
