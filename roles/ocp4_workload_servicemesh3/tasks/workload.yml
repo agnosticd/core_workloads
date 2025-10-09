@@ -29,8 +29,18 @@
   kubernetes.core.k8s:
     state: present
     template: istiocni.yaml.j2
+    wait: true
+    wait_condition:
+      type: Ready
+      status: "True"
+    wait_timeout: 120
 
 - name: Create the Istio resource
   kubernetes.core.k8s:
     state: present
     template: istio.yaml.j2
+    wait: true
+    wait_condition:
+      type: Ready
+      status: "True"
+    wait_timeout: 120
