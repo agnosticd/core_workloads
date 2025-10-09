@@ -44,3 +44,49 @@
       type: Ready
       status: "True"
     wait_timeout: 120
+
+- name: Enable Istio user workload monitoring
+  when: ocp4_workload_servicemesh3_istio_monitoring | bool
+  block:
+    - name: Enable user workload monitoring
+      kubernetes.core.k8s:
+        state: present
+        api_version: v1
+        kind: ConfigMap
+        name: cluster-monitoring-config
+        namespace: openshift-monitoring
+        definition:
+          data:
+            config.yaml: |
+              enableUserWorkload: true
+    - name: Get all pods in openshift-user-workload-monitoring namespace
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: openshift-user-workload-monitoring
+      register: r_monitoring_pods
+      until: r_monitoring_pods.resources | length > 0
+      retries: 5
+      delay: 10
+    - name: Wait for user workload monitoring pods to be ready
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: openshift-user-workload-monitoring
+        name: "{{ item.metadata.name }}"
+        wait: true
+        wait_sleep: 10
+        wait_timeout: 300
+        wait_condition:
+          type: Ready
+          status: "True"
+      loop: "{{ r_monitoring_pods.resources }}"
+      loop_control:
+        label: "{{ item.metadata.name }}"
+    - name: Create monitoring resources for Istio
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', item) | from_yaml }}"
+      loop:
+      - servicemonitor.yaml.j2
+      - podmonitor.yaml.j2

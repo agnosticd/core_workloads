@@ -9,6 +9,15 @@
     state: absent
     template: istiocni.yaml.j2
 
+- name: Remove monitoring resources for Istio
+  when: ocp4_workload_servicemesh3_istio_monitoring | bool
+  kubernetes.core.k8s:
+    state: absent
+    definition: "{{ lookup('template', item) | from_yaml }}"
+  loop:
+  - servicemonitor.yaml.j2
+  - podmonitor.yaml.j2
+
 - name: Remove istio namespaces
   kubernetes.core.k8s:
     state: present
