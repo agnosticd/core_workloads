@@ -46,7 +46,7 @@
     wait_timeout: 120
 
 - name: Enable and verify user workload monitoring
-  when: ocp4_workload_servicemesh3_enable_monitoring | bool
+  when: ocp4_workload_servicemesh3_istio_monitoring | bool
   block:
     - name: Enable user workload monitoring
       kubernetes.core.k8s:
