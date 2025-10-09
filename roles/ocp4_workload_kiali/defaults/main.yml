@@ -1,0 +1,30 @@
+---
+# Channel to use for the Kiali Subscription
+ocp4_workload_kiali_channel: stable
+
+# Set a starting ClusterServiceVersion.
+# Recommended to leave empty to get latest in the channel when not using
+# a catalog snapshot.
+# Highly recommended to be set when using a catalog snapshot but can be
+# empty to get the latest available in the channel at the time when
+# the catalog snapshot got created.
+# Match the first part of the CSV name to the nameprefix below
+ocp4_workload_kiali_starting_csv: ""
+
+# Set automatic InstallPlan approval. Must be set to false when specifying a starting_csv
+ocp4_workload_kiali_automatic_install_plan_approval: true
+
+# --------------------------------
+# Operator Catalog Snapshot Settings
+# --------------------------------
+# See https://github.com/redhat-cop/agnosticd/blob/development/docs/Operator_Catalog_Snapshots.adoc
+# for instructions on how to set up catalog snapshot images
+ocp4_workload_kiali_use_catalog_snapshot: false
+ocp4_workload_kiali_catalog_snapshot_image: ""
+ocp4_workload_kiali_catalog_snapshot_image_tag: ""
+
+# --------------------------------
+# Kiali specific settings
+# --------------------------------
+ocp4_workload_kiali_enable_monitoring: true
+ocp4_workload_kiali_istio_namespace: istio-system

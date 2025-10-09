@@ -1,0 +1,53 @@
+---
+- name: Install Kiali Operator
+  ansible.builtin.include_role:
+    name: install_operator
+  vars:
+    install_operator_action: install
+    install_operator_name: kiali-ossm
+    install_operator_namespace: openshift-operators
+    install_operator_channel: "{{ ocp4_workload_kiali_channel }}"
+    install_operator_automatic_install_plan_approval: "{{ ocp4_workload_kiali_automatic_install_plan_approval }}"
+    install_operator_starting_csv: "{{ ocp4_workload_kiali_starting_csv }}"
+    install_operator_catalogsource_setup: "{{ ocp4_workload_kiali_use_catalog_snapshot }}"
+    install_operator_catalogsource_image: "{{ ocp4_workload_kiali_catalog_snapshot_image }}"
+    install_operator_catalogsource_image_tag: "{{ ocp4_workload_kiali_catalog_snapshot_image_tag }}"
+
+- name: Enable and verify user workload monitoring
+  when: ocp4_workload_kiali_enable_monitoring | bool
+  block:
+    - name: Enable user workload monitoring
+      kubernetes.core.k8s:
+        state: patched
+        api_version: v1
+        kind: ConfigMap
+        name: cluster-monitoring-config
+        namespace: openshift-monitoring
+        definition:
+          data:
+            config.yaml: |
+              enableUserWorkload: true
+    - name: Get all pods in openshift-monitoring namespace
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: openshift-monitoring
+      register: r_monitoring_pods
+      until: r_monitoring_pods.resources | length > 0
+      retries: 5
+      delay: 10
+    - name: Wait for user workload monitoring pods to be ready
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: openshift-monitoring
+        name: "{{ item.metadata.name }}"
+        wait: true
+        wait_sleep: 10
+        wait_timeout: 300
+        wait_condition:
+          type: Ready
+          status: "True"
+      loop: "{{ r_monitoring_pods.resources }}"
+      loop_control:
+        label: "{{ item.metadata.name }}"
