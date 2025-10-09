@@ -54,16 +54,16 @@
         api_version: v1
         kind: ConfigMap
         name: cluster-monitoring-config
-        namespace: openshift-monitoring
+        namespace: openshift-user-workload-monitoring
         definition:
           data:
             config.yaml: |
               enableUserWorkload: true
-    - name: Get all pods in openshift-monitoring namespace
+    - name: Get all pods in openshift-user-workload-monitoring namespace
       kubernetes.core.k8s_info:
         api_version: v1
         kind: Pod
-        namespace: openshift-monitoring
+        namespace: openshift-user-workload-monitoring
       register: r_monitoring_pods
       until: r_monitoring_pods.resources | length > 0
       retries: 5
@@ -72,7 +72,7 @@
       kubernetes.core.k8s_info:
         api_version: v1
         kind: Pod
-        namespace: openshift-monitoring
+        namespace: openshift-user-workload-monitoring
         name: "{{ item.metadata.name }}"
         wait: true
         wait_sleep: 10
