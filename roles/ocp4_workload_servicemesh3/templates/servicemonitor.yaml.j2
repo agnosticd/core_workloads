@@ -1,0 +1,13 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: istiod-monitor
+  namespace: "{{ ocp4_workload_servicemesh3_istio_namespace }}"
+spec:
+  selector:
+    matchLabels:
+      istio: pilot
+  endpoints:
+  - port: http-monitoring
+    interval: 30s
