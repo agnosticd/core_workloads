@@ -26,5 +26,4 @@ ocp4_workload_kiali_catalog_snapshot_image_tag: ""
 # --------------------------------
 # Kiali specific settings
 # --------------------------------
-ocp4_workload_kiali_enable_monitoring: true
 ocp4_workload_kiali_namespace: istio-system
