@@ -29,6 +29,12 @@
       status: "True"
     wait_timeout: 180
 
+- name: Create the OSSMC plugin
+  when: ocp4_workload_kiali_ossmconsole | bool
+  kubernetes.core.k8s:
+    state: present
+    template: ossmconsole.yaml.j2
+
 - name: Get the Kiali Route
   kubernetes.core.k8s_info:
     api_version: route.openshift.io/v1

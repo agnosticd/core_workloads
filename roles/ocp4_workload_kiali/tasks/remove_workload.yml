@@ -1,4 +1,10 @@
 ---
+- name: Remove the OSSMC plugin
+  when: ocp4_workload_kiali_ossmconsole | bool
+  kubernetes.core.k8s:
+    state: absent
+    template: ossmconsole.yaml.j2
+
 - name: Remove the Kiali resource
   kubernetes.core.k8s:
     state: absent
