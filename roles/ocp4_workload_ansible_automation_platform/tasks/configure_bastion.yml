@@ -1,0 +1,38 @@
+---
+# ==============================================================================
+# AAP Bastion Configuration
+# Configures the bastion host with Ansible customizations
+# Based on: automation_platform_bastion role from agnosticd
+# ==============================================================================
+
+- name: Configure AAP Bastion host with Ansible customizations
+  ansible.builtin.debug:
+    msg: Configuring AAP Bastion host with Ansible customizations
+
+- name: Extend ssh timeouts - primarily for Showroom users
+  when: ocp4_workload_ansible_automation_platform_bastion_extend_ssh | bool
+  become: true
+  block:
+
+    - name: Set ClientAliveInterval
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?ClientAliveInterval'
+        line: 'ClientAliveInterval 60'
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Set ClientAliveCountMax
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?ClientAliveCountMax'
+        line: 'ClientAliveCountMax 120'
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Restart sshd service
+      ansible.builtin.systemd:
+        name: sshd
+        state: restarted

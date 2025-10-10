@@ -1,0 +1,68 @@
+---
+# ==============================================================================
+# Generate OCP Bearer Token
+# Creates a service account with an unexpiring token and cluster-admin access
+# ==============================================================================
+
+- name: Create service account for AAP
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: aap-automation
+        namespace: default
+
+- name: Create cluster role binding for service account
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: aap-automation-cluster-admin
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cluster-admin
+      subjects:
+      - kind: ServiceAccount
+        name: aap-automation
+        namespace: default
+
+- name: Create service account token secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: aap-automation-token
+        namespace: default
+        annotations:
+          kubernetes.io/service-account.name: aap-automation
+      type: kubernetes.io/service-account-token
+
+- name: Wait for token to be populated
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: aap-automation-token
+    namespace: default
+  register: r_token_secret
+  until:
+    - r_token_secret.resources is defined
+    - r_token_secret.resources | length > 0
+    - r_token_secret.resources[0].data.token is defined
+  retries: 10
+  delay: 2
+
+- name: Extract token from secret
+  ansible.builtin.set_fact:
+    openshift_bearer_token: "{{ r_token_secret.resources[0].data.token | b64decode }}"
+
+- name: Save ocp bearer token to agnosticd_user_info
+  agnosticd.core.agnosticd_user_info:
+    data:
+      openshift_bearer_token: "{{ openshift_bearer_token }}"

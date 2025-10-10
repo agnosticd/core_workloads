@@ -121,3 +121,17 @@
       aap_controller_web_url: "{{ automation_controller_url }}"
       aap_controller_admin_user: "admin"
       aap_controller_admin_password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
+
+# ==============================================================================
+# Post-Installation Configuration
+# ==============================================================================
+
+- name: Configure AAP platform (tokens, credentials, resources)
+  when: ocp4_workload_ansible_automation_platform_configure_platform | bool
+  ansible.builtin.include_tasks:
+    file: configure_platform.yml
+
+- name: Configure bastion host for AAP
+  when: ocp4_workload_ansible_automation_platform_configure_bastion | bool
+  ansible.builtin.include_tasks:
+    file: configure_bastion.yml

@@ -64,3 +64,27 @@ ocp4_workload_ansible_automation_platform_hub_api_workers: 1
 ocp4_workload_ansible_automation_platform_hub_file_storage_access_mode: ReadWriteOnce
 ocp4_workload_ansible_automation_platform_hub_file_storage_size: 100Gi
 ocp4_workload_ansible_automation_platform_hub_file_storage_file_class: ""
+
+# ---------------------------------------------------------------
+# Platform Configuration Settings
+# ---------------------------------------------------------------
+ocp4_workload_ansible_automation_platform_configure_platform: true
+ocp4_workload_ansible_automation_platform_configure_bastion: true
+
+# Platform Configuration - OCP Token
+ocp4_workload_ansible_automation_platform_generate_ocp_token: false
+ocp4_workload_ansible_automation_platform_ocp_cluster_name: "{{ cluster_name | default('cluster' + '-' + guid) }}"
+ocp4_workload_ansible_automation_platform_ocp_admin_user: kubeadmin
+
+# Platform Configuration - SSH KeyPair
+ocp4_workload_ansible_automation_platform_generate_ssh_keypair: false
+ocp4_workload_ansible_automation_platform_ssh_key_type: ed25519
+ocp4_workload_ansible_automation_platform_ssh_key_path: "/tmp/id_{{ ocp4_workload_ansible_automation_platform_ssh_key_type }}"
+
+# Platform Configuration - AAP Dispatcher
+ocp4_workload_ansible_automation_platform_run_dispatcher: true
+ocp4_workload_ansible_automation_platform_verify_ssl: true
+ocp4_workload_ansible_automation_platform_create_controller_token: false
+
+# Bastion Configuration
+ocp4_workload_ansible_automation_platform_bastion_extend_ssh: true
