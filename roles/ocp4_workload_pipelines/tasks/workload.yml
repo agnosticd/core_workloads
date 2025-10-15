@@ -72,7 +72,7 @@
         | json_query("spec.links[?contains(href,'-linux-amd64')].href") | first }}
 
   - name: Install tkn cli tool on the Bastion
-    delegate_to: "{{ groups['bastions'][0] }}"
+    delegate_to: "{{ groups['bastions'][0] | default(localhost) }}"
     become: true
     block:
     - name: Download tkn cli tool
