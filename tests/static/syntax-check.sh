@@ -80,22 +80,22 @@ do_ansible_syntax() {
 
     config=$(basename $(dirname "${i}"))
 
-    if ! egrep --quiet ^env_type: ${i}; then
-        echo "No env_type found in ${i}"
+    if ! egrep --quiet ^econfig: ${i}; then
+        echo "No econfig found in ${i}"
     fi
-    env_type=$(egrep ^env_type: ${i}|cut -d' ' -f 2)
+    econfig=$(egrep ^econfig: ${i}|cut -d' ' -f 2)
 
     # Ansible Workshops AKA as Linklight needs to be downloaded
-    if [ "${env_type}" = linklight ] || [ "${env_type}" = ansible-workshops ] || [ "${env_type}" = aap2-ansible-workshops ]; then
-        if [ ! -d ${ansible_path}/workdir/${env_type} ]; then
+    if [ "${econfig}" = linklight ] || [ "${econfig}" = ansible-workshops ] || [ "${econfig}" = aap2-ansible-workshops ]; then
+        if [ ! -d ${ansible_path}/workdir/${econfig} ]; then
             set +e
 
             git clone --branch devel \
                 https://github.com/ansible/workshops.git \
-                ${ansible_path}/workdir/${env_type} &> $output
+                ${ansible_path}/workdir/${econfig} &> $output
 
             if [ $? = 0 ]; then
-                commit=$(cd ${ansible_path}/workdir/${env_type}; PAGER=cat git show --no-patch --format=oneline --no-color)
+                commit=$(cd ${ansible_path}/workdir/${econfig}; PAGER=cat git show --no-patch --format=oneline --no-color)
                 echo "OK .......... ${item} / Download ansible-workshop -- $commit"
             else
                 echo "FAIL ........ ${item} / Download ansible-workshop"
@@ -112,8 +112,8 @@ do_ansible_syntax() {
         )
     fi
 
-    if [ -e "${ansible_path}/configs/${env_type}/hosts" ]; then
-        inventory=(-i "${ansible_path}/configs/${env_type}/hosts")
+    if [ -e "${ansible_path}/configs/${econfig}/hosts" ]; then
+        inventory=(-i "${ansible_path}/configs/${econfig}/hosts")
     else
         inventory=(-i "${static}/tox-inventory.txt")
     fi
