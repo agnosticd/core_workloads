@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_openshift_virtualization
+  author: Red Hat, Wolfgang Kulhanek (wkulhane@redhat.com)
+  description: |
+    Deploys OpenShift Virtualization on a OCP4 cluster
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms: []
+  galaxy_tags:
+  - ocp4
+  - openshift
+  - kubevirt
+  - cnv
+dependencies: []

@@ -1,0 +1,4 @@
+---
+# Internal Variables
+_ocp4_workload_openshift_virtualization_default_storage_class: ""
+_ocp4_workload_openshift_virtualization_extra_config: ""

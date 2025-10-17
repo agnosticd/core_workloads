@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_kiali
+  author: Red Hat, Juliano Mohr (juliano@redhat.com)
+  description: |
+    Set up Red Hat Kiali Operator on OpenShift.
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms: []
+  galaxy_tags:
+  - ocp
+  - openshift
+  - kiali
+  - servicemesh
+  - istio
+  - ossm
+dependencies: []
