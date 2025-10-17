@@ -123,7 +123,7 @@
 
   - name: Install kn cli tool if a download URL was found
     when: __ocp4_workload_serverless_kn_url is defined
-    delegate_to: "{{ groups['bastions'][0] }}"
+    delegate_to: "{{ groups['bastions'][0] | default('localhost') }}"
     become: true
     block:
     - name: Download kn cli tool
