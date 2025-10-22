@@ -26,3 +26,5 @@ ocp4_workload_external_odf_noobaa_cpu_limits: 3
 ocp4_workload_external_odf_noobaa_cpu_requests: 3
 
 ocp4_workload_external_odf_volume_binding_mode: WaitForFirstConsumer
+
+ocp4_workload_external_odf_registry_storage_class: ocs-external-storagecluster-ceph-rbd

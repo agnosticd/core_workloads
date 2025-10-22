@@ -10,4 +10,5 @@ spec:
   resources:
     requests:
       storage: {{ ocp4_workload_external_odf_registry_size }}
+  storageClassName: {{ ocp4_workload_external_odf_registry_storage_class }}
   volumeMode: Filesystem
