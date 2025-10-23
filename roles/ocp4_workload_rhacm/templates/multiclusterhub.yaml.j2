@@ -11,7 +11,7 @@ metadata:
   annotations:
     installer.open-cluster-management.io/mce-subscription-spec: '{"source": "{{ ocp4_workload_rhacm_mce_catalogsource_name }}", "sourceNamespace": "{{ ocp4_workload_rhacm_mce_catalogsource_namespace }}"}'
 {% endif %}
-{% if master_instance_count < 2 %}
+{% if (control_plane_instance_count | default(3) | int) < 2 %}
 spec:
   availabilityConfig: Basic
 {% else %}
