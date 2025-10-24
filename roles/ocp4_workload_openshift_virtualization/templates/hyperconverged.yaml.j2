@@ -12,9 +12,7 @@ spec:
         {{ ocp4_workload_openshift_virtualization_workload_tolerations | to_yaml }}
 {% endif %}
 {% if ocp4_workload_openshift_virtualization_boot_sources_shapshot | default(true) | bool %}
-  featureGates:
-    enableCommonBootImageImport: true
+  enableCommonBootImageImport: true
 {% else %}
-  featureGates:
-    enableCommonBootImageImport: false
+  enableCommonBootImageImport: false
 {% endif %}
