@@ -1,3 +1,5 @@
 ---
 _ocp4_workload_gitea_operator_gitea_hostname: ""
 _ocp4_workload_gitea_operator_gitea_route: ""
+_ocp4_workload_gitea_operator_admin_password: ""
+_ocp4_workload_gitea_operator_user_password: ""

@@ -119,16 +119,19 @@
       retries: 90
       delay: 10
 
+    - name: Set admin password variable
+      ansible.builtin.set_fact:
+        _ocp4_workload_gitea_operator_admin_password: "{{ r_gitea_admin_password.resources[0].status.adminPassword }}"
+
     - name: Print admin credentials if admin was created
-      when: ocp4_workload_gitea_operator_create_admin | bool
       agnosticd.core.agnosticd_user_info:
-        msg: "{{ item }}"
+        msg: >-
+          A Gitea admin user has been created with the
+          username '{{ ocp4_workload_gitea_operator_admin_user }}' 
+          and the password '{{ _ocp4_workload_gitea_operator_admin_password }}'.
         data:
           gitea_admin_username: "{{ ocp4_workload_gitea_operator_admin_user }}"
-          gitea_admin_password: "{{ r_gitea_admin_password.resources[0].status.adminPassword }}"
-      loop:
-      - "The Gitea admin username is '{{ ocp4_workload_gitea_operator_admin_user }}'."
-      - "The Gitea admin password is '{{ r_gitea_admin_password.resources[0].status.adminPassword }}'."
+          gitea_admin_password: "{{ _ocp4_workload_gitea_operator_admin_password }}"
 
   - name: Wait for Gitea user setup to be complete
     when: ocp4_workload_gitea_operator_create_users | bool
@@ -146,23 +149,27 @@
       retries: 130
       delay: 30
 
+    - name: Set user password variable
+      ansible.builtin.set_fact:
+        _ocp4_workload_gitea_operator_user_password: "{{ r_gitea_user_setup_complete.resources[0].status.userPassword }}"
+
     - name: Print the user details if multiple users were created
       when: ocp4_workload_gitea_operator_user_number | int > 1
       agnosticd.core.agnosticd_user_info:
         msg: >-
           Gitea users were created, from {{ ocp4_workload_gitea_operator_generate_user_format | format(1) }} to
           {{ ocp4_workload_gitea_operator_generate_user_format | format(ocp4_workload_gitea_operator_user_number | int) }} with the password
-          '{{ r_gitea_user_setup_complete.resources[0].status.userPassword }}'
+          '{{ _ocp4_workload_gitea_operator_user_password }}'
 
     - name: Print and save the user details if a single user was created
       when: ocp4_workload_gitea_operator_user_number | int == 1
       agnosticd.core.agnosticd_user_info:
         data:
           gitea_user: "{{ ocp4_workload_gitea_operator_generate_user_format }}"
-          gitea_password: "{{ r_gitea_user_setup_complete.resources[0].status.userPassword }}"
+          gitea_password: "{{ _ocp4_workload_gitea_operator_user_password }}"
         msg: >-
           A Gitea user '{{ ocp4_workload_gitea_operator_generate_user_format }}' was created, with the password
-          '{{ r_gitea_user_setup_complete.resources[0].status.userPassword }}'
+          '{{ _ocp4_workload_gitea_operator_user_password }}'
 
     - name: Save user details per created user
       when: ocp4_workload_gitea_operator_user_number | int > 1
@@ -170,7 +177,7 @@
         user: "{{ ocp4_workload_gitea_operator_generate_user_format | format(n) }}"
         data:
           gitea_user: "{{ ocp4_workload_gitea_operator_generate_user_format | format(n) }}"
-          gitea_password: "{{ ocp4_workload_gitea_operator_user_password }}"
+          gitea_password: "{{ _ocp4_workload_gitea_operator_user_password }}"
           gitea_console_url: "{{ _ocp4_workload_gitea_operator_gitea_route }}"
       loop: "{{ range(1, 1 + ocp4_workload_gitea_operator_user_number | int) | list }}"
       loop_control:
@@ -194,7 +201,6 @@
 
       - name: Print the repositories that were migrated
         agnosticd.core.agnosticd_user_info:
-          msg: "{{ item }}"
-        loop:
-        - "The following repositories were migrated for the created users:"
-        - "{{ ocp4_workload_gitea_operator_repositories_list | join(', ', attribute='repo') }}"
+          msg: >-
+            The following repositories were migrated for the created users:
+            {{ ocp4_workload_gitea_operator_repositories_list | join(', ', attribute='repo') }}
