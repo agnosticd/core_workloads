@@ -80,3 +80,79 @@
   loop:
   - openshift-openid-client-secret.yml.j2
   - openshift-oauth.yml.j2
+
+- name: Retrieve Keycloak admin credentials
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: keycloak-initial-admin
+    namespace: "{{ ocp4_workload_keycloak_namespace }}"
+  register: r_keycloak_credentials
+  retries: 120
+  delay: 10
+  until:
+  - r_keycloak_credentials is defined
+  - r_keycloak_credentials.resources is defined
+  - r_keycloak_credentials.resources | length > 0
+
+- name: Save user information messages
+  agnosticd.core.agnosticd_user_info:
+    msg: >-
+      Authentication via Keycloak is enabled on this cluster.
+      Keycloak admin console: https://sso.{{ _ocp4_workload_keycloak_base_domain }}
+      Keycloak admin user: {{ r_keycloak_credentials.resources[0].data.username | b64decode }}
+      Keycloak admin password: {{ r_keycloak_credentials.resources[0].data.password | b64decode }}
+    data:
+      keycloak_admin_console: https://sso.{{ _ocp4_workload_keycloak_base_domain }}
+      keycloak_admin_user: "{{ r_keycloak_credentials.resources[0].data.username | b64decode }}"
+      keycloak_admin_password: "{{ r_keycloak_credentials.resources[0].data.password | b64decode }}"
+      openshift_api_server_url: https://api.{{ _ocp4_workload_keycloak_base_domain }}:6443
+      openshift_cluster_console_url: https://console-openshift-console.{{ _ocp4_workload_keycloak_base_domain }}
+      openshift_cluster_num_users: "{{ ocp4_workload_keycloak_num_users | int }}"
+      openshift_cluster_user_base: "{{ ocp4_workload_keycloak_user_username_base }}"
+      openshift_cluster_user_count: "{{ ocp4_workload_keycloak_num_users | int }}"
+
+- name: Print admin information
+  when:
+  - ocp4_workload_keycloak_admin_create | bool
+  - ocp4_workload_keycloak_enable_user_info_messages | bool
+  agnosticd.core.agnosticd_user_info:
+    msg: >-
+      User '{{ _ocp4_workload_keycloak_admin_username }}'
+      with password '{{ _ocp4_workload_keycloak_admin_password }}'
+      is cluster admin.
+
+- name: Save admin information
+  when: ocp4_workload_keycloak_admin_create | bool
+  agnosticd.core.agnosticd_user_info:
+    data:
+      openshift_cluster_admin_username: "{{ _ocp4_workload_keycloak_admin_username }}"
+      openshift_cluster_admin_password: "{{ _ocp4_workload_keycloak_admin_password }}"
+
+- name: Print user information
+  when:
+  - ocp4_workload_keycloak_num_users | int > 0
+  - ocp4_workload_keycloak_enable_user_info_messages | bool
+  agnosticd.core.agnosticd_user_info:
+    msg: >-
+      Users `{{ ocp4_workload_keycloak_user_username_base }}1` ..
+      `{{ ocp4_workload_keycloak_user_username_base ~ ocp4_workload_keycloak_num_users }}`
+      created with password `{{ _ocp4_workload_keycloak_user_password }}`
+
+- name: Save user information for user access
+  agnosticd.core.agnosticd_user_info:
+    user: "{{ ocp4_workload_keycloak_user_username_base }}{{ n + 1 }}"
+    data:
+      user: "{{ ocp4_workload_keycloak_user_username_base }}{{ n + 1 }}"
+      password: "{{ _ocp4_workload_keycloak_user_password }}"
+      console_url: "https://console-openshift-console.{{ _ocp4_workload_keycloak_base_domain }}"
+      openshift_console_url: "https://console-openshift-console.{{ _ocp4_workload_keycloak_base_domain }}"
+      openshift_cluster_ingress_domain: "{{ _ocp4_workload_keycloak_base_domain }}"
+      login_command: >-
+        oc login --insecure-skip-tls-verify=false
+        --username {{ ocp4_workload_keycloak_user_username_base }}{{ n + 1 }}
+        --password {{ _ocp4_workload_keycloak_user_password }}
+        https://api.{{ _ocp4_workload_keycloak_base_domain }}:6443
+  loop: "{{ range(0, ocp4_workload_keycloak_num_users | int) | list }}"
+  loop_control:
+    loop_var: n

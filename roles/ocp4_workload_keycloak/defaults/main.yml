@@ -40,3 +40,7 @@ ocp4_workload_keycloak_openshift_client_secret: ""
 ocp4_workload_keycloak_openshift_client_id: idp-4-ocp
 
 ocp4_workload_keycloak_remove_kubeadmin: false
+
+ocp4_workload_keycloak_enable_user_info_messages: true
+
+ocp4_workload_keycloak_enable_user_info_data: "{{ ocp4_workload_keycloak_num_users | int > 1 }}"
