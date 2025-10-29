@@ -16,9 +16,24 @@
 
 - name: Set base domain and passwords
   ansible.builtin.set_fact:
-    _ocp4_workload_authentication_keycloak_admin_password: "{{ ocp4_workload_authentication_keycloak_admin_password | default(lookup('password', '/dev/null chars=ascii_letters,digits length=10')) }}"
-    _ocp4_workload_authentication_keycloak_user_password: "{{ ocp4_workload_authentication_keycloak_user_password | default(lookup('password', '/dev/null chars=ascii_letters,digits length=10')) }}"
-    _ocp4_workload_authentication_keycloak_openshift_client_secret: "{{ ocp4_workload_authentication_keycloak_openshift_client_secret | default(lookup('password', '/dev/null chars=ascii_letters,digits length=10')) }}"
+    _ocp4_workload_authentication_keycloak_admin_password: >-
+      {% if ocp4_workload_authentication_keycloak_admin_password is defined and ocp4_workload_authentication_keycloak_admin_password | length > 0 %}
+        {{ ocp4_workload_authentication_keycloak_admin_password }}
+      {% else %}
+        {{ lookup('password', '/dev/null chars=ascii_letters,digits length=10') }}
+      {% endif %}
+    _ocp4_workload_authentication_keycloak_user_password: >-
+      {% if ocp4_workload_authentication_keycloak_user_password is defined and ocp4_workload_authentication_keycloak_user_password | length > 0 %}
+        {{ ocp4_workload_authentication_keycloak_user_password }}
+      {% else %}
+        {{ lookup('password', '/dev/null chars=ascii_letters,digits length=10') }}
+      {% endif %}
+    _ocp4_workload_authentication_keycloak_openshift_client_secret: >-
+      {% if ocp4_workload_authentication_keycloak_openshift_client_secret is defined and ocp4_workload_authentication_keycloak_openshift_client_secret | length > 0 %}
+        {{ ocp4_workload_authentication_keycloak_openshift_client_secret }}
+      {% else %}
+        {{ lookup('password', '/dev/null chars=ascii_letters,digits length=10') }}
+      {% endif %}
 
 - name: Create Keycloak namespace
   kubernetes.core.k8s:
