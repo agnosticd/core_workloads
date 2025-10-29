@@ -5,7 +5,7 @@
 
 ocp4_workload_keycloak_namespace: keycloak
 
-ocp4_workload_keycloak_pgsql_user: postgres
+ocp4_workload_keycloak_pgsql_user: keycloak
 
 ocp4_workload_keycloak_pgsql_password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits '~ 'length=' ~ 10) }}"
 
