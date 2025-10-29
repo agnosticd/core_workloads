@@ -14,17 +14,6 @@ spec:
     registrationAllowed: true
     loginWithEmailAllowed: true
     duplicateEmailsAllowed: false
-
-
-      clientId: ocp4_workload_advanced_developer_suite_openshift_keycloak_client_id
-      enabled: true
-      redirectUris:
-      - '*'
-      protocol: openid-connect
-      publicClient: false
-      secret: "{{ ocp4_workload_keycloak_openshift_client_secret }}"
-      serviceAccountsEnabled: true
-
     clients:
       - clientId: {{ ocp4_workload_keycloak_openshift_client_id }}
         enabled: true
@@ -74,3 +63,7 @@ spec:
 {% else %}
     users: []
 {% endif %}
+    groups:
+      - name: admins
+      - name: users
+
