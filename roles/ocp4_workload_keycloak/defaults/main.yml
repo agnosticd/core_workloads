@@ -1,0 +1,40 @@
+---
+# --------------------------------
+# Keycloak Operator
+# --------------------------------
+
+ocp4_workload_keycloak_namespace: keycloak
+
+ocp4_workload_keycloak_pgsql_user: postgres
+
+ocp4_workload_keycloak_pgsql_password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits '~ 'length=' ~ 10)) }}"
+
+ocp4_workload_keycloak_channel: stable-v26.2
+
+ocp4_workload_keycloak_automatic_install_plan_approval: true
+
+ocp4_workload_keycloak_starting_csv: ""
+
+ocp4_workload_keycloak_use_catalog_source: false
+
+ocp4_workload_keycloak_catalogsource_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
+
+ocp4_workload_keycloak_catalogsource_tag: v4.20_2025_10_23
+
+ocp4_workload_keycloak_default_realm: sso
+
+ocp4_workload_keycloak_num_users: 1
+
+ocp4_workload_keycloak_admin_create: true
+
+ocp4_workload_keycloak_admin_username: admin
+
+ocp4_workload_keycloak_admin_password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits '~ 'length=' ~ 10)) }}"
+
+ocp4_workload_keycloak_user_username_base: user
+
+ocp4_workload_keycloak_user_password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits '~ 'length=' ~ 10)) }}"
+
+ocp4_workload_keycloak_openshift_client_secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits '~ 'length=' ~ 10)) }}"
+
+ocp4_workload_keycloak_openshift_client_id: idp-4-ocp
