@@ -48,6 +48,10 @@
   - keycloak_instance.yml.j2
   - keycloak_route.yml.j2
   - keycloak_realm_import.yml.j2
+  register: r_keycloak_instance
+  retries: 120
+  delay: 10
+  until: r_keycloak_instance is not failed
 
 - name: Remove kubeadmin user
   when: ocp4_workload_authentication_keycloak_remove_kubeadmin | bool
