@@ -74,7 +74,7 @@
     template: "{{ item }}"
   loop:
   - openshift-openid-client-secret.yml.j2
-  - openshift-oauth.yml.j2"
+  - openshift-oauth.yml.j2
 
 - name: Retrieve Keycloak admin credentials
   kubernetes.core.k8s_info:
