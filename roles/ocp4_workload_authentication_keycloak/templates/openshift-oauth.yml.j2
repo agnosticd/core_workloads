@@ -16,9 +16,9 @@ spec:
         - name
         preferredUsername:
         - preferred_username
-      clientID: {{ ocp4_workload_keycloak_openshift_client_id }}
+      clientID: {{ ocp4_workload_authentication_keycloak_openshift_client_id }}
       clientSecret:
         name: openid-client-secret-bb6zw
       extraScopes: []
       issuer: >-
-        https://sso.{{ _ocp4_workload_keycloak_base_domain }}/realms/{{ ocp4_workload_keycloak_default_realm }}
+        https://sso.{{ _ocp4_workload_authentication_keycloak_base_domain }}/realms/{{ ocp4_workload_authentication_keycloak_default_realm }}
