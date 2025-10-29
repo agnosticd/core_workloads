@@ -4,9 +4,9 @@
     name: install_operator
   vars:
     install_operator_name: rhbk-operator
-    install_operator_namespace:
+    install_operator_namespace: "{{ ocp4_workload_authentication_keycloak_namespace }}"
+    install_operator_manage_namespaces:
     - "{{ ocp4_workload_authentication_keycloak_namespace }}"
-    install_operator_manage_namespaces: "{{ ocp4_workload_authentication_keycloak_namespace }}"
     install_operator_channel: "{{ ocp4_workload_authentication_keycloak_channel }}"
     install_operator_automatic_install_plan_approval: "{{ ocp4_workload_authentication_keycloak_automatic_install_plan_approval | default('true') }}"
     install_operator_starting_csv: "{{ ocp4_workload_authentication_keycloak_starting_csv }}"
