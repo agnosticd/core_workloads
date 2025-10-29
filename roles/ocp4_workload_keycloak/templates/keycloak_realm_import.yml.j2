@@ -16,7 +16,7 @@ spec:
       - clientId: {{ ocp4_workload_keycloak_openshift_client_id }}
         enabled: true
         clientAuthenticatorType: client-secret
-        secret: {{ ocp4_workload_keycloak_openshift_client_secret }}
+        secret: {{ _ocp4_workload_keycloak_openshift_client_secret }}
         publicClient: false
         redirectUris:
         - "*"
@@ -42,7 +42,7 @@ spec:
         lastName: Demo
         credentials:
           - type: password
-            value: {{ ocp4_workload_keycloak_user_password }}
+            value: {{ _ocp4_workload_keycloak_user_password }}
             temporary: false
         realmRoles:
           - user
@@ -56,7 +56,7 @@ spec:
         lastName: Demo
         credentials:
           - type: password
-            value: {{ ocp4_workload_keycloak_admin_password }}
+            value: {{ _ocp4_workload_keycloak_admin_password }}
             temporary: false
         realmRoles:
           - admin

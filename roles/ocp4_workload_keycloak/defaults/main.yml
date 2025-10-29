@@ -29,13 +29,13 @@ ocp4_workload_keycloak_admin_create: true
 
 ocp4_workload_keycloak_admin_username: admin
 
-ocp4_workload_keycloak_admin_password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits '~ 'length=' ~ 10) }}"
+ocp4_workload_keycloak_admin_password: ""
 
 ocp4_workload_keycloak_user_username_base: user
 
-ocp4_workload_keycloak_user_password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits '~ 'length=' ~ 10) }}"
+ocp4_workload_keycloak_user_password: ""
 
-ocp4_workload_keycloak_openshift_client_secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits '~ 'length=' ~ 10) }}"
+ocp4_workload_keycloak_openshift_client_secret: ""
 
 ocp4_workload_keycloak_openshift_client_id: idp-4-ocp
 
