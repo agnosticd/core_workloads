@@ -36,6 +36,11 @@ spec:
   managedResources:
     cephBlockPools:
       disableStorageClass: true
+      # ODF 4.19+ does not disable the storage class
+      # So to be able to update the default storage class
+      # create a dummy storage class before we create the default
+      # storage class manually.
+      storageClassName: do-not-use
     cephFilesystems: {}
     cephObjectStoreUsers: {}
     cephObjectStores: {}

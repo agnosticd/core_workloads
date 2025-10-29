@@ -71,8 +71,8 @@
       ansible.builtin.set_fact:
         _ocp4_workload_openshift_virtualization_default_storage_class: "{{ default_sc[0] }}"
       vars:
-        default_sc: "{{ r_storageclasses.resources | json_query(query) }}"
-        query: "[?metadata.annotations.\"storageclass.kubernetes.io/is-default-class\" == 'true'].metadata.name"
+        default_sc: "{{ r_storageclasses.resources | json_query(query_sc) }}"
+        query_sc: "[?metadata.annotations.\"storageclass.kubernetes.io/is-default-class\" == 'true'].metadata.name"
 
     - name: Abort if no default storage class found
       when: _ocp4_workload_openshift_virtualization_default_storage_class | length == 0

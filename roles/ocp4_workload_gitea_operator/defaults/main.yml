@@ -127,18 +127,18 @@ ocp4_workload_gitea_operator_user_number: >-
 # Set the password for the users to be created
 # If empty then a random password with the specified
 # length will be created for all users (same for all users)
-ocp4_workload_gitea_operator_user_password: openshift
+ocp4_workload_gitea_operator_user_password: ""
 ocp4_workload_gitea_operator_user_password_length: 16
 
 # Set up repositories for all created users - also handled
 # by the workload, not the operator
 ocp4_workload_gitea_operator_migrate_repositories: false
 ocp4_workload_gitea_operator_repositories_list:
-- repo: "https://github.com/someuser/thing1"
-  name: "thing1"
+- name: "thing1"
+  repo: "https://github.com/someuser/thing1"
   private: "true"
-- repo: "https://github.com/anotheruser/someotherthing"
-  name: "someotherthing"
+- name: "someotherthing"
+  repo: "https://github.com/anotheruser/someotherthing"
   private: "false"
 
 # How long to wait for repos to be created. Can be increased if many users with big repos are created.
