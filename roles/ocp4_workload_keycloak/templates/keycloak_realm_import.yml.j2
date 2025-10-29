@@ -38,6 +38,8 @@ spec:
         enabled: true
         emailVerified: true
         email: {{ ocp4_workload_keycloak_user_username_base }}{{ i }}@demo.redhat.com
+        firstName: {{ ocp4_workload_keycloak_user_username_base | capitalize }}{{ i }}
+        lastName: Demo
         credentials:
           - type: password
             value: {{ ocp4_workload_keycloak_user_password }}
@@ -50,7 +52,7 @@ spec:
         enabled: true
         emailVerified: true
         email: {{ ocp4_workload_keycloak_admin_username }}@demo.redhat.com
-        firstName: {{ ocp4_workload_keycloak_user_username_base | capitalize }}{{ i }}
+        firstName: {{ ocp4_workload_keycloak_admin_username | capitalize }}
         lastName: Demo
         credentials:
           - type: password
