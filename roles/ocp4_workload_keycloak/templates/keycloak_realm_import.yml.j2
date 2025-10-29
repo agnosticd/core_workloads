@@ -23,8 +23,7 @@ spec:
         standardFlowEnabled: true
         directAccessGrantsEnabled: true
         serviceAccountsEnabled: true
-        publicClient: false
-        frontChannelLogout: false
+        frontchannelLogout: false
         protocol: openid-connect
     roles:
       realm:
@@ -51,6 +50,8 @@ spec:
         enabled: true
         emailVerified: true
         email: {{ ocp4_workload_keycloak_admin_username }}@demo.redhat.com
+        firstName: {{ ocp4_workload_keycloak_user_username_base | capitalize }}{{ i }}
+        lastName: Demo
         credentials:
           - type: password
             value: {{ ocp4_workload_keycloak_admin_password }}
