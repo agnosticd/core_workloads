@@ -113,7 +113,7 @@
   - ocp4_workload_authentication_keycloak_enable_user_info_messages | bool
   agnosticd.core.agnosticd_user_info:
     msg: >-
-      User '{{ _ocp4_workload_authentication_keycloak_admin_username }}'
+      User '{{ ocp4_workload_authentication_keycloak_admin_username }}'
       with password '{{ _ocp4_workload_authentication_keycloak_admin_password }}'
       is cluster admin.
 
@@ -121,7 +121,7 @@
   when: ocp4_workload_authentication_keycloak_admin_create | bool
   agnosticd.core.agnosticd_user_info:
     data:
-      openshift_cluster_admin_username: "{{ _ocp4_workload_authentication_keycloak_admin_username }}"
+      openshift_cluster_admin_username: "{{ ocp4_workload_authentication_keycloak_admin_username }}"
       openshift_cluster_admin_password: "{{ _ocp4_workload_authentication_keycloak_admin_password }}"
 
 - name: Print user information
