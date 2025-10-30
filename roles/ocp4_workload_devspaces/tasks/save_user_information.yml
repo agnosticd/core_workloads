@@ -1,0 +1,44 @@
+---
+- name: Get devspaces route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: devspaces
+    namespace: "{{ ocp4_workload_devspaces_namespace }}"
+  register: r_devspaces_route
+  until: r_devspaces_route.resources | length > 0
+  retries: 10
+  delay: 5
+
+- name: Set _ocp4_workload_devspaces_url
+  ansible.builtin.set_fact:
+    _ocp4_workload_devspaces_url: "https://{{ r_devspaces_route.resources[0].spec.host }}"
+
+- name: Save workload user_info
+  block:
+  - name: Output workload user_info
+    agnosticd.core.agnosticd_user_info:
+      msg: "Dev Spaces URL: {{ _ocp4_workload_devspaces_url }}"
+      data:
+        devspaces_url: "{{ _ocp4_workload_devspaces_url }}"
+
+- name: Save workload user_info for multi users
+  when: ocp4_workload_devspaces_user_count | int > 1
+  agnosticd.core.agnosticd_user_info:
+    user: "{{ ocp4_workload_devspaces_user_base }}{{ n }}"
+    data:
+      devspaces_url: "{{ _ocp4_workload_devspaces_url }}"
+  loop: "{{ range(1, ocp4_workload_devspaces_user_count | int + 1) | list }}"
+  loop_control:
+    loop_var: n
+    label: "{{ ocp4_workload_devspaces_user_base }}{{ n }}"
+
+- name: Save devworkspace specific user_info
+  when: ocp4_workload_devspaces_devworkspace | bool
+  vars:
+    _devworkspace_path: >-
+       "dashboard/#/ide/{{ ocp4_workload_devspaces_devworkspace_namespace }}/{{ ocp4_workload_devspaces_devworkspace_name }}"
+  agnosticd.core.agnosticd_user_info:
+    msg: "Dev Spaces Workspace URL: {{ _ocp4_workload_devspaces_url }}/{{ _devworkspace_path }}"
+    data:
+      devworkspaces_url: "{{ _ocp4_workload_devspaces_url }}/{{ _devworkspace_path }}"

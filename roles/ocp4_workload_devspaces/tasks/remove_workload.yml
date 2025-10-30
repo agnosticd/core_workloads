@@ -1,0 +1,4 @@
+---
+- name: Print not implemented message
+  ansible.builtin.debug:
+    msg: Remove Workload is not implemented.
