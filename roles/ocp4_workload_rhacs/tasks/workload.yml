@@ -1,10 +1,4 @@
 ---
-# Implement your Workload deployment tasks here
-
-- name: Setting up workload for user
-  ansible.builtin.debug:
-    msg: "Setting up workload for user ocp_username = {{ ocp_username }}"
-
 - name: Install Operator
   ansible.builtin.include_role:
     name: install_operator
