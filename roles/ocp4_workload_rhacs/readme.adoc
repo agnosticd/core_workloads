@@ -1,0 +1,39 @@
+= ocp4_workload_rhacs - Deploys RHACS
+
+== Recent Updates
+
+*ocp4_workload_rhacs_enable_route_certs*: true::
+To avoid browser cert nag screens, this adds the Stackrox CA cert to the Route for Central.
+
+== Role overview
+
+* This role installs the following onto the cluster:
+** Red Hat Advanced Cluster Security RHACS
+** OpenShift Pipelines - to run the plugins
+** Sample applications
+
+* It consists of the following tasks files:
+** Tasks: link:./tasks/pre_workload.yml[pre_workload.yml] - Sets up an environment for the workload deployment.
+*** Debug task will print out: `pre_workload Tasks completed successfully.`
+
+** Tasks: link:./tasks/workload.yml[workload.yml] - Used to deploy ACS
+*** This role deploys ACS
+*** Debug task will print out: `workload Tasks completed successfully.`
+
+** Tasks: link:./tasks/post_workload.yml[post_workload.yml] - Used to
+ configure the workload after deployment
+*** This role doesn't do anything here
+*** Debug task will print out: `post_workload Tasks completed successfully.`
+
+** Tasks: link:./tasks/remove_workload.yml[remove_workload.yml] - Used to
+ delete the workload
+*** This role uninstalls ACM and related resources
+*** Debug task will print out: `remove_workload Tasks completed successfully.`
+
+== Review the defaults variable file
+
+* This file link:./defaults/main.yml[./defaults/main.yml] contains all the variables you need to define to control the deployment of your workload.
+* A variable *silent=True* can be passed to suppress debug messages.
+* Other variables:
+
+* You can modify any of these default values by adding `-e "variable_name=variable_value"` to the command line
