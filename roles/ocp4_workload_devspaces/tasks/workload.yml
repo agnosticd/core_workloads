@@ -16,7 +16,7 @@
 - name: Create CheCluster
   kubernetes.core.k8s:
     state: present
-    template: checluster.ymal.j2
+    template: checluster.yaml.j2
 
 - name: Wait until devspaces dashboard pod is ready
   kubernetes.core.k8s_info:
