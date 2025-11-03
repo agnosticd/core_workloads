@@ -40,7 +40,9 @@
       pod: "{{ r_devspaces_dashboard_pod.resources[0].metadata.name }}"
       command: curl -sf "{{ ocp4_workload_devspaces_devworkspace_devfile }}"
     register: r_dashboard_check
-    until: r_dashboard_check.rc == 0
+    until: 
+    - r_dashboard_check.rc is defined
+    - r_dashboard_check.rc == 0
     retries: 15
     delay: 5
 
