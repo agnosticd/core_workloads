@@ -1,5 +1,5 @@
 ---
-- name: Set up ODF operator namespace and operator group
+- name: Set up ODF operator namespace
   kubernetes.core.k8s:
     state: present
     src: "{{ item }}"
