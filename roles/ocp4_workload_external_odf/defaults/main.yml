@@ -3,9 +3,6 @@
 ocp4_workload_external_odf_guest_config: ""
 ocp4_workload_external_odf_guest_pool: ""
 
-# Channel to deploy
-ocp4_workload_external_odf_channel: stable-4.18
-
 ocp4_workload_external_odf_registry_size: 100Gi
 ocp4_workload_external_odf_ceph_storage_system_deploy_timeout: 500
 
@@ -28,3 +25,11 @@ ocp4_workload_external_odf_noobaa_cpu_requests: 3
 ocp4_workload_external_odf_volume_binding_mode: WaitForFirstConsumer
 
 ocp4_workload_external_odf_registry_storage_class: ocs-external-storagecluster-ceph-rbd
+
+ocp4_workload_external_odf_operator_namespace: openshift-storage
+ocp4_workload_external_odf_channel: stable-4.18
+ocp4_workload_external_odf_operator_automatic_install_plan_approval: true
+ocp4_workload_external_odf_operator_starting_csv: ""
+ocp4_workload_external_odf_operator_use_catalog_snapshot: false
+ocp4_workload_external_odf_operator_catalog_source_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
+ocp4_workload_external_odf_operator_catalog_source_tag: "v4.18_2025_10_23"
