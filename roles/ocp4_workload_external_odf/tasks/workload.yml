@@ -13,7 +13,7 @@
     install_operator_action: install
     install_operator_name: odf-operator
     install_operator_namespace: "{{ ocp4_workload_external_odf_operator_namespace }}"
-    install_operator_target_namespaces:
+    install_operator_manage_namespaces:
     - "{{ ocp4_workload_external_odf_operator_namespace}}"
     install_operator_channel: "{{ ocp4_workload_external_odf_channel | default('') }}"
     install_operator_automatic_plan_approval: "{{ ocp4_workload_external_odf_operator_automatic_install_plan_approval | default(true) }}"
