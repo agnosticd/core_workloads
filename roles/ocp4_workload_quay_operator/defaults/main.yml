@@ -23,7 +23,8 @@ ocp4_workload_quay_operator_automatic_install_plan_approval: true
 # Highly recommended to be set when using a catalog snapshot but can be
 # empty to get the latest available in the channel at the time when
 # the catalog snapshot got created.
-ocp4_workload_quay_operator_starting_csv: "quay-operator.v3.15.2"
+# ocp4_workload_quay_operator_starting_csv: "quay-operator.v3.15.2"
+ocp4_workload_quay_operator_starting_csv: ""
 
 # --------------------------------
 # Operator Catalog Snapshot Settings
