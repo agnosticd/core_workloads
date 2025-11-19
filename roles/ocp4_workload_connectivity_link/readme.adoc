@@ -1,8 +1,8 @@
-= ocp4_workload_metallb - Deploy MetalLB Operator to an OpenShift Cluster
+= ocp4_workload_connectivity_link - Deploy Connectivity Link Operator to an OpenShift Cluster
 
 == Role overview
 
-* This role installs the MetalLB Operator into an OpenShift Cluster.
+* This role installs the Connectivity Link Operator into an OpenShift Cluster.
 
 == The defaults variable file
 

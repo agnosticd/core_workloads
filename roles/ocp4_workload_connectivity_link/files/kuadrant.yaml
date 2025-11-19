@@ -1,6 +1,5 @@
----
-apiVersion: metallb.io/v1beta1
-kind: MetalLB
+apiVersion: kuadrant.io/v1beta1
+kind: Kuadrant
 metadata:
-  name: metallb
-  namespace: metallb-system
+  name: kuadrant-instance
+spec: {}
