@@ -2,7 +2,7 @@
 galaxy_info:
   role_name: ocp4_workload_connectivity_link
   author:
-  - Wolfgang Kulhanek <wkulhane@redhat.com>
+  - Tyrell Reddy <treddy@redhat.com>
   description: |
     Deploys Connectivity Link Operator to an OCP4 cluster
   platforms: []
