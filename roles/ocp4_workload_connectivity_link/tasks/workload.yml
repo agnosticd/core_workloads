@@ -1,5 +1,5 @@
 ---
-- name: Install MetalLB Operator
+- name: Install Connectivity Link Operator
   ansible.builtin.include_role:
     name: install_operator
   vars:
@@ -27,7 +27,7 @@
   kubernetes.core.k8s_info:
     api_version: kuadrant.io/v1beta1
     kind: Kuadrant
-    name: kuadrant
+    name: kuadrant-instance
     namespace: openshift-operators
     wait: true
     wait_condition:
