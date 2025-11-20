@@ -1,4 +1,38 @@
 ---
+- name: Use provided key
+  when: ocp4_workload_rhacm_cloud_credentials_ssh_privatekey | length > 0
+  block:
+  - name: Set SSH key variables
+    ansible.builtin.set_fact:
+      _ocp4_workload_rhacm_cloud_credentials_ssh_privatekey: "{{ ocp4_workload_rhacm_cloud_credentials_ssh_privatekey }}"
+      _ocp4_workload_rhacm_cloud_credentials_ssh_publickey: "{{ ocp4_workload_rhacm_cloud_credentials_ssh_publickey }}"
+
+- name: Generate new key
+  when: ocp4_workload_rhacm_cloud_credentials_ssh_privatekey | length == 0
+  block:
+  - name: Generate SSH key
+    community.crypto.openssh_keypair:
+      path: /tmp/key
+      type: rsa
+      size: 4096
+      state: present
+      force: false
+
+  - name: Read private key
+    ansible.builtin.slurp:
+      src: /tmp/id_rsa
+    register: private_key_content
+
+  - name: Read public key
+    ansible.builtin.slurp:
+      src: /tmp/id_rsa.pub
+    register: public_key_content
+
+  - name: Set SSH key variables
+    ansible.builtin.set_fact:
+      _ocp4_workload_rhacm_cloud_credentials_ssh_privatekey: "{{ private_key_content.content | b64decode }}"
+      _ocp4_workload_rhacm_cloud_credentials_ssh_publickey: "{{ public_key_content.content | b64decode }}"
+
 - name: Create AWS Secret
   when: ocp4_workload_rhacm_cloud_credentials_aws | bool
   kubernetes.core.k8s:
