@@ -1,0 +1,19 @@
+---
+# Common variables
+ocp4_workload_rhacm_cloud_credentials_namespace: open-cluster-management
+
+ocp4_workload_rhacm_cloud_credentials_ocp4_token: ""
+ocp4_workload_rhacm_cloud_credentials_ssh_privatekey: ""
+ocp4_workload_rhacm_cloud_credentials_ssh_publickey: ""
+
+# AWS Cloud credentials
+ocp4_workload_rhacm_cloud_credentials_aws: false
+ocp4_workload_rhacm_cloud_credentials_aws_secret_name: aws-secret
+
+ocp4_workload_rhacm_cloud_credentials_aws_access_key: ""
+ocp4_workload_rhacm_cloud_credentials_aws_secret_key: ""
+ocp4_workload_rhacm_cloud_credentials_aws_base_domain: ""
+
+# KubeVirt credentials
+ocp4_workload_rhacm_cloud_credentials_kubevirt: false
+ocp4_workload_rhacm_cloud_credentials_kubevirt_secret_name: kubevirt-secret

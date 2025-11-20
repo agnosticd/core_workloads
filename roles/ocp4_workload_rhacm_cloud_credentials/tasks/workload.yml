@@ -1,0 +1,19 @@
+---
+- name: Create AWS Secret
+  when: ocp4_workload_rhacm_cloud_credentials_aws | bool
+  kubernetes.core.k8s:
+    state: present
+    template: secret-aws.yaml.j2
+
+- name: Create OpenShift objects for workload - KubeVirt
+  when: ocp4_workload_rhacm_cloud_credentials_kubevirt | bool
+  vars:
+    ocp4_workload_rhacm_cloud_credentials_kubevirt_pubkey: |
+      {{ hostvars.localhost.ssh_provision_pubkey_content |
+         default(hostvars.localhost.env_authorized_key_content_pub) }}
+  kubernetes.core.k8s:
+    state: present
+    template: "{{ item }}"
+  loop:
+  - namespace-kubevirt.yaml.j2
+  - secret-kubevirt.yaml.j2
