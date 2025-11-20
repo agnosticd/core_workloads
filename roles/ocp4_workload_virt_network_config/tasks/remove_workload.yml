@@ -1,0 +1,4 @@
+---
+- name: Print unsupported message
+  ansible.builtin.debug:
+    msg: "Removing virt network config is not implemented."

@@ -1,8 +1,4 @@
 ---
-become_override: false
-ocp_username: opentlc-mgr
-silent: false
-
 # Default values below are for MetalLB version 4.20
 
 # Channel to use for the Migration Toolkit for OpenShift Virtualization subscription
@@ -26,6 +22,22 @@ ocp4_workload_metallb_automatic_install_plan_approval: true
 ocp4_workload_metallb_starting_csv: ""
 # ocp4_workload_metallb_starting_csv: "v4.20.0-202509271248"
 
+# Configure IPAddressPool
+ocp4_workload_metallb_enable_ipaddresspool: false
+ocp4_workload_metallb_ipaddresspool_name: ip-addresspool
+ocp4_workload_metallb_ipaddresspool_addresses:
+- "10.10.10.200-10.10.10.210"
+
+# Configure L2Advertisement
+ocp4_workload_metallb_enable_l2advertisement: false
+ocp4_workload_metallb_l2advertisement_ipaddresspool:
+- ip-addresspool
+ocp4_workload_metallb_l2advertisement_interface:
+- br-ex
+
+# By default, MetalLB advertises in all nodes. This variable is used to specify in which nodes should be advertised
+ocp4_workload_metallb_node_selector: ""
+
 # --------------------------------
 # Operator Catalog Snapshot Settings
 # --------------------------------
@@ -44,19 +56,3 @@ ocp4_workload_metallb_catalog_snapshot_image: quay.io/gpte-devops-automation/olm
 
 # Catalog snapshot image tag
 ocp4_workload_metallb_catalog_snapshot_image_tag: "v4.19_2025_10_20"
-
-# Configure IPAddressPool
-ocp4_workload_metallb_enable_ipaddresspool: false
-ocp4_workload_metallb_ipaddresspool_name: ip-addresspool
-ocp4_workload_metallb_ipaddresspool_addresses:
-- "10.10.10.200-10.10.10.210"
-
-# Configure L2Advertisement
-ocp4_workload_metallb_enable_l2advertisement: false
-ocp4_workload_metallb_l2advertisement_ipaddresspool:
-- ip-addresspool
-ocp4_workload_metallb_l2advertisement_interface:
-- br-ex
-
-# By default, MetalLB advertises in all nodes. This variable is used to specify in which nodes should be advertised
-ocp4_workload_metallb_node_selector: ""
