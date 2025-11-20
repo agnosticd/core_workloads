@@ -16,7 +16,7 @@
   ansible.builtin.template:
     src: trust-relationship.json.j2
     dest: /tmp/trust-relationship.json
-    mode: "0664"
+    mode: ug=rw,o=r
 
 - name: Apply trust-relationship.json
   environment:
@@ -54,7 +54,7 @@
   ansible.builtin.template:
     src: awspolicy-hcp-cli-role.json.j2
     dest: /tmp/awspolicy-hcp-cli-role.json
-    mode: "0664"
+    mode: ug=rw,o=r
 
 - name: Apply awspolicy-hcp-cli-role.json
   environment:
@@ -85,3 +85,4 @@
   ansible.builtin.copy:
     content: "{{ ocp4_pull_secret }}"
     dest: /tmp/pull_secret.json
+    mode: ug=rw,o=r

@@ -150,7 +150,7 @@
   retries: 10
   delay: 10
 
-- name: Install HCP CLI on bastion
+- name: Install HCP CLI
   become: true
   ansible.builtin.unarchive:
     src: /tmp/hcp.tar.gz
