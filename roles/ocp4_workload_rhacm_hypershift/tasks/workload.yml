@@ -167,11 +167,11 @@
     state: absent
     path: /tmp/hcp.tar.gz
 
-- name: Setup HCP CLI bash completion
-  become: true
-  ansible.builtin.shell: "/usr/bin/hcp completion bash >/etc/bash_completion.d/hcp"
-  args:
-    creates: /etc/bash_completion.d/hcp
+# - name: Setup HCP CLI bash completion
+#   become: true
+#   ansible.builtin.shell: "/usr/bin/hcp completion bash >/etc/bash_completion.d/hcp"
+#   args:
+#     creates: /etc/bash_completion.d/hcp
 
 #############################################################################
 # Wait for ConfigMap kube-public/oidc-storage-provider-s3-config to be
