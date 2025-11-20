@@ -2,7 +2,6 @@
 #############################################################################
 # Prerequisite Checks
 #############################################################################
-
 - name: Ensure RHACM MultiClusterHub is deployed
   kubernetes.core.k8s_info:
     api_version: "operator.open-cluster-management.io/v1"
@@ -18,7 +17,7 @@
     - r_rhacm_multiclusterhub.resources[0].status.phase is defined
     - r_rhacm_multiclusterhub.resources[0].status is defined
     - r_rhacm_multiclusterhub.resources[0].status.phase == "Running"
-    # quiet: true
+    quiet: true
     fail_msg: "MultiClusterHub not found on cluster. Can not continue."
     success_msg: "MultiClusterHub found on cluster. Ready to set up Hypershift."
 
@@ -32,37 +31,34 @@
 #############################################################################
 # AWS S3 bucket setup
 #############################################################################
-
-# WK: amazon.aws.s3_bucket does not work because of unmet k8s virtualenv dependencies
 - name: Create AWS S3 bucket
   amazon.aws.s3_bucket:
-  # s3_bucket:
     name: "{{ ocp4_workload_rhacm_hypershift_s3_bucket_name }}"
     region: "{{ ocp4_workload_rhacm_hypershift_s3_bucket_region }}"
     state: present
     aws_access_key: "{{ aws_access_key_id }}"
     aws_secret_key: "{{ aws_secret_access_key }}"
-    # public_access:
-    #   block_public_acls: false
-    #   block_public_policy: false
-    #   ignore_public_acls: true
-    #   restrict_public_buckets: false
+    public_access:
+      block_public_acls: false
+      block_public_policy: false
+      ignore_public_acls: true
+      restrict_public_buckets: false
 
-- name: Update s3 bucket
-  environment:
-    AWS_ACCESS_KEY_ID: "{{ aws_access_key_id }}"
-    AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}"
-    AWS_REGION: "{{ ocp4_workload_rhacm_hypershift_s3_bucket_region }}"
-  ansible.builtin.command:
-    cmd: >-
-      aws s3api delete-public-access-block
-        --bucket {{ ocp4_workload_rhacm_hypershift_s3_bucket_name }}
+# - name: Update s3 bucket
+#   environment:
+#     AWS_ACCESS_KEY_ID: "{{ aws_access_key_id }}"
+#     AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}"
+#     AWS_REGION: "{{ ocp4_workload_rhacm_hypershift_s3_bucket_region }}"
+#   ansible.builtin.command:
+#     cmd: >-
+#       aws s3api delete-public-access-block
+#         --bucket {{ ocp4_workload_rhacm_hypershift_s3_bucket_name }}
 
 - name: Copy policy file
   ansible.builtin.template:
     src: bucket-policy.json.j2
     dest: /tmp/bucket-policy.json
-    mode: "0664"
+    mode: ug=rx,o=r
 
 - name: Apply bucket policy
   environment:
@@ -84,36 +80,34 @@
 #############################################################################
 # Configure HyperShift
 #############################################################################
-
 - name: Create s3 credentials secret
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'secret-s3-credentials.yaml.j2') }}"
+    template: secret-s3-credentials.yaml.j2
 
 - name: Generate an OpenSSH keypair for HyperShift
   community.crypto.openssh_keypair:
-    path: "~{{ ansible_user }}/.ssh/{{ ocp4_workload_rhacm_key_pair_name }}"
+    path: "/tmp/{{ ocp4_workload_rhacm_key_pair_name }}"
   register: r_hypershift_key
 
 - name: Read private key from filesystem
   ansible.builtin.slurp:
-    src: "~{{ ansible_user }}/.ssh/{{ ocp4_workload_rhacm_key_pair_name }}"
+    src: "/tmp/{{ ocp4_workload_rhacm_key_pair_name }}"
   register: r_hypershift_private_key
 
 - name: Read public key from filesystem
   ansible.builtin.slurp:
-    src: "~{{ ansible_user }}/.ssh/{{ ocp4_workload_rhacm_key_pair_name }}.pub"
+    src: "/tmp/{{ ocp4_workload_rhacm_key_pair_name }}.pub"
   register: r_hypershift_public_key
 
 - name: Create hypershift aws credentials secret
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'secret-aws-credentials.yaml.j2') }}"
+    template: secret-aws-credentials.yaml.j2
 
 #############################################################################
 # Install HCP CLI
 #############################################################################
-
 - name: Wait until HCP CLI download deployment is ready
   kubernetes.core.k8s_info:
     api_version: v1
@@ -183,7 +177,6 @@
 # Wait for ConfigMap kube-public/oidc-storage-provider-s3-config to be
 # available before proceeding
 #############################################################################
-
 - name: Wait for ConfigMap kube-public/oidc-storage-provider-s3-config
   kubernetes.core.k8s_info:
     api_version: v1
@@ -200,7 +193,6 @@
 #############################################################################
 # Deploy managed HyperShift clusters
 #############################################################################
-
 - name: Deploy Hypershift clusters
   when: ocp4_workload_rhacm_hypershift_deploy_clusters | length > 0
   ansible.builtin.include_tasks: create_hypershift_cluster.yml
