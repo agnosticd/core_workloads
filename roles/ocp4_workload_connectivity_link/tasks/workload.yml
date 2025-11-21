@@ -28,7 +28,7 @@
       status: "True"
       reason: InitialNamesAccepted
     wait_sleep: 10
-    wait_timeout: 600
+    wait_timeout: 900
 
 - name: Wait for API server to cache the CRD
   ansible.builtin.pause:
