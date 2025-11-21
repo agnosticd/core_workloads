@@ -54,7 +54,7 @@
         status: 'True'
         type: Ready
       wait_sleep: 10
-    wait_timeout: 600
+      wait_timeout: 600
 
   rescue:
     - name: Kuadrant installation timed out, attempting reinstall
