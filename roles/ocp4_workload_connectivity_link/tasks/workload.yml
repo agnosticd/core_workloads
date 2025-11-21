@@ -28,28 +28,69 @@
       status: "True"
       reason: InitialNamesAccepted
     wait_sleep: 10
-    wait_timeout: 900
+    wait_timeout: 600
 
 - name: Wait for API server to cache the CRD
   ansible.builtin.pause:
     seconds: 10
 
-- name: Create the Connectivity Link instance
+- name: Create the Kuadrant instance
   kubernetes.core.k8s:
     state: present
     namespace: openshift-operators
     definition: "{{ lookup('file', 'kuadrant.yaml') }}"
 
-- name: Wait until Kuadrant is installed
-  kubernetes.core.k8s_info:
-    api_version: kuadrant.io/v1beta1
-    kind: Kuadrant
-    name: kuadrant-instance
-    namespace: openshift-operators
-    wait: true
-    wait_condition:
-      reason: Ready
-      status: 'True'
-      type: Ready
-    wait_sleep: 10
+- name: Install Kuadrant with retry on timeout
+  block:
+  - name: Wait until Kuadrant is installed
+    kubernetes.core.k8s_info:
+      api_version: kuadrant.io/v1beta1
+      kind: Kuadrant
+      name: kuadrant-instance
+      namespace: openshift-operators
+      wait: true
+      wait_condition:
+        reason: Ready
+        status: 'True'
+        type: Ready
+      wait_sleep: 10
     wait_timeout: 600
+
+  rescue:
+    - name: Kuadrant installation timed out, attempting reinstall
+      ansible.builtin.debug:
+        msg: "Kuadrant failed to become ready, deleting and recreating..."
+
+    - name: Delete failed Kuadrant instance
+      kubernetes.core.k8s:
+        api_version: kuadrant.io/v1beta1
+        kind: Kuadrant
+        name: kuadrant-instance
+        namespace: openshift-operators
+        state: absent
+        wait: true
+        wait_timeout: 120
+
+    - name: Wait for cleanup
+      ansible.builtin.pause:
+        seconds: 10
+
+    - name: Recreate Kuadrant instance
+      kubernetes.core.k8s:
+        state: present
+        namespace: openshift-operators
+        definition: "{{ lookup('file', 'kuadrant.yaml') }}"
+
+    - name: Wait until Kuadrant is ready (retry)
+      kubernetes.core.k8s_info:
+        api_version: kuadrant.io/v1beta1
+        kind: Kuadrant
+        name: kuadrant-instance
+        namespace: openshift-operators
+        wait: true
+        wait_condition:
+          reason: Ready
+          status: 'True'
+          type: Ready
+        wait_sleep: 10
+        wait_timeout: 600
