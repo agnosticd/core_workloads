@@ -17,6 +17,16 @@
     install_operator_catalogsource_image: "{{ ocp4_workload_connectivity_link_catalog_snapshot_image | default('') }}"
     install_operator_catalogsource_image_tag: "{{ ocp4_workload_connectivity_link_catalog_snapshot_image_tag | default('') }}"
 
+- name: Check for Kuadrant CRD
+  kubernetes.core.k8s_info:
+    api_version: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    name: kuadrants.kuadrant.io
+  register: r_kuadrant_crd
+  until: r_kuadrant_crd.resources | length > 0
+  retries: 30
+  delay: 20
+
 - name: Create the Connectivity Link instance
   kubernetes.core.k8s:
     state: present
