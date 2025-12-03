@@ -6,6 +6,10 @@
         domain: "{{ openshift_cluster_ingress_domain }}"
         apiUrl: "{{ openshift_api_url }}"
 
+# TODO: validate syntax of incoming application name
+# TODO: maybe use Argo to add label for all resources created for this tenant
+#  for cleanup purposes.  Maybe name of application becomes part of a label/annotation.
+
 - name: Debug _ocp4_workload_gitops_bootstrap_deployer_values
   ansible.builtin.debug:
     msg: "{{ _ocp4_workload_gitops_bootstrap_deployer_values | to_yaml }}"
@@ -19,7 +23,7 @@
   kubernetes.core.k8s_info:
     api_version: argoproj.io/v1alpha1
     kind: Application
-    name: bootstrap
+    name: bootstrap # variable
     namespace: openshift-gitops
   register: argocd_bootstrap
   retries: "{{ ocp4_workload_gitops_bootstrap_health_retries }}"
@@ -33,6 +37,7 @@
   - argocd_bootstrap.resources[0].status.sync.status == "Synced"
   ignore_errors: "{{ ocp4_workload_gitops_bootstrap_health_ignore | bool }}"
 
+# consider removing - test without and if validation below is enough.
 - name: Pause for a minute while the bootstrap app deploys
   ansible.builtin.pause:
     seconds: 60
@@ -43,7 +48,7 @@
     api_version: argoproj.io/v1alpha1
     kind: Application
     label_selectors:
-    - "demo.redhat.com/application"
+    - "demo.redhat.com/application"  # add extra label lookup based on what Argo creates above for bootstrap application
   register: _all_apps
   delay: 10
   retries: "{{ ocp4_workload_gitops_bootstrap_application_health_retries }}"
@@ -56,6 +61,7 @@
 
 #######
 ####### Begin processing GitOps output
+####### Consider removing
 #######
 
 - name: Retrieve ConfigMaps with the demo.redhat.com/userinfo label
@@ -63,7 +69,7 @@
     api_version: v1
     kind: ConfigMap
     label_selectors:
-    - "demo.redhat.com/userinfo"
+    - "demo.redhat.com/userinfo"  # as in application: add extra label lookup based on what Argo creates above for bootstrap application
   register: cm_userinfo
 
 - name: If ConfigMaps were found, process them
