@@ -1,17 +1,47 @@
 ---
 ocp4_workload_gitops_bootstrap_repo_url: http://gitea:3000/user/bootstrap
 ocp4_workload_gitops_bootstrap_repo_revision: main
+
+# Examples to support multi-tenancy:
+#
+#   Example 1: Backwards compatibility.  Deploys INFRA and N number of tenants
+#     ocp4_workload_gitops_bootstrap_application_name: 'bootstrap'
+#     ocp4_workload_gitops_bootstrap_repo_path: ""
+#     ocp4_workload_gitops_bootstrap_helm_values:
+#       user:
+#         count: 3
+#
+#   Example 2: Deploy ONLY the infra:
+#     ocp4_workload_gitops_bootstrap_application_name: 'bootstrap-infra'
+#     ocp4_workload_gitops_bootstrap_repo_path: infra
+#
+#   Example 3: Deploy ONE tenant
+#     ocp4_workload_gitops_bootstrap_application_name: 'bootstrap-tenant-{{ guid }}'
+#     ocp4_workload_gitops_bootstrap_repo_path: tenant
+
+ocp4_workload_gitops_bootstrap_application_name: bootstrap
 ocp4_workload_gitops_bootstrap_repo_path: ""
+#'bootstrap-tenant-{{ guid }}' or 'bootstrap-infra' or 'bootstrap'
+
+# We cannot do k8s_info on annotations,
+# so when deploying openshift_gitops,
+# you need to enable ocp4_workload_openshift_gitops_resource_tracking_method: "annotations+label"
 
 ocp4_workload_gitops_bootstrap_namespace: openshift-gitops
 
 # Helm values to override in the ArgoCD bootstrap application.
 ocp4_workload_gitops_bootstrap_helm_values: []
 
+# in Argo, application "health" is more important than "sync"
+# During development, it's usually safe to ignore "sync" errors in bootstrap
+# Developers must clean up sync errors before promoting to prod
 ocp4_workload_gitops_bootstrap_health_retries: 60
 ocp4_workload_gitops_bootstrap_health_ignore: true
 
 # wait 15 mninutes for apps to roll out
 ocp4_workload_gitops_bootstrap_application_wait: true
 ocp4_workload_gitops_bootstrap_application_health_retries: 90
-ocp4_workload_gitops_bootstrap_application_health_ignore: true
+# you really do want your apps to be healthy
+ocp4_workload_gitops_bootstrap_application_health_required: true
+
+ocp4_workload_gitops_bootstrap_application_sync_required: true # false is great for development
