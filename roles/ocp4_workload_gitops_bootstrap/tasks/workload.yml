@@ -27,8 +27,6 @@
 #   annotations:
 #     argocd.argoproj.io/tracking-id: 'bootstrap:argoproj.io/Application:openshift-gitops/infra-bootstrap'
 
-
-
 - name: Wait until bootstrap ArgoCD application is healthy and synced
   kubernetes.core.k8s_info:
     api_version: argoproj.io/v1alpha1
