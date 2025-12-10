@@ -254,17 +254,16 @@
     acs_route: "https://{{ r_acs_portal_route.resources[0].spec.host }}"
 
 - name: Print user info
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     msg: "{{ item }}"
   loop:
   - ""
-  - "Your RHACS console is available at:"
-  - "{{ acs_route }}"
+  - "Your RHACS console is available at: {{ acs_route }}"
   - "RHACS portal username: admin"
   - "RHACS portal password: {{ _ocp4_workload_rhacs_central_admin_password }}"
 
 - name: Save user data
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     data:
       acs_route: "{{ acs_route }}"
       acs_portal_username: admin
