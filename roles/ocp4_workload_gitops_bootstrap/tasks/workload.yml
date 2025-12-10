@@ -11,6 +11,10 @@
   ansible.builtin.debug:
     msg: "{{ _ocp4_workload_gitops_bootstrap_deployer_values | to_yaml }}"
 
+- name: Report boostrap application name
+  ansible.builtin.debug:
+    msg: "Deploying boostrap application: {{ ocp4_workload_gitops_bootstrap_application_name }}"
+
 - name: Create bootstrap ArgoCD application
   kubernetes.core.k8s:
     state: present
