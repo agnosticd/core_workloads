@@ -48,15 +48,15 @@
     register: r_ingress_config
     failed_when: r_ingress_config.resources | length < 1
 
-  - name: Use Provided Quay route hostname
+  - name: Use provided Quay route hostname
     when: ocp4_workload_quay_operator_registry_route | default("") | length > 0
     ansible.builtin.set_fact:
       _ocp4_workload_quay_operator_registry_route: "{{ ocp4_workload_quay_operator_registry_route }}"
 
-  - name: Otherwise use quay-{{guid}}.basedomain for the Quay route hostname
+  - name: Otherwise use default for the Quay route hostname
     when: ocp4_workload_quay_operator_registry_route | default("") | length == 0
     ansible.builtin.set_fact:
-      _ocp4_workload_quay_operator_registry_route: "quay-{{ guid }}.{{ r_ingress_config.resources[0].spec.domain }}"
+      _ocp4_workload_quay_operator_registry_route: "{{ ocp4_workload_quay_operator_registry_hostname }}.{{ openshift_cluster_ingress_domain }}"
 
   - name: Create Quay Registry Resources
     kubernetes.core.k8s:
@@ -163,3 +163,14 @@
         name: "{{ r_quay_registry.resources[0].status.configEditorCredentialsSecret }}"
         namespace: "{{ ocp4_workload_quay_operator_registry_namespace }}"
       register: r_config_editor_secret
+
+    - name: Save user data for Quay config editor
+      agnosticd.core.agnosticd_user_info:
+        msg: >-
+          "Red Hat Quay Config is available at {{ r_quay_registry.resources[0].status.configEditorEndpoint }}."
+          "- Config User: quayconfig."
+          "- Config Password: {{ r_config_editor_secret.resources[0].data.password | b64decode }}."
+        data:
+          quay_config_url: "{{ r_quay_registry.resources[0].status.configEditorEndpoint }}"
+          quay_config_username: "quayconfig"
+          quay_config_password: "{{ r_config_editor_secret.resources[0].data.password | b64decode }}"

@@ -61,8 +61,11 @@ ocp4_workload_quay_operator_registry_namespace: quay-enterprise
 # Name of the Quay Registry
 ocp4_workload_quay_operator_registry_name: quay
 
+# Quay hostname. Default is quay-{{ guid }}
+ocp4_workload_quay_operator_registry_hostname: "quay-{{ guid }}"
+
 # Quay Route. Can be overwritten with a fully qualified hostname.
-# When empty the route will be quay-{{guid}}.basedomain
+# When empty the route will be quay.basedomain
 ocp4_workload_quay_operator_registry_route: ""
 
 ocp4_workload_quay_operator_registry_display_name: "Red Hat Demo Platform Quay"
@@ -83,10 +86,3 @@ ocp4_workload_quay_operator_registry_clair_volume_size: 100Gi
 ocp4_workload_quay_operator_registry_enable_hpa: false
 ocp4_workload_quay_operator_registry_enable_mirror: false
 ocp4_workload_quay_operator_registry_enable_monitoring: false
-
-# ---------------------------------------
-# Internal variables. Don't set or change
-# ---------------------------------------
-_ocp4_workload_quay_operator_registry_route: ""
-_ocp4_workload_quay_operator_registry_admin_password: ""
-_ocp4_workload_quay_operator_registry_admin_token: ""
