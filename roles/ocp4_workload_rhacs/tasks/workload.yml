@@ -36,12 +36,19 @@
   retries: 30
   delay: 5
 
-- name: Generate random password for Central admin
+- name: Generate admin password
+  when: ocp4_workload_rhacs_central_admin_password | default('') | length == 0
   ansible.builtin.set_fact:
-    ocp4_workload_rhacs_central_admin_password: >-
-        {{ lookup('password', '/dev/null chars=ascii_letters,digits '
-           ~ 'length=18'
-        ) }}
+    _ocp4_workload_rhacs_central_admin_password: >-
+      {{ lookup('password', '/dev/null chars=ascii_letters,digits '
+          ~ 'length=' ~ ocp4_workload_rhacs_central_admin_password_length
+      ) }}
+
+- name: Use provided admin password
+  when: ocp4_workload_rhacs_central_admin_password | default('') | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_central_admin_password: >-
+      {{ ocp4_workload_rhacs_central_admin_password }}
 
 - name: Create Secret for Central admin password
   kubernetes.core.k8s:
@@ -53,7 +60,7 @@
         name: acs-password
         namespace: stackrox
       data:
-        password: "{{ ocp4_workload_rhacs_central_admin_password | b64encode }}"
+        password: "{{ _ocp4_workload_rhacs_central_admin_password | b64encode }}"
       type: Opaque
   register: r_k8s
   until: r_k8s is successful
@@ -91,7 +98,7 @@
     url: "https://{{ f_stackrox_central_addr }}/v1/ping"
     method: GET
     user: admin
-    password: "{{ ocp4_workload_rhacs_central_admin_password }}"
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
     force_basic_auth: true
     validate_certs: false
   register: result
@@ -150,7 +157,7 @@
     body: "{ \"name\": \"prod-{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=8') }}\"}"
     method: POST
     user: admin
-    password: "{{ ocp4_workload_rhacs_central_admin_password }}"
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
     body_format: json
     force_basic_auth: true
     validate_certs: false
@@ -230,3 +237,35 @@
   until: r_k8s is successful
   retries: 30
   delay: 5
+
+- name: Get the ACS portal route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: central
+    namespace: stackrox
+  register: r_acs_portal_route
+  until: r_acs_portal_route is successful
+  retries: 30
+  delay: 5
+
+- name: Set fact for ACS route
+  ansible.builtin.set_fact:
+    acs_route: "https://{{ r_acs_portal_route.resources[0].spec.host }}"
+
+- name: Print user info
+  agnosticd_user_info:
+    msg: "{{ item }}"
+  loop:
+  - ""
+  - "Your RHACS console is available at:"
+  - "{{ acs_route }}"
+  - "RHACS portal username: admin"
+  - "RHACS portal password: {{ _ocp4_workload_rhacs_central_admin_password }}"
+
+- name: Save user data
+  agnosticd_user_info:
+    data:
+      acs_route: "{{ acs_route }}"
+      acs_portal_username: admin
+      acs_portal_password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
