@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: bootstrap
+  name: "{{ ocp4_workload_gitops_bootstrap_application_name }}"
   namespace: {{ ocp4_workload_gitops_bootstrap_namespace }}
 spec:
   project: default
