@@ -52,7 +52,8 @@
 - name: Create Ansible Automation Platform
   kubernetes.core.k8s:
     state: present
-    template: aap.yaml.j2
+    resource_definition: "{{ lookup('template', 'aap.yaml.j2') | from_yaml | ansible.builtin.combine(ocp4_workload_ansible_automation_platform_aap_manifest_overrides | default({}), recursive=true) }}"
+    apply: true
 
 - name: Wait until the Ansible Automation Platform is fully deployed
   kubernetes.core.k8s_info:

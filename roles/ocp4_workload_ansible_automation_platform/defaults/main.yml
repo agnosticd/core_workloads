@@ -27,6 +27,8 @@ ocp4_workload_ansible_automation_platform_disable_eda: false
 ocp4_workload_ansible_automation_platform_disable_hub: true
 ocp4_workload_ansible_automation_platform_disable_lightspeed: true
 ocp4_workload_ansible_automation_platform_extra_wait_minutes: 10
+# Additional manifest overrides to be merged into the Template used to deploy AAP
+ocp4_workload_ansible_automation_platform_aap_manifest_overrides: {}
 
 # ---------------------------------------------------------------
 # OCP bearer token lifecycle
