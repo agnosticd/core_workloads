@@ -67,6 +67,7 @@
     template: "{{ item }}"
   loop:
   - clusterissuer.yaml.j2
+  - clusterissuer_fallback.yaml.j2
   - certificate-ingress.yaml.j2
   - certificate-api.yaml.j2
   register: r_clusterissuer
