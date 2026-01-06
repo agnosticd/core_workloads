@@ -2,7 +2,7 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: cert-manager-ingress-cert-fallback
+  name: cert-manager-ingress-cert
   namespace: openshift-ingress
 spec:
   isCA: false
@@ -17,5 +17,5 @@ spec:
   - "{{ _ocp4_workload_cert_manager_wildcard_domain }}"
   issuerRef:
     kind: ClusterIssuer
-    name: {{ ocp4_workload_cert_manager_provider_fallback }}-production-{{ ocp4_workload_cert_manager_cloud_provider }}-fallback
+    name: {{ ocp4_workload_cert_manager_provider }}-production-{{ ocp4_workload_cert_manager_cloud_provider }}
     group: cert-manager.io
