@@ -26,9 +26,9 @@ spec:
       dns01:
 {% if ocp4_workload_cert_manager_cloud_provider == "aws" and ocp4_workload_cert_manager_provider != "acme-bifrost" %}      
         route53:
-          region: {{ ocp4_workload_cert_manager_ec2_region }}
+          region: {{ ocp4_workload_cert_manager_aws_region }}
           hostedZoneID: {{ _ocp4_workload_cert_manager_hostedzoneid }}
-          accessKeyID: {{ ocp4_workload_cert_manager_ec2_access_key_id }}
+          accessKeyID: {{ ocp4_workload_cert_manager_aws_access_key_id }}
           secretAccessKeySecretRef:
             name: cert-manager-aws-creds
             key: aws_secret_access_key
@@ -60,7 +60,7 @@ spec:
           config:
             gatewayURL: {{ ocp4_workload_cert_manager_acme_bifrost_gateway_url }}
             caProvider: {{ ocp4_workload_cert_manager_acme_bifrost_ca_provider_fallback | default("letsencrypt") }}
-            region: {{ ocp4_workload_cert_manager_ec2_region }}
+            region: {{ ocp4_workload_cert_manager_aws_region }}
             zoneID: {{ _ocp4_workload_cert_manager_hostedzoneid }}
             accessKeyIDSecretRef:
               name: cert-manager-aws-creds
