@@ -94,7 +94,7 @@
     with_sequence: start=0 end={{ ocp4_workload_cert_manager_ingress_cert_max_retries }}
 
   - name: Update Ingress controller to use certificate
-    when: not r_certificate_ingress is failed
+    when: _ocp4_workload_cert_manager_ingress_cert_ready | default(false) | bool
     kubernetes.core.k8s:
       state: present
       template: default-ingress-controller.yaml.j2
@@ -107,7 +107,7 @@
     with_sequence: start=0 end={{ ocp4_workload_cert_manager_api_cert_max_retries }}
 
   - name: API Certificate successfull
-    when: not r_certificate_api is failed
+    when: _ocp4_workload_cert_manager_api_cert_ready | default(false) | bool
     block:
     - name: Update API server to use certificate
       kubernetes.core.k8s:
