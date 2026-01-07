@@ -93,7 +93,7 @@
     - name: Mark certificate ready
       when: not r_certificate_ingress is failed
       ansible.builtin.set_fact:
-        ingress_cert_ready: true
+        _ocp4_workload_cert_manager_ingress_cert_ready: true
     rescue:
     - name: Restart cert-manager on failure
       kubernetes.core.k8s:
@@ -123,4 +123,4 @@
     - name: Mark cert ready
       when: not r_certificate_ingress is failed
       ansible.builtin.set_fact:
-        ingress_cert_ready: true
+        _ocp4_workload_cert_manager_ingress_cert_ready: true
