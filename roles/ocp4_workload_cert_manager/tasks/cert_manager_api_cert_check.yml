@@ -38,20 +38,20 @@
 
   - name: Report fail on api certificate failure
     when:
-    - (_ocp4_workload_cert_manager_api_retry_count | int > api_cert_max_retries | int)
+    - (_ocp4_workload_cert_manager_api_retry_count | int > ocp4_workload_cert_manager_api_cert_max_retries | int)
     - r_certificate_api is failed
     block:
     - name: Print error message if requesting certificates failed
       when: ocp4_workload_cert_manager_ignore_errors | bool
       ansible.builtin.debug:
-        msg: "Requesting certificate for API servers failed after {{ api_cert_max_retries }} retries."
+        msg: "Requesting certificate for API servers failed after {{ ocp4_workload_cert_manager_api_cert_max_retries }} retries."
 
     - name: Fail if requesting certificates failed
       when:
       - not ocp4_workload_cert_manager_ignore_errors | bool
       - ocp4_workload_cert_manager_provider_fallback == ""
       ansible.builtin.fail:
-        msg: "Requesting certificate for API servers failed after {{ api_cert_max_retries }} retries."
+        msg: "Requesting certificate for API servers failed after {{ ocp4_workload_cert_manager_api_cert_max_retries }} retries."
 
   - name: Try fallback provider if defined
     when:
