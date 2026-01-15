@@ -118,7 +118,7 @@
   when: ocp4_workload_cert_manager_provider_fallback | default("") != ""
   kubernetes.core.k8s:
     state: present
-    template: "clusterissuer-fallback.yaml.j2
+    template: "clusterissuer-fallback.yaml.j2"
 
 - name: Install Ingress controller certificate
   when: ocp4_workload_cert_manager_install_ingress_certificates | bool
