@@ -1,0 +1,59 @@
+---
+# =============================================================================
+# Field Content Workload - Variable Defaults
+# =============================================================================
+# This role creates an ArgoCD Application pointing to a developer's GitOps
+# repository. The repository must be a Helm chart.
+#
+# Automatically injected values available in your Helm chart:
+#   deployer.domain  - Cluster ingress domain (e.g., apps.cluster.example.com)
+#   deployer.apiUrl  - Cluster API URL (e.g., https://api.cluster.example.com:6443)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Required: Developer's GitOps repository URL
+# -----------------------------------------------------------------------------
+ocp4_workload_field_content_gitops_repo_url: ""
+
+# -----------------------------------------------------------------------------
+# Optional: Git revision and path
+# -----------------------------------------------------------------------------
+# Git branch, tag, or commit to deploy
+ocp4_workload_field_content_gitops_repo_revision: main
+
+# Path within the repository (empty = root of repo)
+ocp4_workload_field_content_gitops_repo_path: ""
+
+# -----------------------------------------------------------------------------
+# Optional: ArgoCD configuration
+# -----------------------------------------------------------------------------
+# Namespace where the ArgoCD Application will be created
+ocp4_workload_field_content_namespace: openshift-gitops
+
+# Additional Helm values merged with auto-injected deployer values
+# Example:
+#   ocp4_workload_field_content_helm_values:
+#     myApp:
+#       replicas: 3
+ocp4_workload_field_content_helm_values: {}
+
+# -----------------------------------------------------------------------------
+# Health check configuration
+# -----------------------------------------------------------------------------
+# Retries when waiting for the field-content ArgoCD Application to sync
+ocp4_workload_field_content_health_retries: 60
+
+# Continue if health check fails (true = warn only, false = fail the playbook)
+ocp4_workload_field_content_health_ignore: true
+
+# -----------------------------------------------------------------------------
+# Application monitoring (for apps with demo.redhat.com/application label)
+# -----------------------------------------------------------------------------
+# Wait for all labeled applications to be healthy before completing
+ocp4_workload_field_content_application_wait: true
+
+# Retries when waiting for labeled applications
+ocp4_workload_field_content_application_health_retries: 90
+
+# Continue if application health check fails
+ocp4_workload_field_content_application_health_ignore: true
