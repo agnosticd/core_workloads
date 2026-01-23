@@ -37,6 +37,9 @@
 # This would be necessary to get user data back to display in the RHDP UI,
 # but we would have to wait for the workloads to succeed.
 
+# We would also need to add waits and checks earlier to make sure
+# the app is enabled and healthy
+
 #######
 ####### Begin processing GitOps output
 #######
