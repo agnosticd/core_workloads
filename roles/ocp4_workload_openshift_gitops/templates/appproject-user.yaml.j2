@@ -13,6 +13,9 @@ spec:
     server: https://kubernetes.default.svc
   sourceRepos:
   - "*"
+  clusterResourceWhitelist:
+  - group: ""
+    kind: Namespace
   roles:
   - name: user-role
     description: "Role for {{ _username }}"
