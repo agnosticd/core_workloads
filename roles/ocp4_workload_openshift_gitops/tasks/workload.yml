@@ -51,6 +51,17 @@
     state: patched
     template: openshift-gitops.yaml.j2
 
+- name: Create per-user AppProjects
+  when: ocp4_workload_openshift_gitops_per_user_access | bool
+  kubernetes.core.k8s:
+    state: present
+    template: appproject-user.yaml.j2
+  loop: "{{ range(1, ocp4_workload_openshift_gitops_user_count | int + 1) | list }}"
+  loop_control:
+    loop_var: _user_num
+  vars:
+    _username: "{{ ocp4_workload_openshift_gitops_user_base }}{{ _user_num }}"
+
 - name: Attempt to install the ArgoCD CLI to the bastion
   when: ocp4_workload_openshift_gitops_install_cli_tools | bool
   block:

@@ -135,8 +135,27 @@ ocp4_workload_openshift_gitops_kustomize_plugin_env: []
 ocp4_workload_openshift_gitops_resource_tracking_method: ""
 
 # --------------------------------
-# Operator Catalog Snapshot Settings
+# Per-User Application Visibility
 # --------------------------------
+# Enable per-user AppProject creation for multi-tenant Argo CD access
+# This allows regular users to log into the System ArgoCD console and see only their own Applications.
+# Make sure all target namespaces for Applications or ApplicationSets for individual users are named "namespace-<username>"
+ocp4_workload_openshift_gitops_per_user_access: false
+
+# Number of users to create AppProjects for (user1, user2, ..., userN)
+ocp4_workload_openshift_gitops_user_count: 0
+
+# Base username prefix (e.g., "user" results in user1, user2, etc.)
+ocp4_workload_openshift_gitops_user_base: user
+
+# Prefix for AppProject names (e.g., "appproject-" results in appproject-user1, appproject-user2)
+# Any Application or ApplicationSet that belongs to the user should have a .spec.project: <appproject-prefix><username>
+#     For example in an ApplicationSet: .spec.project: appproject-{{ user }}
+ocp4_workload_openshift_gitops_user_project_prefix: "appproject-"
+
+# ----------------------------------
+# Operator Catalog Snapshot Settings
+# ----------------------------------
 # See https://github.com/redhat-cop/agnosticd/blob/development/docs/Operator_Catalog_Snapshots.adoc
 # for instructions on how to set up catalog snapshot images
 

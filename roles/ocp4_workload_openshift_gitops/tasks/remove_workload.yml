@@ -20,6 +20,16 @@
     state: absent
     src: clusterrolebinding.yaml
 
+- name: Remove per-user AppProjects
+  when: ocp4_workload_openshift_gitops_per_user_access | bool
+  kubernetes.core.k8s:
+    state: absent
+    api_version: argoproj.io/v1alpha1
+    kind: AppProject
+    namespace: openshift-gitops
+    label_selectors:
+      - app.kubernetes.io/managed-by=agnosticd
+
 - name: Remove openshift-gitops namespace
   kubernetes.core.k8s:
     state: absent
