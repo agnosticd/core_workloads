@@ -14,8 +14,10 @@ spec:
   sourceRepos:
   - "*"
   clusterResourceWhitelist:
-  - group: ""
-    kind: Namespace
+{% for resource in ocp4_workload_openshift_gitops_user_cluster_resource_whitelist %}
+  - group: "{{ resource.group }}"
+    kind: {{ resource.kind }}
+{% endfor %}
   roles:
   - name: user-role
     description: "Role for {{ _username }}"

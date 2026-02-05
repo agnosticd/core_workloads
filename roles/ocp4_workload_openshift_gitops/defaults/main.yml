@@ -153,6 +153,16 @@ ocp4_workload_openshift_gitops_user_base: user
 #     For example in an ApplicationSet: .spec.project: appproject-{{ user }}
 ocp4_workload_openshift_gitops_user_project_prefix: "appproject-"
 
+# Cluster-scoped resources allowed in per-user AppProjects
+# Add additional resources as needed (e.g., ClusterRole, ClusterRoleBinding, etc.)
+ocp4_workload_openshift_gitops_user_cluster_resource_whitelist:
+- group: ""
+  kind: Namespace
+- group: rbac.authorization.k8s.io
+  kind: ClusterRole
+- group: rbac.authorization.k8s.io
+  kind: ClusterRoleBinding
+
 # ----------------------------------
 # Operator Catalog Snapshot Settings
 # ----------------------------------
