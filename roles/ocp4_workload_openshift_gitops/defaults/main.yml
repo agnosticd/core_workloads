@@ -152,3 +152,18 @@ ocp4_workload_openshift_gitops_catalog_snapshot_image: quay.io/gpte-devops-autom
 
 # Catalog snapshot image tag
 ocp4_workload_openshift_gitops_catalog_snapshot_image_tag: v4.19_2025_07_21
+
+# --------------------------------
+# Per-User Application Visibility
+# --------------------------------
+# Enable per-user AppProject creation for multi-tenant Argo CD access
+ocp4_workload_openshift_gitops_per_user_access: false
+
+# Number of users to create AppProjects for (user1, user2, ..., userN)
+ocp4_workload_openshift_gitops_user_count: 0
+
+# Base username prefix (e.g., "user" results in user1, user2, etc.)
+ocp4_workload_openshift_gitops_user_base: user
+
+# Prefix for AppProject names (e.g., "user-" results in user-user1, user-user2)
+ocp4_workload_openshift_gitops_user_project_prefix: "user-"

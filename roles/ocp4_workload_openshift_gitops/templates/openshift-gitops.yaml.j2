@@ -9,11 +9,11 @@ spec:
 {% if ocp4_workload_openshift_gitops_resource_tracking_method | length > 0 %}
   resourceTrackingMethod: {{ ocp4_workload_openshift_gitops_resource_tracking_method }}
 {% endif %}
-{% if ocp4_workload_openshift_gitops_rbac_update | default(false) | bool %}
+{% if ocp4_workload_openshift_gitops_rbac_update | default(false) | bool or ocp4_workload_openshift_gitops_per_user_access | default(false) | bool %}
   rbac:
     policy: |
       {{ ocp4_workload_openshift_gitops_rbac_policy | indent(6) }}
-    scopes: '{{ ocp4_workload_openshift_gitops_rbac_scopes | default(omit) }}'
+    scopes: '[groups, preferred_username]'
 {% endif %}
   applicationSet:
 {% if ocp4_workload_openshift_gitops_applicationset_controller_update | default(false) | bool %}

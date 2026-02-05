@@ -1,0 +1,22 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ ocp4_workload_openshift_gitops_user_project_prefix }}{{ _username }}
+  namespace: openshift-gitops
+  labels:
+    app.kubernetes.io/managed-by: agnosticd
+spec:
+  description: "Project for {{ _username }}"
+  destinations:
+    - namespace: "*-{{ _username }}"
+      server: https://kubernetes.default.svc
+  sourceRepos:
+    - "*"
+  roles:
+    - name: user-role
+      description: "Role for {{ _username }}"
+      policies:
+        - p, proj:{{ ocp4_workload_openshift_gitops_user_project_prefix }}{{ _username }}:user-role, applications, *, {{ ocp4_workload_openshift_gitops_user_project_prefix }}{{ _username }}/*, allow
+      groups:
+        - "{{ _username }}"
