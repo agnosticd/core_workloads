@@ -137,6 +137,7 @@ ocp4_workload_openshift_gitops_resource_tracking_method: ""
 # --------------------------------
 # Per-User Application Visibility
 # --------------------------------
+# Make sure all namespaces for individual users are named "namespace-<username>"
 # Enable per-user AppProject creation for multi-tenant Argo CD access
 ocp4_workload_openshift_gitops_per_user_access: false
 
@@ -146,8 +147,8 @@ ocp4_workload_openshift_gitops_user_count: 0
 # Base username prefix (e.g., "user" results in user1, user2, etc.)
 ocp4_workload_openshift_gitops_user_base: user
 
-# Prefix for AppProject names (e.g., "user-" results in user-user1, user-user2)
-ocp4_workload_openshift_gitops_user_project_prefix: "user-"
+# Prefix for AppProject names (e.g., "appproject-" results in appproject-user1, appproject-user2)
+ocp4_workload_openshift_gitops_user_project_prefix: "appproject-"
 
 # ----------------------------------
 # Operator Catalog Snapshot Settings
