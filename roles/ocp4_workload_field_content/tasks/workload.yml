@@ -4,17 +4,70 @@
     msg: "ocp4_workload_field_content_gitops_repo_url is required but not provided"
   when: ocp4_workload_field_content_gitops_repo_url == "" or ocp4_workload_field_content_gitops_repo_url is not defined
 
-- name: Set _ocp4_workload_field_content_deployer_values
+# ===================================================================
+# Check for LiteMaaS credentials (optional - passed from AgnosticV)
+# ===================================================================
+# AgnosticV reads from agnosticd_user_data and passes as workload variables
+- name: Check if LiteMaaS credentials are available
+  ansible.builtin.set_fact:
+    _litemaas_api_url: "{{ ocp4_workload_field_content_litemaas_api_url | default('') }}"
+    _litemaas_api_key: "{{ ocp4_workload_field_content_litemaas_api_key | default('') }}"
+    _litemaas_model: "{{ ocp4_workload_field_content_litemaas_model | default('llama-scout-17b') }}"
+
+- name: Set LiteMaaS availability flag
+  ansible.builtin.set_fact:
+    _litemaas_available: "{{ _litemaas_api_url != '' and _litemaas_api_key != '' }}"
+
+- name: Debug LiteMaaS credentials status
+  ansible.builtin.debug:
+    msg: |
+      LiteMaaS credentials available: {{ _litemaas_available }}
+      API URL: {{ _litemaas_api_url if _litemaas_available else 'not set' }}
+      Model: {{ _litemaas_model if _litemaas_available else 'not set' }}
+
+# ===================================================================
+# Build Helm values
+# ===================================================================
+- name: Set deployer values (always included)
   ansible.builtin.set_fact:
     _ocp4_workload_field_content_deployer_values:
       deployer:
         domain: "{{ openshift_cluster_ingress_domain }}"
         apiUrl: "{{ openshift_api_url }}"
 
-- name: Debug _ocp4_workload_field_content_deployer_values
-  ansible.builtin.debug:
-    msg: "{{ _ocp4_workload_field_content_deployer_values | to_yaml }}"
+- name: Add LiteMaaS credentials to Helm values (if available)
+  ansible.builtin.set_fact:
+    _ocp4_workload_field_content_litemaas_values:
+      litemaas:
+        enabled: true
+        apiUrl: "{{ _litemaas_api_url }}"
+        apiKey: "{{ _litemaas_api_key }}"
+        model: "{{ _litemaas_model }}"
+  when: _litemaas_available | bool
 
+- name: Set empty LiteMaaS values (if not available)
+  ansible.builtin.set_fact:
+    _ocp4_workload_field_content_litemaas_values:
+      litemaas:
+        enabled: false
+  when: not (_litemaas_available | bool)
+
+- name: Combine all Helm values
+  ansible.builtin.set_fact:
+    _ocp4_workload_field_content_all_values: >-
+      {{
+        ocp4_workload_field_content_helm_values | default({})
+        | combine(_ocp4_workload_field_content_deployer_values)
+        | combine(_ocp4_workload_field_content_litemaas_values)
+      }}
+
+- name: Debug final Helm values
+  ansible.builtin.debug:
+    msg: "{{ _ocp4_workload_field_content_all_values | to_yaml }}"
+
+# ===================================================================
+# Deploy via ArgoCD
+# ===================================================================
 - name: Create field content ArgoCD application
   kubernetes.core.k8s:
     state: present
@@ -32,62 +85,3 @@
   until:
   - argocd_field_content.resources | length > 0
   failed_when: argocd_field_content.resources | length == 0
-
-# Saving this for possibly enabling in the future
-# This would be necessary to get user data back to display in the RHDP UI,
-# but we would have to wait for the workloads to succeed.
-
-# We would also need to add waits and checks earlier to make sure
-# the app is enabled and healthy
-
-#######
-####### Begin processing GitOps output
-#######
-
-# - name: Retrieve ConfigMaps with the demo.redhat.com/userinfo label
-#   kubernetes.core.k8s_info:
-#     api_version: v1
-#     kind: ConfigMap
-#     label_selectors:
-#     - "demo.redhat.com/userinfo"
-#   register: cm_userinfo
-
-# - name: If ConfigMaps were found, process them
-#   when:
-#   - cm_userinfo.resources is defined
-#   - cm_userinfo.resources | length | int > 0
-#   block:
-#   - name: Add to agnosticd_user_info all data from ConfigMaps except configmap.data.users_json data
-#     agnosticd.core.agnosticd_user_info:
-#       data: >-
-#         {{ item | dict2items | selectattr('key', 'ne', 'users_json') | items2dict }}
-#     loop: "{{ cm_userinfo.resources | map(attribute='data') }}"
-
-#   - name: Prepare data_user_json to add to agnosticd_user_info
-#     ansible.builtin.debug:
-#       msg: "Prepare data_user_json to add to agnosticd_user_info"
-
-#   - name: Merge list of all users_json data from all ConfigMaps that have data.users_json
-#     ansible.builtin.set_fact:
-#       data_users_json: "{{ data_users_json | default([]) | combine(item.data.users_json | from_json, recursive=True) }}"
-#     loop: "{{ cm_userinfo.resources }}"
-#     when: item.data.users_json is defined
-
-#   - name: Handle data_users_json data
-#     when: data_users_json is defined
-#     block:
-#     - name: Debug merged data_users_json data
-#       ansible.builtin.debug:
-#         msg: "{{ data_users_json }}"
-
-#     - name: Add to agnosticd_user_info all configmap.data.users_json ConfigMap data
-#       agnosticd.core.agnosticd_user_info:
-#         user: "{{ item.key }}"
-#         data:
-#           "{{ item.value }}"
-#       loop: "{{ data_users_json.users | dict2items }}"
-#       when: data_users_json is defined
-
-# - name: Debug user_data
-#   ansible.builtin.debug:
-#     msg: "{{ lookup('agnosticd_user_data', '*') }}"
