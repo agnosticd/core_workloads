@@ -34,6 +34,10 @@
       deployer:
         domain: "{{ openshift_cluster_ingress_domain }}"
         apiUrl: "{{ openshift_api_url }}"
+      gitops:
+        repoURL: "{{ ocp4_workload_field_content_gitops_repo_url }}"
+        revision: "{{ ocp4_workload_field_content_gitops_repo_revision }}"
+        path: "{{ ocp4_workload_field_content_gitops_repo_path }}"
 
 - name: Add LiteMaaS credentials to Helm values (if available)
   ansible.builtin.set_fact:
