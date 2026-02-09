@@ -4,9 +4,39 @@
 # -----------------------------------------------
 # Base of the users for htpasswd
 ocp4_workload_authentication_htpasswd_user_base: user
-# Override option for user name when user_count==1
-ocp4_workload_authentication_htpasswd_user_name: "{{ ocp4_workload_authentication_htpasswd_user_base }}1"
-ocp4_workload_authentication_htpasswd_user_count: "{{ user_count | default(num_users) | default(10) | int }}"
+ocp4_workload_authentication_htpasswd_user_count: "{{ num_users | default(0) | int }}"
+
+# Default just create an admin named user
+ocp4_workload_authentication_htpasswd_named_users_default:
+- name: "{{ ocp4_workload_authentication_htpasswd_admin_user }}"
+  cluster_role: "{{ ocp4_workload_authentication_htpasswd_admin_cluster_role }}"
+  # Use admin password if set, otherwise use common named user password if set.
+  # If neither are set then a password will be generated.
+  password: >-
+    {{ ocp4_workload_authentication_htpasswd_admin_password
+     | default(ocp4_workload_authentication_htpasswd_named_user_password, true)
+    }}
+  password_length: "{{ ocp4_workload_authentication_htpasswd_admin_password_length }}"
+
+
+ocp4_workload_authentication_htpasswd_named_user_password: ""
+ocp4_workload_authentication_htpasswd_named_user_password_randomized: true
+
+# Additional named users
+# COMPATIBILITY HACK!
+# One numbered user (num_users) should behave the same as many, but for compatibility with
+# the old weird behavior we need to handle a single user as a named user.
+ocp4_workload_authentication_htpasswd_single_user_compatibility_hack: >-
+  {{ ocp4_workload_authentication_htpasswd_user_count | int == 1 }}
+ocp4_workload_authentication_htpasswd_user_name: "{{ ocp4_workload_authentication_htpasswd_user_base }}"
+ocp4_workload_authentication_htpasswd_named_users: >-
+  {{
+    [{"name": ocp4_workload_authentication_htpasswd_user_name}]
+    if ocp4_workload_authentication_htpasswd_single_user_compatibility_hack | bool else []
+  }}
+
+# Override for named users to prevent admin user creation
+#ocp4_workload_authentication_htpasswd_named_users_override: []
 
 # If true then generate a unique password of specified length for every user
 # Also if true then a provided user password will be ignored.
@@ -23,9 +53,12 @@ ocp4_workload_authentication_htpasswd_user_password_length: 16
 # -----------------------------------------------
 ocp4_workload_authentication_htpasswd_admin_user: admin
 
+# Cluster role to define for admin user
+ocp4_workload_authentication_htpasswd_admin_cluster_role: cluster-admin
+
 # Set a password for the admin user
 # If no password is provided a random password will be generated
-# ocp4_workload_authentication_htpasswd_admin_password: ""
+ocp4_workload_authentication_htpasswd_admin_password: ""
 ocp4_workload_authentication_htpasswd_admin_password_length: 16
 
 # -----------------------------------------------
@@ -39,5 +72,6 @@ ocp4_workload_authentication_htpasswd_remove_kubeadmin: true
 # If set to false then no agnosticd_user_info will be reported
 ocp4_workload_authentication_htpasswd_enable_user_info_messages: true
 
-# Only report per-user messages if number of users is greater than one
-ocp4_workload_authentication_htpasswd_enable_user_info_data: "{{ ocp4_workload_authentication_htpasswd_user_count | int > 1 }}"
+# Report user data for numbered users. This can be disabled if numbered
+# users should be created in the auth service but not reported.
+ocp4_workload_authentication_htpasswd_enable_user_info_data: true

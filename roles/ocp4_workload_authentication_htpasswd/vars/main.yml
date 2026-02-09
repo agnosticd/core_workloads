@@ -2,7 +2,18 @@
 # Internal variables, do not set
 _ocp4_workload_authentication_htpasswd_user_password: ""
 _ocp4_workload_authentication_htpasswd_user_passwords: []
-_ocp4_workload_authentication_htpasswd_admin_password: ""
+_ocp4_workload_authentication_htpasswd_named_user_password: ""
+_ocp4_workload_authentication_htpasswd_named_user_passwords: {}
 _ocp4_workload_authentication_htpasswd_cluster_ingress_domain: ""
 _ocp4_workload_authentication_htpasswd_console_route: ""
 _ocp4_workload_authentication_htpasswd_api_server: ""
+_ocp4_workload_authentication_htpasswd_named_users: >-
+  {{ ocp4_workload_authentication_htpasswd_named_users_override
+  if ocp4_workload_authentication_htpasswd_named_users_override is defined else
+  (ocp4_workload_authentication_htpasswd_named_users_default + ocp4_workload_authentication_htpasswd_named_users)
+  }}
+# Compatibility hack treats the single user case as a named user with no numbered users.
+_ocp4_workload_authentication_htpasswd_user_count: >-
+  {{ 0 if ocp4_workload_authentication_htpasswd_single_user_compatibility_hack | bool else
+    ocp4_workload_authentication_htpasswd_user_count
+  }}
