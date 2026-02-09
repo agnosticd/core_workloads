@@ -8,6 +8,16 @@ ocp4_workload_authentication_htpasswd_user_base: user
 ocp4_workload_authentication_htpasswd_user_name: "{{ ocp4_workload_authentication_htpasswd_user_base }}1"
 ocp4_workload_authentication_htpasswd_user_count: "{{ user_count | default(num_users) | default(10) | int }}"
 
+# List of named users to create. Each entry is a dict with 'name' and
+# optional 'password'. If password is omitted the common user password
+# is used. Named user data is reported as flat provision data.
+# Example:
+#   ocp4_workload_authentication_htpasswd_named_users:
+#   - name: alice
+#     password: secretA
+#   - name: bob
+# ocp4_workload_authentication_htpasswd_named_users: []
+
 # If true then generate a unique password of specified length for every user
 # Also if true then a provided user password will be ignored.
 ocp4_workload_authentication_htpasswd_user_password_randomized: false

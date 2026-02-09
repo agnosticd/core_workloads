@@ -1,0 +1,6 @@
+---
+# Internal variables, do not set
+_ocp4_workload_authentication_keycloak_user_password: ""
+_ocp4_workload_authentication_keycloak_user_passwords: []
+_ocp4_workload_authentication_keycloak_admin_password: ""
+_ocp4_workload_authentication_keycloak_openshift_client_secret: ""

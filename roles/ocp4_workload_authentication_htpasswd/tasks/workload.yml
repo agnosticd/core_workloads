@@ -1,8 +1,6 @@
 ---
 
 - name: Save OpenShift access facts
-  vars:
-    _ingress_config: "{{ r_ingress_config.resources[0] }}"
   ansible.builtin.set_fact:
     _ocp4_workload_authentication_htpasswd_cluster_ingress_domain: "{{ openshift_cluster_ingress_domain }}"
     _ocp4_workload_authentication_htpasswd_console_route: "https://console-openshift-console.{{ openshift_cluster_ingress_domain }}"

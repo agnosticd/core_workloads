@@ -3,44 +3,103 @@
 # Keycloak Operator
 # --------------------------------
 
+# Namespace for Keycloak operator and instance
 ocp4_workload_authentication_keycloak_namespace: keycloak
 
+# PostgreSQL database user for Keycloak backend
 ocp4_workload_authentication_keycloak_pgsql_user: keycloak
 
+# PostgreSQL database password (auto-generated if not provided)
 ocp4_workload_authentication_keycloak_pgsql_password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits '~ 'length=' ~ 10) }}"
 
+# Operator subscription channel
 ocp4_workload_authentication_keycloak_channel: stable-v26.2
 
+# Automatically approve operator install plans
 ocp4_workload_authentication_keycloak_automatic_install_plan_approval: true
 
+# Pin to a specific ClusterServiceVersion (empty = latest in channel)
 ocp4_workload_authentication_keycloak_starting_csv: ""
 
+# Use a custom CatalogSource instead of the default OperatorHub
 ocp4_workload_authentication_keycloak_use_catalog_source: false
 
+# Custom CatalogSource image and tag (only used when use_catalog_source is true)
 ocp4_workload_authentication_keycloak_catalogsource_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
-
 ocp4_workload_authentication_keycloak_catalogsource_tag: v4.20_2025_10_23
 
+# Keycloak realm name for SSO
 ocp4_workload_authentication_keycloak_default_realm: sso
 
-ocp4_workload_authentication_keycloak_num_users: 1
+# OpenShift OAuth client secret for Keycloak integration
+# If not provided a random secret will be generated
+# ocp4_workload_authentication_keycloak_openshift_client_secret: ""
 
-ocp4_workload_authentication_keycloak_admin_create: true
-
-ocp4_workload_authentication_keycloak_admin_username: admin
-
-ocp4_workload_authentication_keycloak_admin_password: ""
-
-ocp4_workload_authentication_keycloak_user_username_base: user
-
-ocp4_workload_authentication_keycloak_user_password: ""
-
-ocp4_workload_authentication_keycloak_openshift_client_secret: ""
-
+# OpenShift OAuth client ID registered in Keycloak
 ocp4_workload_authentication_keycloak_openshift_client_id: idp-4-ocp
 
+# --------------------------------
+# User settings
+# --------------------------------
+# Base of the usernames for keycloak users
+ocp4_workload_authentication_keycloak_user_username_base: user
+# Override option for user name when user_count==1
+ocp4_workload_authentication_keycloak_user_name: "{{ ocp4_workload_authentication_keycloak_user_username_base }}1"
+# Number of bulk users to create (user1..userN). Set to 0 for no bulk users.
+# Backward compatible: also accepts ocp4_workload_authentication_keycloak_num_users
+ocp4_workload_authentication_keycloak_user_count: >-
+  {{ ocp4_workload_authentication_keycloak_num_users
+   | default(user_count)
+   | default(num_users)
+   | default(1)
+   | int }}
+
+# List of named users to create. Each entry is a dict with 'name' and
+# optional 'password'. If password is omitted the common user password
+# is used. Named user data is reported as flat provision data.
+# Example:
+#   ocp4_workload_authentication_keycloak_named_users:
+#   - name: alice
+#     password: secretA
+#   - name: bob
+# ocp4_workload_authentication_keycloak_named_users: []
+
+# If true then generate a unique password of specified length for every user
+# Also if true then a provided user password will be ignored.
+ocp4_workload_authentication_keycloak_user_password_randomized: false
+
+# Set a password for all keycloak users
+# If no password is provided a common random password will be generated
+# ocp4_workload_authentication_keycloak_user_password: ""
+# Length of generated passwords
+ocp4_workload_authentication_keycloak_user_password_length: 16
+
+# --------------------------------
+# Admin user
+# --------------------------------
+# Create an OpenShift cluster admin user in Keycloak
+ocp4_workload_authentication_keycloak_admin_create: true
+# Admin username for cluster admin role binding
+ocp4_workload_authentication_keycloak_admin_username: admin
+
+# Set a password for the admin user
+# If no password is provided a random password will be generated
+# ocp4_workload_authentication_keycloak_admin_password: ""
+ocp4_workload_authentication_keycloak_admin_password_length: 16
+
+# --------------------------------
+# Kubeadmin
+# --------------------------------
+
+# Remove Kubeadmin user upon successful installation of Authentication
 ocp4_workload_authentication_keycloak_remove_kubeadmin: false
 
+# --------------------------------
+# User info reporting
+# --------------------------------
+
+# If set to false then no agnosticd_user_info will be reported
 ocp4_workload_authentication_keycloak_enable_user_info_messages: true
 
-ocp4_workload_authentication_keycloak_enable_user_info_data: "{{ ocp4_workload_authentication_keycloak_num_users | int > 1 }}"
+# Only report per-user messages if number of users is greater than one
+ocp4_workload_authentication_keycloak_enable_user_info_data: "{{ ocp4_workload_authentication_keycloak_user_count | int > 1 }}"

@@ -31,18 +31,37 @@ spec:
           description: "Default user role"
         - name: admin
           description: "Administrator role"
-{% if ocp4_workload_authentication_keycloak_num_users > 0 or ocp4_workload_authentication_keycloak_admin_create %}
+{% if ocp4_workload_authentication_keycloak_user_count | int > 0 or ocp4_workload_authentication_keycloak_admin_create or (ocp4_workload_authentication_keycloak_named_users | default([]) | length > 0) %}
     users:
-{% for i in range(1, ocp4_workload_authentication_keycloak_num_users + 1) %}
-      - username: {{ ocp4_workload_authentication_keycloak_user_username_base }}{{ i }}
+{% for i in range(0, ocp4_workload_authentication_keycloak_user_count | int) %}
+{% if ocp4_workload_authentication_keycloak_user_count | int == 1 %}
+{% set _username = ocp4_workload_authentication_keycloak_user_name %}
+{% else %}
+{% set _username = ocp4_workload_authentication_keycloak_user_username_base ~ (i + 1) %}
+{% endif %}
+      - username: {{ _username }}
         enabled: true
         emailVerified: true
-        email: {{ ocp4_workload_authentication_keycloak_user_username_base }}{{ i }}@demo.redhat.com
-        firstName: {{ ocp4_workload_authentication_keycloak_user_username_base | capitalize }}{{ i }}
+        email: {{ _username }}@demo.redhat.com
+        firstName: {{ _username | capitalize }}
         lastName: Demo
         credentials:
           - type: password
-            value: {{ _ocp4_workload_authentication_keycloak_user_password }}
+            value: {{ _ocp4_workload_authentication_keycloak_user_passwords[i] }}
+            temporary: false
+        realmRoles:
+          - user
+{% endfor %}
+{% for named_user in ocp4_workload_authentication_keycloak_named_users | default([]) %}
+      - username: {{ named_user.name }}
+        enabled: true
+        emailVerified: true
+        email: {{ named_user.name }}@demo.redhat.com
+        firstName: {{ named_user.name | capitalize }}
+        lastName: Demo
+        credentials:
+          - type: password
+            value: {{ named_user.password | default(_ocp4_workload_authentication_keycloak_user_password) }}
             temporary: false
         realmRoles:
           - user
@@ -67,4 +86,3 @@ spec:
     groups:
       - name: admins
       - name: users
-
