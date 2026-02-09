@@ -1,0 +1,95 @@
+---
+- name: Validate field content repository URL is provided
+  ansible.builtin.fail:
+    msg: "ocp4_workload_field_content_gitops_repo_url is required but not provided"
+  when: ocp4_workload_field_content_gitops_repo_url == "" or ocp4_workload_field_content_gitops_repo_url is not defined
+
+# ===================================================================
+# Check for LiteMaaS credentials (optional - passed from AgnosticV)
+# ===================================================================
+- name: Check LiteMaaS credentials
+  when: ocp4_workload_field_content_litemaas_api_url != "" and ocp4_workload_field_content_litemaas_api_key != ""
+  block:
+    - name: Set LiteMaaS credentials
+      ansible.builtin.set_fact:
+        _litemaas_api_url: "{{ ocp4_workload_field_content_litemaas_api_url }}"
+        _litemaas_api_key: "{{ ocp4_workload_field_content_litemaas_api_key }}"
+        _litemaas_model: "{{ ocp4_workload_field_content_litemaas_model }}"
+        _litemaas_available: true
+
+    - name: Debug LiteMaaS credentials status
+      ansible.builtin.debug:
+        msg: |
+          LiteMaaS credentials available: true
+          API URL: {{ _litemaas_api_url }}
+          Model: {{ _litemaas_model }}
+
+- name: Set LiteMaaS unavailable
+  when: ocp4_workload_field_content_litemaas_api_url == "" or ocp4_workload_field_content_litemaas_api_key == ""
+  ansible.builtin.set_fact:
+    _litemaas_available: false
+
+# ===================================================================
+# Build Helm values
+# ===================================================================
+- name: Set deployer values (always included)
+  ansible.builtin.set_fact:
+    _ocp4_workload_field_content_deployer_values:
+      deployer:
+        domain: "{{ openshift_cluster_ingress_domain }}"
+        apiUrl: "{{ openshift_api_url }}"
+      gitops:
+        repoURL: "{{ ocp4_workload_field_content_gitops_repo_url }}"
+        revision: "{{ ocp4_workload_field_content_gitops_repo_revision }}"
+        path: "{{ ocp4_workload_field_content_gitops_repo_path }}"
+
+- name: Add LiteMaaS credentials to Helm values (if available)
+  ansible.builtin.set_fact:
+    _ocp4_workload_field_content_litemaas_values:
+      litemaas:
+        enabled: true
+        apiUrl: "{{ _litemaas_api_url }}"
+        apiKey: "{{ _litemaas_api_key }}"
+        model: "{{ _litemaas_model }}"
+  when: _litemaas_available | bool
+
+- name: Set empty LiteMaaS values (if not available)
+  ansible.builtin.set_fact:
+    _ocp4_workload_field_content_litemaas_values:
+      litemaas:
+        enabled: false
+  when: not (_litemaas_available | bool)
+
+- name: Combine all Helm values
+  ansible.builtin.set_fact:
+    _ocp4_workload_field_content_all_values: >-
+      {{
+        ocp4_workload_field_content_helm_values | default({})
+        | combine(_ocp4_workload_field_content_deployer_values)
+        | combine(_ocp4_workload_field_content_litemaas_values)
+      }}
+
+- name: Debug final Helm values
+  ansible.builtin.debug:
+    msg: "{{ _ocp4_workload_field_content_all_values | to_yaml }}"
+
+# ===================================================================
+# Deploy via ArgoCD
+# ===================================================================
+- name: Create field content ArgoCD application
+  kubernetes.core.k8s:
+    state: present
+    template: application.yaml.j2
+
+- name: Verify ArgoCD application was accepted
+  kubernetes.core.k8s_info:
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: field-content
+    namespace: "{{ ocp4_workload_field_content_namespace }}"
+  register: argocd_field_content
+  retries: 6
+  delay: 10
+  until:
+  - argocd_field_content.resources | length > 0
+  failed_when: argocd_field_content.resources | length == 0
