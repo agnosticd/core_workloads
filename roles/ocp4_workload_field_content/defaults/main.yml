@@ -38,6 +38,23 @@ ocp4_workload_field_content_namespace: openshift-gitops
 ocp4_workload_field_content_helm_values: {}
 
 # -----------------------------------------------------------------------------
+# Optional: LiteMaaS/MaaS credentials
+# -----------------------------------------------------------------------------
+# Passed from AgnosticV when ocp4_workload_litellm_virtual_keys provisions
+# a virtual key. These are read from agnosticd_user_data in the catalog.
+#
+# When both api_url and api_key are provided, the role injects:
+#   litemaas:
+#     enabled: true
+#     apiUrl: <api_url>
+#     apiKey: <api_key>
+#     model: <model>
+# into the Helm values for the ArgoCD Application.
+ocp4_workload_field_content_litemaas_api_url: ""
+ocp4_workload_field_content_litemaas_api_key: ""
+ocp4_workload_field_content_litemaas_model: "llama-scout-17b"
+
+# -----------------------------------------------------------------------------
 # Deployment behavior
 # -----------------------------------------------------------------------------
 # This role uses a "fire and forget" approach:

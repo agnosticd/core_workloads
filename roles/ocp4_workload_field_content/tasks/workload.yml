@@ -7,23 +7,27 @@
 # ===================================================================
 # Check for LiteMaaS credentials (optional - passed from AgnosticV)
 # ===================================================================
-# AgnosticV reads from agnosticd_user_data and passes as workload variables
-- name: Check if LiteMaaS credentials are available
-  ansible.builtin.set_fact:
-    _litemaas_api_url: "{{ ocp4_workload_field_content_litemaas_api_url | default('') }}"
-    _litemaas_api_key: "{{ ocp4_workload_field_content_litemaas_api_key | default('') }}"
-    _litemaas_model: "{{ ocp4_workload_field_content_litemaas_model | default('llama-scout-17b') }}"
+- name: Check LiteMaaS credentials
+  when: ocp4_workload_field_content_litemaas_api_url != "" and ocp4_workload_field_content_litemaas_api_key != ""
+  block:
+    - name: Set LiteMaaS credentials
+      ansible.builtin.set_fact:
+        _litemaas_api_url: "{{ ocp4_workload_field_content_litemaas_api_url }}"
+        _litemaas_api_key: "{{ ocp4_workload_field_content_litemaas_api_key }}"
+        _litemaas_model: "{{ ocp4_workload_field_content_litemaas_model }}"
+        _litemaas_available: true
 
-- name: Set LiteMaaS availability flag
-  ansible.builtin.set_fact:
-    _litemaas_available: "{{ _litemaas_api_url != '' and _litemaas_api_key != '' }}"
+    - name: Debug LiteMaaS credentials status
+      ansible.builtin.debug:
+        msg: |
+          LiteMaaS credentials available: true
+          API URL: {{ _litemaas_api_url }}
+          Model: {{ _litemaas_model }}
 
-- name: Debug LiteMaaS credentials status
-  ansible.builtin.debug:
-    msg: |
-      LiteMaaS credentials available: {{ _litemaas_available }}
-      API URL: {{ _litemaas_api_url if _litemaas_available else 'not set' }}
-      Model: {{ _litemaas_model if _litemaas_available else 'not set' }}
+- name: Set LiteMaaS unavailable
+  when: ocp4_workload_field_content_litemaas_api_url == "" or ocp4_workload_field_content_litemaas_api_key == ""
+  ansible.builtin.set_fact:
+    _litemaas_available: false
 
 # ===================================================================
 # Build Helm values
