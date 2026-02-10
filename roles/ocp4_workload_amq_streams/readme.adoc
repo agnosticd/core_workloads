@@ -1,0 +1,117 @@
+= ocp4_workload_amq_streams - Red Hat AMQ Streams Operator
+
+== Role Overview
+
+This role installs the Red Hat AMQ Streams (Kafka) operator on an OpenShift 4 cluster.
+
+* Tasks: link:./tasks/workload.yml[workload.yml] - Installs the AMQ Streams operator via OLM
+* Tasks: link:./tasks/remove_workload.yml[remove_workload.yml] - Removes the AMQ Streams operator
+
+The provisioning infrastructure sets the variable `ACTION` to either `provision` or `destroy`.
+
+== What This Role Does
+
+=== On Provision
+1. Installs the AMQ Streams operator from the Red Hat operators catalog
+2. Optionally uses a catalog snapshot for air-gapped environments
+
+=== On Destroy
+1. Removes the AMQ Streams operator subscription and CSV
+
+== Variables
+
+All variables are prefixed with `ocp4_workload_amq_streams_` as per v2 naming conventions.
+See link:./defaults/main.yml[defaults/main.yml] for all available variables with documentation.
+
+=== Key Variables
+
+[cols="2,1,3"]
+|===
+| Variable | Default | Description
+
+| `ocp4_workload_amq_streams_channel`
+| `""` (auto-detect)
+| Operator subscription channel
+
+| `ocp4_workload_amq_streams_automatic_install_plan_approval`
+| `true`
+| Auto-approve operator InstallPlans
+
+| `ocp4_workload_amq_streams_starting_csv`
+| `""`
+| Pin to specific ClusterServiceVersion
+
+| `ocp4_workload_amq_streams_use_catalog_snapshot`
+| `false`
+| Use catalog snapshot for air-gapped installs
+
+| `ocp4_workload_amq_streams_silent`
+| `false`
+| Suppress debug messages
+|===
+
+=== Catalog Snapshot Variables
+
+For air-gapped environments:
+
+[cols="2,1,3"]
+|===
+| Variable | Default | Description
+
+| `ocp4_workload_amq_streams_catalogsource_name`
+| `redhat-operators-snapshot-amq-streams`
+| Custom CatalogSource name
+
+| `ocp4_workload_amq_streams_catalog_snapshot_image`
+| `quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog`
+| Snapshot image repository
+
+| `ocp4_workload_amq_streams_catalog_snapshot_image_tag`
+| `v4.19_2025_07_21`
+| Snapshot image tag
+|===
+
+== Predefined Variables
+
+The following variables are always available in v2:
+
+* `openshift_console_url`: The URL of the OpenShift console
+* `openshift_api_url`: The OpenShift API endpoint URL
+* `openshift_cluster_ingress_domain`: The domain used for ingress controllers
+
+== Usage Examples
+
+=== Deploy AMQ Streams Operator
+
+[source,bash]
+----
+ansible-playbook site.yml \
+  -e "ACTION=provision" \
+  -e "ocp4_workload_amq_streams_channel=stable"
+----
+
+=== Deploy with Specific Version
+
+[source,bash]
+----
+ansible-playbook site.yml \
+  -e "ACTION=provision" \
+  -e "ocp4_workload_amq_streams_starting_csv=amqstreams.v2.5.0"
+----
+
+=== Remove AMQ Streams Operator
+
+[source,bash]
+----
+ansible-playbook site.yml \
+  -e "ACTION=destroy"
+----
+
+== Migration Notes
+
+This role was migrated from AgnosticD v1 `ocp4_workload_amq_streams`. Key changes:
+
+* Updated catalog snapshot image tag to current version
+* ACTION values standardized to `provision`/`destroy` (v1 also accepted `create`/`remove`)
+* Uses `ansible.builtin.include_role` instead of `include_role`
+* Added `ocp4_workload_amq_streams_operator_namespace` variable (defaults to `openshift-operators`)
