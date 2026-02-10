@@ -11,14 +11,8 @@
 - name: Setup htpasswd authentication
   ansible.builtin.include_tasks: setup_htpasswd.yml
 
-- name: Set up cluster admin users
-  kubernetes.core.k8s:
-    state: present
-    template: cluster_role_binding.yaml.j2
-  register: r_cluster_admin_role_binding
-  until: r_cluster_admin_role_binding is successful
-  delay: 15
-  retries: 20
+- name: Setup cluster role bindings
+  ansible.builtin.include_tasks: setup_cluster_role_bindings.yml
 
 - name: Remove kubeadmin user
   when: ocp4_workload_authentication_htpasswd_remove_kubeadmin | bool
