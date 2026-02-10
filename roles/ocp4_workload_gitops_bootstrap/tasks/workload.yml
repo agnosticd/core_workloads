@@ -5,7 +5,7 @@
       deployer:
         domain: "{{ openshift_cluster_ingress_domain }}"
         apiUrl: "{{ openshift_api_url }}"
-        guid:   "{{ guid }}"
+        guid: "{{ guid }}"
 
 - name: Debug _ocp4_workload_gitops_bootstrap_deployer_values
   ansible.builtin.debug:
@@ -23,12 +23,12 @@
 - name: Set App path for 'bootstrap-infra', infra only deployment scenario
   when: ocp4_workload_gitops_bootstrap_application_name == 'bootstrap-infra'
   ansible.builtin.set_fact:
-    ocp4_workload_gitops_bootstrap_repo_path: "infra"
+    ocp4_workload_gitops_bootstrap_repo_path: "infra/bootstrap"
 
 - name: "Set App path and name for 'bootstrap-tenant', infra only deployment scenario"
   when: ocp4_workload_gitops_bootstrap_application_name == 'bootstrap-tenant'
   ansible.builtin.set_fact:
-    ocp4_workload_gitops_bootstrap_repo_path: "tenant"
+    ocp4_workload_gitops_bootstrap_repo_path: "tenant/bootstrap"
     ocp4_workload_gitops_bootstrap_application_name: "bootstrap-tenant-{{ guid }}"
 
 - name: Create bootstrap ArgoCD application
@@ -57,14 +57,14 @@
   retries: "{{ ocp4_workload_gitops_bootstrap_health_retries }}"
   delay: 10
   until:
-  - argocd_bootstrap is defined
-  - argocd_bootstrap.resources is defined
-  - argocd_bootstrap.resources | length > 0
-  - argocd_bootstrap.resources[0].status is defined
-  - argocd_bootstrap.resources[0].status.health.status is defined
-  - argocd_bootstrap.resources[0].status.health.status == "Healthy"
-  - argocd_bootstrap.resources[0].status.sync.status is defined
-  - argocd_bootstrap.resources[0].status.sync.status == "Synced"
+    - argocd_bootstrap is defined
+    - argocd_bootstrap.resources is defined
+    - argocd_bootstrap.resources | length > 0
+    - argocd_bootstrap.resources[0].status is defined
+    - argocd_bootstrap.resources[0].status.health.status is defined
+    - argocd_bootstrap.resources[0].status.health.status == "Healthy"
+    - argocd_bootstrap.resources[0].status.sync.status is defined
+    - argocd_bootstrap.resources[0].status.sync.status == "Synced"
   ignore_errors: "{{ ocp4_workload_gitops_bootstrap_health_ignore | bool }}"
 
 # - name: Pause for a minute while the bootstrap app deploys
@@ -77,17 +77,16 @@
     api_version: argoproj.io/v1alpha1
     kind: Application
     label_selectors:
-    - "app.kubernetes.io/instance={{ ocp4_workload_gitops_bootstrap_application_name }}"
+      - "app.kubernetes.io/instance={{ ocp4_workload_gitops_bootstrap_application_name }}"
   register: _all_apps
   delay: 10
   retries: "{{ ocp4_workload_gitops_bootstrap_application_health_retries }}"
   until:
-  - _all_apps is defined
-  - _all_apps.resources is defined
-  # json_query: length of list of resources found == length of list of those with good status
-  - _all_apps.resources | json_query('length([?status.health.status==`Healthy` || status.health.status==`Suspended`]) == length(@)')
-  - _all_apps.resources | json_query('length([?status.sync.status==`Synced`]) == length(@)')
-
+    - _all_apps is defined
+    - _all_apps.resources is defined
+    # json_query: length of list of resources found == length of list of those with good status
+    - _all_apps.resources | json_query('length([?status.health.status==`Healthy` || status.health.status==`Suspended`]) == length(@)')
+    - _all_apps.resources | json_query('length([?status.sync.status==`Synced`]) == length(@)')
 #######
 ####### Begin processing GitOps output
 #######
