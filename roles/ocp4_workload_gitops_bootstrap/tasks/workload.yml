@@ -20,6 +20,11 @@
   ansible.builtin.set_fact:
     ocp4_workload_gitops_bootstrap_repo_path: "bootstrap"
 
+- name: Set App path for 'bootstrap-platform', platform only deployment scenario
+  when: ocp4_workload_gitops_bootstrap_application_name == 'bootstrap-platform'
+  ansible.builtin.set_fact:
+    ocp4_workload_gitops_bootstrap_repo_path: "platform/bootstrap"
+
 - name: Set App path for 'bootstrap-infra', infra only deployment scenario
   when: ocp4_workload_gitops_bootstrap_application_name == 'bootstrap-infra'
   ansible.builtin.set_fact:
