@@ -7,7 +7,7 @@ ocp4_workload_authentication_keycloak_namespace: keycloak
 
 ocp4_workload_authentication_keycloak_pgsql_user: keycloak
 
-ocp4_workload_authentication_keycloak_pgsql_password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits '~ 'length=' ~ 10) }}"
+ocp4_workload_authentication_keycloak_pgsql_password: ""
 
 ocp4_workload_authentication_keycloak_channel: stable-v26.2
 
@@ -23,7 +23,7 @@ ocp4_workload_authentication_keycloak_catalogsource_tag: v4.20_2025_10_23
 
 ocp4_workload_authentication_keycloak_default_realm: sso
 
-ocp4_workload_authentication_keycloak_num_users: 1
+ocp4_workload_authentication_keycloak_num_users: "{{ num_users | default(0) }}"
 
 ocp4_workload_authentication_keycloak_admin_create: true
 
@@ -35,6 +35,7 @@ ocp4_workload_authentication_keycloak_admin_password: ""
 # Length of password if generated for admin user.
 ocp4_workload_authentication_keycloak_admin_password_length: 10
 
+# Base name prefix for numbered users
 ocp4_workload_authentication_keycloak_user_username_base: user
 
 # User password. If set to empty string then a password will be generated.
@@ -55,6 +56,8 @@ ocp4_workload_authentication_keycloak_remove_kubeadmin: false
 ocp4_workload_authentication_keycloak_enable_user_info_messages: true
 
 # Optional named users if users other than admin should be created.
+# An admin user with cluster-admin access is automatically added to the list of
+# named users if  ocp4_workload_authentication_keycloak_admin_create is set.
 # Ex:
 #ocp4_workload_authentication_keycloak_named_users:
 #- name: cluster-reader
@@ -68,17 +71,7 @@ ocp4_workload_authentication_keycloak_enable_user_info_messages: true
 #  realm_roles:
 #  - developer
 #  - user
-#
-# COMPATIBILITY HACK!
-# One numbered user (num_users) should behave the same as many, but for compatibility with
-# the old weird behavior we need to handle a single user as a named user.
-ocp4_workload_authentication_keycloak_single_user_compatibility_hack: >-
-  {{ ocp4_workload_authentication_keycloak_num_users | int == 1 }}
-ocp4_workload_authentication_keycloak_named_users: >-
-  {{
-    [{"name": ocp4_workload_authentication_keycloak_user_username_base ~ "1"}]
-    if ocp4_workload_authentication_keycloak_single_user_compatibility_hack | bool else []
-  }}
+ocp4_workload_authentication_keycloak_named_users: []
 
 # Optional common password for all named user accounts.
 ocp4_workload_authentication_keycloak_named_user_password: ""

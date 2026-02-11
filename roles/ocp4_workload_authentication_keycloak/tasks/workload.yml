@@ -83,7 +83,7 @@
           length=_user.password_length | default(ocp4_workload_authentication_keycloak_user_password_length)
         )
       }}
-  loop: "{{ range(0, _ocp4_workload_authentication_keycloak_num_users | int) | list }}"
+  loop: "{{ range(0, ocp4_workload_authentication_keycloak_num_users | int) | list }}"
 
 - name: Set openshift client secret
   ansible.builtin.set_fact:
@@ -214,14 +214,14 @@
       User `{{ _named_user.name }}` created with password `{{ _ocp4_workload_authentication_keycloak_named_user_passwords[_named_user.name] }}`{% if _named_user.cluster_role is defined %} and cluster role `{{ _named_user.cluster_role }}`{% endif %}.
       {% endfor %}
 
-      {% if _ocp4_workload_authentication_keycloak_num_users | int > 0 -%}
-      Users `{{ ocp4_workload_authentication_keycloak_user_base }}1` ..
-      `{{ ocp4_workload_authentication_keycloak_user_base ~ _ocp4_workload_authentication_keycloak_num_users }}`
+      {% if ocp4_workload_authentication_keycloak_num_users | int > 0 -%}
+      Users `{{ ocp4_workload_authentication_keycloak_user_username_base }}1` ..
+      `{{ ocp4_workload_authentication_keycloak_user_username_base ~ ocp4_workload_authentication_keycloak_num_users }}`
       {%- if ocp4_workload_authentication_keycloak_user_password_randomized | bool %}
       created.
 
-      {% for _n in range(0, _ocp4_workload_authentication_keycloak_num_users) -%}
-      User `{{ ocp4_workload_authentication_keycloak_user_base }}{{ _n + 1 }}`,
+      {% for _n in range(0, ocp4_workload_authentication_keycloak_num_users) -%}
+      User `{{ ocp4_workload_authentication_keycloak_user_username_base }}{{ _n + 1 }}`,
       Password `{{ _ocp4_workload_authentication_keycloak_user_passwords[_n] }}`
 
       {% endfor %}
@@ -252,14 +252,14 @@
       openshift_cluster_admin_password: "{{ _password }}"
 
 - name: Save numbered user information
-  when: _ocp4_workload_authentication_keycloak_num_users | int > 0
+  when: ocp4_workload_authentication_keycloak_num_users | int > 0
   agnosticd.core.agnosticd_user_info:
     # Pass data as dict to preserve integer type
     data: >-
       {{
         {
           "openshift_cluster_num_users": ocp4_workload_authentication_keycloak_num_users | int,
-          "openshift_cluster_user_base": ocp4_workload_authentication_keycloak_user_base,
+          "openshift_cluster_user_base": ocp4_workload_authentication_keycloak_user_username_base,
           "openshift_cluster_user_count": ocp4_workload_authentication_keycloak_num_users | int,
         }
       }}
@@ -278,6 +278,6 @@
         --username {{ ocp4_workload_authentication_keycloak_user_username_base }}{{ _n + 1 }}
         --password {{ _ocp4_workload_authentication_keycloak_user_passwords[_n] }}
         {{ openshift_api_url }}
-  loop: "{{ range(0, _ocp4_workload_authentication_keycloak_num_users | int) | list }}"
+  loop: "{{ range(0, ocp4_workload_authentication_keycloak_num_users | int) | list }}"
   loop_control:
     loop_var: _n

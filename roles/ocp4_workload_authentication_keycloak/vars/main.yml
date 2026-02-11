@@ -21,9 +21,3 @@ _ocp4_workload_authentication_keycloak_named_users: >-
       []
     ) + ocp4_workload_authentication_keycloak_named_users
   }}
-
-# Compatibility hack treats the single user case as a named user with no numbered users.
-_ocp4_workload_authentication_keycloak_num_users: >-
-  {{ 0 if ocp4_workload_authentication_keycloak_single_user_compatibility_hack | bool else
-    ocp4_workload_authentication_keycloak_num_users
-  }}

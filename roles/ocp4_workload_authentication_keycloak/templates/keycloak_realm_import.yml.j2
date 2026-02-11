@@ -31,7 +31,7 @@ spec:
           description: "Default user role"
         - name: admin
           description: "Administrator role"
-{% if _ocp4_workload_authentication_keycloak_num_users > 0 or _ocp4_workload_authentication_keycloak_named_users | length > 0 %}
+{% if ocp4_workload_authentication_keycloak_num_users | int > 0 or _ocp4_workload_authentication_keycloak_named_users | length > 0 %}
     users:
 {% for _user in _ocp4_workload_authentication_keycloak_named_users %}
       - username: {{ _user.name }}
@@ -46,7 +46,7 @@ spec:
             temporary: false
         realmRoles: {{ _user.realm_roles | default(['user']) | to_json }}
 {% endfor %}
-{% for i in range(0, _ocp4_workload_authentication_keycloak_num_users) %}
+{% for i in range(0, ocp4_workload_authentication_keycloak_num_users) %}
       - username: {{ ocp4_workload_authentication_keycloak_user_username_base }}{{ i|int + 1 }}
         enabled: true
         emailVerified: true
@@ -55,7 +55,7 @@ spec:
         lastName: Demo
         credentials:
           - type: password
-            value: {{ _ocp4_workload_authentication_keycloak_named_user_passwords[i] | to_json }}
+            value: {{ _ocp4_workload_authentication_keycloak_user_passwords[i] | to_json }}
             temporary: false
         realmRoles:
           - user
