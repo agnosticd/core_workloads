@@ -29,11 +29,22 @@ ocp4_workload_authentication_keycloak_admin_create: true
 
 ocp4_workload_authentication_keycloak_admin_username: admin
 
+# Admin password. If set to empty string then a password will be generated.
 ocp4_workload_authentication_keycloak_admin_password: ""
+
+# Length of password if generated for admin user.
+ocp4_workload_authentication_keycloak_admin_password_length: 10
 
 ocp4_workload_authentication_keycloak_user_username_base: user
 
+# User password. If set to empty string then a password will be generated.
 ocp4_workload_authentication_keycloak_user_password: ""
+
+# Length of password generated for user.
+ocp4_workload_authentication_keycloak_user_password_length: 10
+
+# Generate a separate password for each numbered user account.
+ocp4_workload_authentication_keycloak_user_password_randomized: false
 
 ocp4_workload_authentication_keycloak_openshift_client_secret: ""
 
@@ -43,4 +54,34 @@ ocp4_workload_authentication_keycloak_remove_kubeadmin: false
 
 ocp4_workload_authentication_keycloak_enable_user_info_messages: true
 
-ocp4_workload_authentication_keycloak_enable_user_info_data: "{{ ocp4_workload_authentication_keycloak_num_users | int > 1 }}"
+# Optional named users if users other than admin should be created.
+# Ex:
+#ocp4_workload_authentication_keycloak_named_users:
+#- name: cluster-reader
+#  cluster_role: cluster-reader
+#  password: reader
+#  realm_roles:
+#  - auditor
+#  - user
+#- name: developer
+#  password_length: 8
+#  realm_roles:
+#  - developer
+#  - user
+#
+# COMPATIBILITY HACK!
+# One numbered user (num_users) should behave the same as many, but for compatibility with
+# the old weird behavior we need to handle a single user as a named user.
+ocp4_workload_authentication_keycloak_single_user_compatibility_hack: >-
+  {{ ocp4_workload_authentication_keycloak_num_users | int == 1 }}
+ocp4_workload_authentication_keycloak_named_users: >-
+  {{
+    [{"name": ocp4_workload_authentication_keycloak_user_username_base ~ "1"}]
+    if ocp4_workload_authentication_keycloak_single_user_compatibility_hack | bool else []
+  }}
+
+# Optional common password for all named user accounts.
+ocp4_workload_authentication_keycloak_named_user_password: ""
+
+# Generate a separate password for each named user account.
+ocp4_workload_authentication_keycloak_named_user_password_randomized: true

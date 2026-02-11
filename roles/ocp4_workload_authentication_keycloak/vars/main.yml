@@ -1,0 +1,29 @@
+---
+_ocp4_workload_authentication_keycloak_named_user_password: "{{ ocp4_workload_authentication_keycloak_named_user_password }}"
+_ocp4_workload_authentication_keycloak_named_user_passwords: {}
+_ocp4_workload_authentication_keycloak_user_password: "{{ ocp4_workload_authentication_keycloak_user_password }}"
+_ocp4_workload_authentication_keycloak_user_passwords: []
+
+_ocp4_workload_authentication_keycloak_admin_user:
+  name: "{{ ocp4_workload_authentication_keycloak_admin_username }}"
+  cluster_role: cluster-admin
+  password: "{{ ocp4_workload_authentication_keycloak_admin_password }}"
+  password_length: "{{ ocp4_workload_authentication_keycloak_admin_password_length }}"
+  realm_roles:
+  - admin
+
+# Admin user is handled like other named users if configured to be created.
+_ocp4_workload_authentication_keycloak_named_users: >-
+  {{ 
+    (
+      [_ocp4_workload_authentication_keycloak_admin_user]
+      if ocp4_workload_authentication_keycloak_admin_create | bool else
+      []
+    ) + ocp4_workload_authentication_keycloak_named_users
+  }}
+
+# Compatibility hack treats the single user case as a named user with no numbered users.
+_ocp4_workload_authentication_keycloak_num_users: >-
+  {{ 0 if ocp4_workload_authentication_keycloak_single_user_compatibility_hack | bool else
+    ocp4_workload_authentication_keycloak_num_users
+  }}
