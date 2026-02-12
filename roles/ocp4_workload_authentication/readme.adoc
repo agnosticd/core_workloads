@@ -1,0 +1,5 @@
+= ocp4_workload_authentication - Configure cluster authentication
+
+Supports htpasswd and keycloak identity providers.
+
+See defaults/main.yml for variables to set.

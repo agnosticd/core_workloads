@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_authentication
+  author: Demo Platform
+  description: |
+    This role configures OpenShift oauth with htpasswd or keycloak.
+  license: MIT
+  min_ansible_version: 2.9
+  platforms: []
+  galaxy_tags:
+  - ocp
+  - openshift
+  - keycloak
+dependencies: []

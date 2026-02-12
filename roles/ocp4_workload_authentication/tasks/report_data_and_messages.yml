@@ -1,0 +1,117 @@
+---
+- name: Save user information messages
+  agnosticd.core.agnosticd_user_info:
+    msg: >-
+      Authentication via {{ ocp4_workload_authentication_provider | capitalize }}
+      is enabled on this cluster.
+
+      {% if ocp4_workload_authentication_provider == 'keycloak' %}
+      Keycloak admin console: https://sso.{{ openshift_cluster_ingress_domain }}
+
+      Keycloak admin user: {{ _ocp4_workload_authentication_keycloak_admin_username }}
+
+      Keycloak admin password: {{ _ocp4_workload_authentication_keycloak_admin_password }}
+      {% endif %}
+
+      {% for _user in _ocp4_workload_authentication_cluster_users -%}
+      User `{{ _user.name }}` created with password `{{ _ocp4_workload_authentication_cluster_user_passwords[_user.name] }}`{% if _user.cluster_role is defined %} and cluster role `{{ _user.cluster_role }}`{% endif %}.
+      {% endfor %}
+
+      {% if ocp4_workload_authentication_num_users | int == 1 -%}
+      User `{{ ocp4_workload_authentication_user_name }}` created with password 
+      `{{ _ocp4_workload_authentication_user_passwords[0] }}`
+      {% elif ocp4_workload_authentication_num_users | int > 1 -%}
+      Users `{{ ocp4_workload_authentication_user_basename }}1` ..
+      `{{ ocp4_workload_authentication_user_basename ~ ocp4_workload_authentication_num_users }}`
+      {%- if ocp4_workload_authentication_user_password_randomized | bool %}
+      created.
+
+      {% for _n in range(0, ocp4_workload_authentication_num_users) -%}
+      User `{{ ocp4_workload_authentication_user_basename }}{{ _n + 1 }}`,
+      Password `{{ _ocp4_workload_authentication_user_passwords[_n] }}`
+
+      {% endfor %}
+      {%- else %}
+      created with password `{{ _ocp4_workload_authentication_user_password }}`.
+      {%- endif %}
+      {%- endif %}
+    data:
+      openshift_api_server_url: "{{ openshift_api_url }}"
+      openshift_cluster_console_url: "{{ openshift_console_url }}"
+      openshift_cluster_user_passwords: "{{ _ocp4_workload_authentication_cluster_user_passwords }}"
+
+- name: Report keycloak provision data
+  when: ocp4_workload_authentication_provider == 'keycloak'
+  agnosticd.core.agnosticd_user_info:
+    data:
+      keycloak_admin_console: https://sso.{{ openshift_cluster_ingress_domain }}
+      keycloak_admin_user: "{{ _ocp4_workload_authentication_keycloak_admin_username }}"
+      keycloak_admin_password: "{{ _ocp4_workload_authentication_keycloak_admin_password }}"
+
+- name: Save cluster admin user data
+  vars:
+    _username: >-
+      {{ _ocp4_workload_authentication_named_users
+       | json_query("[?cluster_role=='cluster-admin'].name|[0]")
+      }}
+    _password: >-
+      {{ _ocp4_workload_authentication_named_user_passwords[_username] }}
+  when: _username | default("") != ""
+  agnosticd.core.agnosticd_user_info:
+    data:
+      openshift_cluster_admin_username: "{{ _username }}"
+      openshift_cluster_admin_password: "{{ _password }}"
+
+- name: Save numbered user information
+  when: ocp4_workload_authentication_num_users | int > 0
+  agnosticd.core.agnosticd_user_info:
+    # Pass data as dict to preserve integer type
+    data: >-
+      {{
+        {
+          "openshift_cluster_num_users": ocp4_workload_authentication_num_users | int,
+          "openshift_cluster_user_base": ocp4_workload_authentication_user_basename,
+        }
+      }}
+
+- name: Save single user information
+  when: ocp4_workload_authentication_num_users | int == 1
+  agnosticd.core.agnosticd_user_info:
+    data:
+      openshift_cluster_user_name: "{{ ocp4_workload_authentication_user_name }}"
+      openshift_cluster_user_password: "{{ _ocp4_workload_authentication_user_passwords[0] }}"
+
+- name: Save common user password if common to all users
+  when:
+  - ocp4_workload_authentication_num_users | int > 0
+  - _ocp4_workload_authentication_user_password != ""
+  agnosticd.core.agnosticd_user_info:
+    data:
+      openshift_cluster_user_password: "{{ _ocp4_workload_authentication_user_password }}"
+
+- name: Save user information for user access
+  agnosticd.core.agnosticd_user_info:
+    user: "{{ _name }}"
+    data:
+      user: "{{ _name }}" 
+      password: "{{ _password }}"
+      console_url: "{{ openshift_console_url }}"
+      openshift_console_url: "{{ openshift_console_url }}"
+      openshift_cluster_ingress_domain: "{{ openshift_cluster_ingress_domain }}"
+      login_command: >-
+        oc login --insecure-skip-tls-verify=false
+        --username {{ _name }}
+        --password {{ _password | quote }}
+        {{ openshift_api_url }}
+  loop: "{{ range(0, ocp4_workload_authentication_num_users | int) | list }}"
+  loop_control:
+    loop_var: _n
+  vars:
+    _name: >-
+      {{
+        ocp4_workload_authentication_user_name
+        if ocp4_workload_authentication_num_users == 1 else
+        ocp4_workload_authentication_user_basename ~ (_n + 1)
+      }}
+    _password: >-
+      {{ _ocp4_workload_authentication_user_passwords[_n] }}

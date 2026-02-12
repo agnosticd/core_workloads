@@ -1,0 +1,107 @@
+---
+# --------------------------------
+# Common settings for all auth providers
+# --------------------------------
+ocp4_workload_authentication_admin_create: true
+ocp4_workload_authentication_admin_username: admin
+
+# Admin password. If set to empty string then a password will be generated.
+ocp4_workload_authentication_admin_password: ""
+
+# Length of password if generated for admin user.
+ocp4_workload_authentication_admin_password_length: 10
+
+# Optional cluster users if users other than admin should be created.
+# These cluster users are created in the authentication provider but are
+# not reported as users with `agnosticd_user_info` and so do not create
+# seats for workshop usage.
+#
+# An admin user with cluster-admin access is automatically added to the list of
+# cluster users if  ocp4_workload_authentication_admin_create is set.
+# Ex:
+#ocp4_workload_authentication_cluster_users:
+#- name: cluster-reader
+#  cluster_role: cluster-reader
+#  password: reader
+#  realm_roles:
+#  - auditor
+#  - user
+#- name: developer
+#  password_length: 8
+#  keycloak_realm_roles:
+#  - developer
+#  - user
+ocp4_workload_authentication_cluster_users: []
+
+# Optional common password for all cluster user accounts.
+ocp4_workload_authentication_cluster_user_password: ""
+
+# Generate a separate password for each cluster user account.
+ocp4_workload_authentication_cluster_user_password_randomized: true
+
+# Configure whether and how many numbered users to create.
+ocp4_workload_authentication_num_users: "{{ num_users | default(0) }}"
+
+# Base name prefix for numbered users
+ocp4_workload_authentication_user_basename: user
+
+# User name to use when only a single "numbered" user is requested.
+# This user is reported like numbered users with `agnosticd_user_info`
+# to allow separating environment data from data exposed to end users,
+# for example as workshop seats.
+ocp4_workload_authentication_user_name: user
+
+# Common user password for numbered users. If left empty then a password will
+# be generated.
+ocp4_workload_authentication_user_password: ""
+
+# Length of password generated for user.
+ocp4_workload_authentication_user_password_length: 10
+
+# Generate a separate password for each numbered user account.
+ocp4_workload_authentication_user_password_randomized: true
+
+# Remove secret for kubeadmin user access created in initial cluster installation.
+ocp4_workload_authentication_remove_kubeadmin: false
+
+# Select auth provider: htpasswd or keycloak
+ocp4_workload_authentication_provider: htpasswd
+
+# --------------------------------
+# Htpasswd Settings
+# --------------------------------
+ocp4_workload_authentication_htpasswd_secret_name: htpasswd
+
+# --------------------------------
+# Keycloak Settings
+# --------------------------------
+
+ocp4_workload_authentication_keycloak_namespace: keycloak
+
+ocp4_workload_authentication_keycloak_pgsql_user: keycloak
+
+ocp4_workload_authentication_keycloak_pgsql_password: ""
+
+ocp4_workload_authentication_keycloak_channel: stable-v26.2
+
+ocp4_workload_authentication_keycloak_automatic_install_plan_approval: true
+
+ocp4_workload_authentication_keycloak_starting_csv: ""
+
+ocp4_workload_authentication_keycloak_use_catalog_source: false
+
+ocp4_workload_authentication_keycloak_catalogsource_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
+
+ocp4_workload_authentication_keycloak_catalogsource_tag: v4.20_2025_10_23
+
+ocp4_workload_authentication_keycloak_default_realm: sso
+
+ocp4_workload_authentication_keycloak_default_groups:
+- name: admins
+- name: users
+
+ocp4_workload_authentication_keycloak_openshift_client_secret: ""
+
+ocp4_workload_authentication_keycloak_openshift_client_id: idp-4-ocp
+
+ocp4_workload_authentication_keycloak_enable_user_info_messages: true

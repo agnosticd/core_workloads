@@ -1,0 +1,22 @@
+---
+- name: Set cluster role bindings for named users
+  kubernetes.core.k8s:
+    force: true
+    resource_definition:
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: "{{ ocp4_workload_authentication_provider }}-sso-user:{{ _user.name }}:{{ _user.cluster_role }}"
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: "{{ _user.cluster_role }}"
+      subjects:
+      - apiGroup: rbac.authorization.k8s.io
+        kind: User
+        name: "{{ _user.name }}"
+  loop: "{{ _ocp4_workload_authentication_cluster_users }}"
+  loop_control:
+    label: "{{ _user.name }}"
+    loop_var: _user
+  when: _user.cluster_role | default('') != ''
