@@ -62,7 +62,7 @@ ocp4_workload_authentication_user_password_length: 10
 ocp4_workload_authentication_user_password_randomized: true
 
 # Remove secret for kubeadmin user access created in initial cluster installation.
-ocp4_workload_authentication_remove_kubeadmin: false
+ocp4_workload_authentication_remove_kubeadmin: true
 
 # Select auth provider: htpasswd or keycloak
 ocp4_workload_authentication_provider: htpasswd
