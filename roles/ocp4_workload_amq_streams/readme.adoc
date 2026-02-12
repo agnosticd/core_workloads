@@ -63,7 +63,7 @@ For air-gapped environments:
 | Custom CatalogSource name
 
 | `ocp4_workload_amq_streams_catalog_snapshot_image`
-| `quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog`
+| `quay.io/rhpds/olm_snapshot_redhat_catalog`
 | Snapshot image repository
 
 | `ocp4_workload_amq_streams_catalog_snapshot_image_tag`

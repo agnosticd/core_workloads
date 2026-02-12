@@ -14,7 +14,7 @@ ocp4_workload_ansible_automation_platform_automatic_install_plan_approval: true
 
 ocp4_workload_ansible_automation_platform_use_catalog_snapshot: false
 ocp4_workload_ansible_automation_platform_catalogsource_name: olm-snapshot-redhat-catalog
-ocp4_workload_ansible_automation_platform_catalog_snapshot_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
+ocp4_workload_ansible_automation_platform_catalog_snapshot_image: quay.io/rhpds/olm_snapshot_redhat_catalog
 ocp4_workload_ansible_automation_platform_catalog_snapshot_image_tag: v4.19_2025_09_29
 
 # ---------------------------------------------------------------

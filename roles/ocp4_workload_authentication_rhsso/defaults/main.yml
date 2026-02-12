@@ -6,7 +6,7 @@ ocp4_workload_authentication_rhsso_starting_csv: ""
 # ocp4_workload_authentication_rhsso_starting_csv: rhsso-operator.7.6.3-opr-002
 ocp4_workload_authentication_rhsso_automatic_install_plan_approval: true
 ocp4_workload_authentication_rhsso_use_catalog_source: false
-ocp4_workload_authentication_rhsso_catalogsource_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
+ocp4_workload_authentication_rhsso_catalogsource_image: quay.io/rhpds/olm_snapshot_redhat_catalog
 ocp4_workload_authentication_rhsso_catalogsource_tag: v4.19_2025_07_21
 
 ocp4_workload_authentication_rhsso_admin_create: true
