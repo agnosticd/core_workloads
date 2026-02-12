@@ -17,7 +17,7 @@ ocp4_workload_authentication_keycloak_starting_csv: ""
 
 ocp4_workload_authentication_keycloak_use_catalog_source: false
 
-ocp4_workload_authentication_keycloak_catalogsource_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
+ocp4_workload_authentication_keycloak_catalogsource_image: quay.io/rhpds/olm_snapshot_redhat_catalog
 
 ocp4_workload_authentication_keycloak_catalogsource_tag: v4.20_2025_10_23
 

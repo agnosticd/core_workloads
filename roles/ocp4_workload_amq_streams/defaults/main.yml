@@ -38,7 +38,7 @@ ocp4_workload_amq_streams_use_catalog_snapshot: false
 ocp4_workload_amq_streams_catalogsource_name: redhat-operators-snapshot-amq-streams
 
 # Catalog snapshot image
-ocp4_workload_amq_streams_catalog_snapshot_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
+ocp4_workload_amq_streams_catalog_snapshot_image: quay.io/rhpds/olm_snapshot_redhat_catalog
 
 # Catalog snapshot image tag
 ocp4_workload_amq_streams_catalog_snapshot_image_tag: "v4.19_2025_07_21"

@@ -55,7 +55,7 @@ ocp4_workload_mtv_use_catalog_snapshot: false
 ocp4_workload_mtv_catalogsource_name: redhat-operators-snapshot-mtv
 
 # Catalog snapshot image
-ocp4_workload_mtv_catalog_snapshot_image: quay.io/gpte-devops-automation/olm_snapshot_redhat_catalog
+ocp4_workload_mtv_catalog_snapshot_image: quay.io/rhpds/olm_snapshot_redhat_catalog
 
 # Catalog snapshot image tag
 ocp4_workload_mtv_catalog_snapshot_image_tag: "v4.20_2025_11_17"
