@@ -1,0 +1,13 @@
+---
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: htpasswd
+    type: HTPasswd
+    mappingMethod: claim
+    htpasswd:
+      fileData:
+        name: {{ ocp4_workload_authentication_htpasswd_secret_name | to_json }}

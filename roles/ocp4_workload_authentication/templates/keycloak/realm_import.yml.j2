@@ -1,0 +1,67 @@
+---
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: {{ ocp4_workload_authentication_keycloak_default_realm }}
+spec:
+  keycloakCRName: keycloak
+  realm:
+    id: {{ ocp4_workload_authentication_keycloak_default_realm }}
+    realm: {{ ocp4_workload_authentication_keycloak_default_realm }}
+    enabled: true
+    sslRequired: external
+    registrationAllowed: true
+    loginWithEmailAllowed: true
+    duplicateEmailsAllowed: false
+    clients:
+      - clientId: {{ ocp4_workload_authentication_keycloak_openshift_client_id }}
+        enabled: true
+        clientAuthenticatorType: client-secret
+        secret: {{ _ocp4_workload_authentication_keycloak_openshift_client_secret }}
+        publicClient: false
+        redirectUris:
+        - "*"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: true
+        serviceAccountsEnabled: true
+        frontchannelLogout: false
+        protocol: openid-connect
+    roles:
+      realm:
+        - name: user
+          description: "Default user role"
+        - name: admin
+          description: "Administrator role"
+{% if ocp4_workload_authentication_num_users | int > 0 or _ocp4_workload_authentication_cluster_accounts | length > 0 %}
+    users:
+{% for _account in _ocp4_workload_authentication_cluster_accounts %}
+      - username: {{ _account.name }}
+        enabled: true
+        emailVerified: true
+        email: {{ _account.name }}@demo.redhat.com
+        firstName: {{ _account.name | capitalize }}
+        lastName: Demo
+        credentials:
+          - type: password
+            value: {{ _ocp4_workload_authentication_cluster_account_passwords[_account.name] | to_json }}
+            temporary: false
+        realmRoles: {{ _account.keycloak_realm_roles | default(['user']) | to_json }}
+{% endfor %}
+{% for _account in _ocp4_workload_authentication_user_accounts %}
+      - username: {{ _account.name }}
+        enabled: true
+        emailVerified: true
+        email: {{ _account.name }}@demo.redhat.com
+        firstName: {{ _account.name | capitalize }}
+        lastName: Demo
+        credentials:
+          - type: password
+            value: {{ _account.password | to_json }}
+            temporary: false
+        realmRoles:
+          - user
+{% endfor %}
+{% else %}
+    users: []
+{% endif %}
+    groups: {{ ocp4_workload_authentication_keycloak_default_groups | to_json }}

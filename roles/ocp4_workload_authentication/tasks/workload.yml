@@ -1,0 +1,21 @@
+---
+- name: Setup passwords
+  ansible.builtin.include_tasks: setup_passwords.yml
+
+- name: Setup htpasswd
+  when: ocp4_workload_authentication_provider == 'htpasswd'
+  ansible.builtin.include_tasks: setup_htpasswd.yml
+
+- name: Setup keycloak
+  when: ocp4_workload_authentication_provider == 'keycloak'
+  ansible.builtin.include_tasks: setup_keycloak.yml
+
+- name: Setup cluster role bindings
+  ansible.builtin.include_tasks: setup_cluster_role_bindings.yml
+
+- name: Remove kubeadmin user
+  when: ocp4_workload_authentication_remove_kubeadmin | bool
+  ansible.builtin.include_tasks: remove_kubeadmin_user.yml
+
+- name: Report provision data and messages
+  ansible.builtin.include_tasks: report_data_and_messages.yml

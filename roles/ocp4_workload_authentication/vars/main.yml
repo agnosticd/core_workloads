@@ -1,0 +1,24 @@
+---
+_ocp4_workload_authentication_cluster_account_password: "{{ ocp4_workload_authentication_cluster_account_password }}"
+_ocp4_workload_authentication_cluster_account_passwords: {}
+_ocp4_workload_authentication_user_accounts: []
+_ocp4_workload_authentication_user_password: "{{ ocp4_workload_authentication_user_password }}"
+_ocp4_workload_authentication_user_passwords: []
+
+_ocp4_workload_authentication_admin_user:
+  name: "{{ ocp4_workload_authentication_admin_username }}"
+  cluster_role: cluster-admin
+  password: "{{ ocp4_workload_authentication_admin_password }}"
+  password_length: "{{ ocp4_workload_authentication_admin_password_length }}"
+  keycloak_realm_roles:
+  - admin
+
+# Admin user is handled like other cluster users if configured to be created.
+_ocp4_workload_authentication_cluster_accounts: >-
+  {{ 
+    (
+      [_ocp4_workload_authentication_admin_user]
+      if ocp4_workload_authentication_admin_create | bool else
+      []
+    ) + ocp4_workload_authentication_cluster_accounts
+  }}
