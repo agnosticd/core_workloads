@@ -32,32 +32,31 @@ spec:
           description: "Default user role"
         - name: admin
           description: "Administrator role"
-{% if ocp4_workload_authentication_num_users | int > 0 or _ocp4_workload_authentication_cluster_users | length > 0 %}
+{% if ocp4_workload_authentication_num_users | int > 0 or _ocp4_workload_authentication_cluster_accounts | length > 0 %}
     users:
-{% for _user in _ocp4_workload_authentication_cluster_users %}
-      - username: {{ _user.name }}
+{% for _account in _ocp4_workload_authentication_cluster_accounts %}
+      - username: {{ _account.name }}
         enabled: true
         emailVerified: true
-        email: {{ _user.name }}@demo.redhat.com
-        firstName: {{ _user.name | capitalize }}
+        email: {{ _account.name }}@demo.redhat.com
+        firstName: {{ _account.name | capitalize }}
         lastName: Demo
         credentials:
           - type: password
-            value: {{ _ocp4_workload_authentication_cluster_user_passwords[_user.name] | to_json }}
+            value: {{ _ocp4_workload_authentication_cluster_account_passwords[_account.name] | to_json }}
             temporary: false
-        realmRoles: {{ _user.realm_roles | default(['user']) | to_json }}
+        realmRoles: {{ _account.keycloak_realm_roles | default(['user']) | to_json }}
 {% endfor %}
-{% for _n in range(0, ocp4_workload_authentication_num_users) %}
-{% set _name = ocp4_workload_authentication_user_name if ocp4_workload_authentication_num_users == 1 else ocp4_workload_authentication_user_basename ~ (_n+1) %}
-      - username: {{ _name }}
+{% for _account in _ocp4_workload_authentication_user_accounts %}
+      - username: {{ _account.name }}
         enabled: true
         emailVerified: true
-        email: {{ _name }}@demo.redhat.com
-        firstName: {{ _name | capitalize }}
+        email: {{ _account.name }}@demo.redhat.com
+        firstName: {{ _account.name | capitalize }}
         lastName: Demo
         credentials:
           - type: password
-            value: {{ _ocp4_workload_authentication_user_passwords[_n] | to_json }}
+            value: {{ _account.password | to_json }}
             temporary: false
         realmRoles:
           - user

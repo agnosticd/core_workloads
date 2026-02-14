@@ -11,36 +11,42 @@ ocp4_workload_authentication_admin_password: ""
 # Length of password if generated for admin user.
 ocp4_workload_authentication_admin_password_length: 10
 
-# Optional cluster users if users other than admin should be created.
-# These cluster users are created in the authentication provider but are
+# Optional cluster accounts if accounts other than admin should be created.
+# These cluster accounts are created in the authentication provider but are
 # not reported as users with `agnosticd_user_info` and so do not create
 # seats for workshop usage.
 #
-# An admin user with cluster-admin access is automatically added to the list of
-# cluster users if  ocp4_workload_authentication_admin_create is set.
+# An admin account with cluster-admin access is automatically added to the list
+# of cluster accounts if ocp4_workload_authentication_admin_create is true.
 # Ex:
-#ocp4_workload_authentication_cluster_users:
+#ocp4_workload_authentication_cluster_accounts:
 #- name: cluster-reader
 #  cluster_role: cluster-reader
 #  password: reader
-#  realm_roles:
-#  - auditor
-#  - user
 #- name: developer
 #  password_length: 8
-#  keycloak_realm_roles:
-#  - developer
-#  - user
-ocp4_workload_authentication_cluster_users: []
+ocp4_workload_authentication_cluster_accounts: []
 
 # Optional common password for all cluster user accounts.
-ocp4_workload_authentication_cluster_user_password: ""
+ocp4_workload_authentication_cluster_account_password: ""
 
 # Generate a separate password for each cluster user account.
-ocp4_workload_authentication_cluster_user_password_randomized: true
+ocp4_workload_authentication_cluster_account_password_randomized: true
 
 # Configure whether and how many numbered users to create.
 ocp4_workload_authentication_num_users: "{{ num_users | default(0) }}"
+
+# Configure user naming for multiuser mode.
+# This toggle determines whether a single user configured with a numeric
+# suffix, ex `user1` using `ocp4_workload_authentication_user_basename` or
+# whether it uses `ocp4_workload_authentication_user_name for` the user name.
+# It also controls account naming when multiple accounts are created per-user.
+#
+# If the service has a parameter for the number of users that can be 1 or
+# higher then then this should be explicitly set to true for consistent user
+# naming when ordered with just one user.
+ocp4_workload_authentication_multiuser: >-
+  {{ ocp4_workload_authentication_num_users | int > 1 }}
 
 # Base name prefix for numbered users
 ocp4_workload_authentication_user_basename: user
@@ -60,6 +66,19 @@ ocp4_workload_authentication_user_password_length: 10
 
 # Generate a separate password for each numbered user account.
 ocp4_workload_authentication_user_password_randomized: true
+
+# Account names to create for each user.
+# Default is to create a single account for each user named with either
+# ocp4_workload_authentication_user_name for single user deployment or
+# ocp4_workload_authentication_user_basename followed by the numerical
+# suffix for multiple users.
+ocp4_workload_authentication_per_user_account_names:
+- >-
+  {{
+    ocp4_workload_authentication_user_basename
+    if ocp4_workload_authentication_multiuser | bool else
+    ocp4_workload_authentication_user_name
+  }}
 
 # Remove secret for kubeadmin user access created in initial cluster installation.
 ocp4_workload_authentication_remove_kubeadmin: true
