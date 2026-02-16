@@ -5,3 +5,13 @@
     api_version: v1
     kind: Namespace
     name: "{{ ocp4_workload_authentication_keycloak_namespace }}"
+
+- name: Reset OAuth cluster configuration
+  kubernetes.core.k8s:
+    resource_definition:
+      apiVersion: config.openshift.io/v1
+      kind: OAuth
+      metadata:
+        name: cluster
+      spec:
+        identityProviders: []
