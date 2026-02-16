@@ -9,7 +9,7 @@ ocp4_workload_authentication_admin_username: admin
 ocp4_workload_authentication_admin_password: ""
 
 # Length of password if generated for admin user.
-ocp4_workload_authentication_admin_password_length: 10
+ocp4_workload_authentication_admin_password_length: 16
 
 # Optional cluster accounts if accounts other than admin should be created.
 # These cluster accounts are created in the authentication provider but are
@@ -24,7 +24,7 @@ ocp4_workload_authentication_admin_password_length: 10
 #  cluster_role: cluster-reader
 #  password: reader
 #- name: developer
-#  password_length: 8
+#  password_length: 16
 ocp4_workload_authentication_cluster_accounts: []
 
 # Optional common password for all cluster user accounts.
@@ -62,7 +62,7 @@ ocp4_workload_authentication_user_name: user
 ocp4_workload_authentication_user_password: ""
 
 # Length of password generated for user.
-ocp4_workload_authentication_user_password_length: 10
+ocp4_workload_authentication_user_password_length: 16
 
 # Generate a separate password for each numbered user account.
 ocp4_workload_authentication_user_password_randomized: true
@@ -99,6 +99,7 @@ ocp4_workload_authentication_keycloak_namespace: keycloak
 
 ocp4_workload_authentication_keycloak_pgsql_user: keycloak
 
+# Postgres database password for keycloak. Password generated if empty.
 ocp4_workload_authentication_keycloak_pgsql_password: ""
 
 ocp4_workload_authentication_keycloak_channel: stable-v26.2

@@ -26,7 +26,7 @@
           lookup('password',
             [output_dir, 'keycloak-openid-client-secret'] | ansible.builtin.path_join,
             chars=['ascii_letters','digits'],
-            length=10
+            length=16
           )
         , true)
       }}
@@ -42,7 +42,7 @@
           lookup('password',
             [output_dir, 'keycloak-pgsql-password'] | ansible.builtin.path_join,
             chars=['ascii_letters','digits'],
-            length=10
+            length=16
           )
         , true)
       }}
