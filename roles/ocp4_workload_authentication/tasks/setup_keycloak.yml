@@ -1,0 +1,110 @@
+---
+# Install and configure keycloak
+- name: Install keycloak operator
+  ansible.builtin.include_role:
+    name: install_operator
+  vars:
+    install_operator_name: rhbk-operator
+    install_operator_namespace: "{{ ocp4_workload_authentication_keycloak_namespace }}"
+    install_operator_manage_namespaces:
+    - "{{ ocp4_workload_authentication_keycloak_namespace }}"
+    install_operator_channel: "{{ ocp4_workload_authentication_keycloak_channel }}"
+    install_operator_automatic_install_plan_approval: "{{ ocp4_workload_authentication_keycloak_automatic_install_plan_approval | default('true') }}"
+    install_operator_starting_csv: "{{ ocp4_workload_authentication_keycloak_starting_csv }}"
+    install_operator_catalogsource_setup: "{{ ocp4_workload_authentication_keycloak_use_catalog_source }}"
+    install_operator_catalogsource_image: "{{ ocp4_workload_authentication_keycloak_catalogsource_image }}"
+    install_operator_catalogsource_image_tag: "{{ ocp4_workload_authentication_keycloak_catalogsource_tag }}"
+
+# Set openshift client secret by generating a value with file in output_dir
+# for persistence.
+- name: Set openshift client secret
+  ansible.builtin.set_fact:
+    _ocp4_workload_authentication_keycloak_openshift_client_secret: >-
+      {{
+        ocp4_workload_authentication_keycloak_openshift_client_secret
+        | default(
+          lookup('password',
+            [output_dir, 'keycloak-openid-client-secret'] | ansible.builtin.path_join,
+            chars=['ascii_letters','digits'],
+            length=16
+          )
+        , true)
+      }}
+
+# Set keycloak postgres password by generating a value with file in output_dir
+# for persistence.
+- name: Set keycloak pgsql password
+  ansible.builtin.set_fact:
+    _ocp4_workload_authentication_keycloak_pgsql_password: >-
+      {{
+        ocp4_workload_authentication_keycloak_pgsql_password
+        | default(
+          lookup('password',
+            [output_dir, 'keycloak-pgsql-password'] | ansible.builtin.path_join,
+            chars=['ascii_letters','digits'],
+            length=16
+          )
+        , true)
+      }}
+
+- name: Create Keycloak namespace
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: "{{ ocp4_workload_authentication_keycloak_namespace }}"
+    state: present
+
+- name: Create Keycloak PSQL deployment
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ ocp4_workload_authentication_keycloak_namespace }}"
+    template: "{{ item }}"
+  loop:
+  - keycloak/postgres_database_user_details.yml.j2
+  - keycloak/postgres_database_pvc.yml.j2
+  - keycloak/postgres_database_deployment.yml.j2
+  - keycloak/postgres_database_service.yml.j2
+
+- name: Create Keycloak instance
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ ocp4_workload_authentication_keycloak_namespace }}"
+    template: "{{ item }}"
+  loop:
+  - keycloak/tls_service.yml.j2
+  - keycloak/instance.yml.j2
+  - keycloak/route.yml.j2
+  - keycloak/realm_import.yml.j2
+  register: r_keycloak_instance
+  retries: 120
+  delay: 10
+  until: r_keycloak_instance is not failed
+
+- name: Create Openshift auth resources
+  kubernetes.core.k8s:
+    state: present
+    template: "{{ item }}"
+  loop:
+  - keycloak/openshift-openid-client-secret.yml.j2
+  - keycloak/openshift-oauth.yml.j2
+
+- name: Retrieve Keycloak admin credentials
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: keycloak-initial-admin
+    namespace: "{{ ocp4_workload_authentication_keycloak_namespace }}"
+  register: r_keycloak_credentials
+  retries: 120
+  delay: 10
+  until:
+  - r_keycloak_credentials is defined
+  - r_keycloak_credentials.resources is defined
+  - r_keycloak_credentials.resources | length > 0
+
+- name: Set facts for keycloak admin
+  ansible.builtin.set_fact:
+    _ocp4_workload_authentication_keycloak_admin_username: >-
+      {{ r_keycloak_credentials.resources[0].data.username | b64decode }}
+    _ocp4_workload_authentication_keycloak_admin_password: >-
+      {{ r_keycloak_credentials.resources[0].data.password | b64decode }}

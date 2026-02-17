@@ -1,0 +1,155 @@
+= ocp4_workload_authentication - Configure cluster authentication
+
+Supports htpasswd and keycloak identity providers.
+
+See defaults/main.yml for variables to set.
+
+== Usage
+
+When configuring authentication for an RHDP service it is important to think
+about the relationship of authentication to the users of the service, in
+particular what accounts are configured and reported for the cluster itself
+and what is for workshop users of the environment.
+For clarity we will refer to "users" as describing workshop users provided by
+the cluster and "accounts" as entries in the authentication provider either
+created for the cluster or created for workshop users.
+
+This workload supports three usage patterns:
+
+* Single-user provision
+* Multiuser provision
+* Cluster configuration only (default)
+
+=== Single-user provision
+
+In a single-user provision a single workshop user is configured.
+The variable `ocp4_workload_authentication_user_name` can be used to configure the user name.
+This will create a single seat for a workshop user with an account name matching the user name.
+
+In the simplest use case a user is created named `user` with an account named the same.
+
+.example vars
+----
+num_users: 1
+----
+
+.example provision data
+----
+users:
+  user:
+    password: XhWsWamkPC
+    user: user
+----
+
+A customized user name may be desired for the user:
+
+.example vars
+----
+num_users: 1
+ocp4_workload_authentication_user_name: developer
+----
+
+.example provision data
+----
+users:
+  developer:
+    password: XhWsWamkPC
+    user: developer
+----
+
+In some cases a workshop user may need multiple accounts so that they can explore different personas.
+`ocp4_workload_authentication_per_user_account_names` can be used to configure the accounts created for the user.
+Note in this case that the authentication accounts are named `developer` and `operations` while the workshop seat user name is the default `user`.
+It is important to remember when writing lab instructions that if custom account names are used then the account name may differ from the workshop user name.
+All accounts for the user share the same password.
+
+.example vars
+----
+num_users: 1
+ocp4_workload_authentication_per_user_account_names:
+- developer
+- operations
+----
+
+.example provision data
+----
+users:
+  user:
+    developer_username: developer
+    operations_username: operations
+    password: XhWsWamkPC
+----
+
+=== Multiuser provision
+
+In a multiuser deployment one or more workshop users are configured.
+It is similar to the single-user case described above, but the user naming
+convention adds numerical suffixes to each user.
+`ocp4_workload_authentication_multiuser: true` should be set explicitly to
+keep consistent user naming when a multiuser environment is ordered with a
+single user. The variable `ocp4_workload_authentication_user_basename` can
+be used to control the user naming if desired.
+
+The simple multiuser use case creates two users and each with one account with a matching name.
+
+.example vars
+----
+ocp4_workload_authentication_multiuser: true
+num_users: 1
+----
+
+.example provision data
+----
+users:
+  user1:
+    password: QaGZTmprcx
+    user: user1
+----
+
+Multiple accounts may be configured per workshop user as described above for the sigle user case.
+
+.example vars                                                                         
+----
+ocp4_workload_authentication_multiuser: true                                          
+num_users: 1
+ocp4_workload_authentication_per_user_account_names:   
+- developer
+- operations           
+----
+
+.example provision data                                  
+----
+users:          
+  user1:                    
+    developer_username: developer1
+    operations_username: operations1
+    password: XhWsWamkPC
+----
+
+=== Cluster configuration only
+
+The default behavior is to configure only the base authentication provider without workshop users.
+The authentication provider may still be configured with accounts that are not associated with workshop users.
+By default an `admin` account is configured and reported as provision data for the service owner.
+This may be configured with `ocp4_workload_authentication_admin_create`.
+Additional cluster accounts may be configured with `ocp4_workload_authentication_cluster_accounts`.
+Optional cluster roles may be specified for these accounts similar to how the admin account is given a `cluster-admin` cluster role binding.
+
+This usage is most useful for open-environment or base component usage that do not involve deployment of a lab user interface such as showroom.
+
+.example vars                                                                         
+----
+ocp4_workload_authentication_cluster_accounts:
+- name: cluster-reader
+  cluster_role: cluster-reader
+  password: reader
+----
+
+.example provision data                                  
+----
+openshift_cluster_account_passwords:
+  admin: 5AJcm2OfMf
+  cluster-reader: dsWa4eNG5S
+openshift_cluster_admin_password: 5AJcm2OfMf
+openshift_cluster_admin_username: admin
+----
