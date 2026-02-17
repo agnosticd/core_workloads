@@ -29,12 +29,6 @@
       `{{ ocp4_workload_authentication_user_basename ~ ocp4_workload_authentication_num_users }}`
       {%- if ocp4_workload_authentication_user_password_randomized | bool %}
       created.
-
-      {% for _n in range(0, ocp4_workload_authentication_num_users) -%}
-      User `{{ ocp4_workload_authentication_user_basename }}{{ _n + 1 }}`,
-      Password `{{ _ocp4_workload_authentication_user_passwords[_n] }}`
-
-      {% endfor %}
       {%- else %}
       created with password `{{ _ocp4_workload_authentication_user_password }}`.
       {%- endif %}
