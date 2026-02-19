@@ -53,6 +53,10 @@
     kind: Namespace
     name: "{{ ocp4_workload_authentication_keycloak_namespace }}"
     state: present
+  register: r_keycloak_namespace
+  retries: 5
+  delay: 10
+  until: r_keycloak_namespace is success
 
 - name: Create Keycloak PSQL deployment
   kubernetes.core.k8s:
@@ -64,6 +68,10 @@
   - keycloak/postgres_database_pvc.yml.j2
   - keycloak/postgres_database_deployment.yml.j2
   - keycloak/postgres_database_service.yml.j2
+  register: r_keycloak_psql
+  retries: 5
+  delay: 10
+  until: r_keycloak_psql is success
 
 - name: Create Keycloak instance
   kubernetes.core.k8s:
@@ -87,6 +95,10 @@
   loop:
   - keycloak/openshift-openid-client-secret.yml.j2
   - keycloak/openshift-oauth.yml.j2
+  register: r_openshift_auth
+  retries: 5
+  delay: 10
+  until: r_openshift_auth is success
 
 - name: Retrieve Keycloak admin credentials
   kubernetes.core.k8s_info:

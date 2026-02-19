@@ -20,3 +20,7 @@
     label: "{{ _account.name }}"
     loop_var: _account
   when: _account.cluster_role | default('') != ''
+  register: r_cluster_role_bindings
+  retries: 5
+  delay: 10
+  until: r_cluster_role_bindings is success

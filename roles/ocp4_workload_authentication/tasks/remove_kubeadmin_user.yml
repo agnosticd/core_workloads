@@ -6,3 +6,7 @@
     kind: Secret
     name: kubeadmin
     namespace: kube-system
+  register: r_remove_kubeadmin
+  retries: 5
+  delay: 10
+  until: r_remove_kubeadmin is success
