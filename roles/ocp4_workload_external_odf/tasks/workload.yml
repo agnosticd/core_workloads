@@ -124,6 +124,11 @@
       status: "True"
       type: Available
   register: r_backingstore
+  until:
+  - r_backingstore.resources is defined
+  - r_backingstore.resources | length > 0
+  retries: 60
+  delay: 10
 
 - name: Change BackingStore numVolumes in pvPool
   kubernetes.core.k8s:
