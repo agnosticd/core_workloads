@@ -15,9 +15,10 @@ ocp4_workload_devspaces_devworkspace_devfile: >-
 # Either have one user specified with ocp4_workload_devspaces_username
 ocp4_workload_devspaces_username: user1
 # Or have a number of users starting with ocp4_workload_devspaces_user_base
-ocp4_workload_devspaces_user_base: user
-ocp4_workload_devspaces_user_count: 2
+# ocp4_workload_devspaces_user_base: user
+# ocp4_workload_devspaces_user_count: 2
 
+ocp4_workload_devspaces_devworkspace_project: project
 ocp4_workload_devspaces_devworkspace_name: workspace
 # Actual namespace will be either ocp4_workload_devspaces_devworkspace_namespace_base-ocp4_workload_devspaces_username
 # or ocp4_workload_devspaces_devworkspace_namespace_base-ocp4_workload_devspaces_user_baseXX
