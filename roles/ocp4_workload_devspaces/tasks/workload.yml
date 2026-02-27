@@ -18,18 +18,18 @@
 #     state: present
 #     template: checluster.yaml.j2
 
-# - name: Wait until devspaces dashboard pod is ready
-#   kubernetes.core.k8s_info:
-#     api_version: v1
-#     kind: Pod
-#     label_selectors:
-#     - component=devspaces-dashboard
-#     namespace: "{{ ocp4_workload_devspaces_namespace }}"
-#   register: r_devspaces_dashboard_pod
-#   failed_when: r_devspaces_dashboard_pod.resources[0].status.phase | default('') != 'Running'
-#   until: r_devspaces_dashboard_pod is successful
-#   retries: 30
-#   delay: 10
+- name: Wait until devspaces dashboard pod is ready
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    label_selectors:
+    - component=devspaces-dashboard
+    namespace: "{{ ocp4_workload_devspaces_namespace }}"
+  register: r_devspaces_dashboard_pod
+  failed_when: r_devspaces_dashboard_pod.resources[0].status.phase | default('') != 'Running'
+  until: r_devspaces_dashboard_pod is successful
+  retries: 30
+  delay: 10
 
 - name: Create DevWorkspace(s)
   when: ocp4_workload_devspaces_setup_devworkspaces | bool
