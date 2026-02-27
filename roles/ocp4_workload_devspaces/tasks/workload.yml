@@ -32,7 +32,7 @@
 #   delay: 10
 
 - name: Create DevWorkspace(s)
-  when: ocp4_workload_devspaces_devworkspaces | bool
+  when: ocp4_workload_devspaces_setup_devworkspaces | bool
   block:
   - name: Check {{ ocp4_workload_devspaces_devworkspace_devfile }}
     kubernetes.core.k8s_exec:
