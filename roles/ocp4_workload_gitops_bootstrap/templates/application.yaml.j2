@@ -5,7 +5,7 @@ metadata:
   name: "{{ ocp4_workload_gitops_bootstrap_final_application_name }}"
   namespace: {{ ocp4_workload_gitops_bootstrap_namespace }}
 spec:
-  project: default
+  project: "{{ ocp4_workload_gitops_bootstrap_application_project_name | default('default') }}"
   source:
     repoURL: {{ ocp4_workload_gitops_bootstrap_repo_url }}
     targetRevision: {{ ocp4_workload_gitops_bootstrap_repo_revision }}

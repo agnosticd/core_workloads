@@ -31,6 +31,7 @@
   ansible.builtin.set_fact:
     ocp4_workload_gitops_bootstrap_repo_path: "tenant/bootstrap"
     ocp4_workload_gitops_bootstrap_final_application_name: "bootstrap-tenant-{{ guid }}"
+    ocp4_workload_gitops_bootstrap_application_project_name: "tenants"
 
 - name: Set final_application_name to application_name if final_application_name is not set
   when: ocp4_workload_gitops_bootstrap_final_application_name is not defined
