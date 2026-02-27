@@ -24,12 +24,14 @@ ocp4_workload_devspaces_devworkspace_name: workspace
 # or ocp4_workload_devspaces_devworkspace_namespace_base-ocp4_workload_devspaces_user_baseXX
 ocp4_workload_devspaces_devworkspace_namespace_base: devworkspace-
 
-# Repo to be cloned into the devworkspace
+# Repo to be cloned into the devworkspace - one of the two options must be set
 # Either the full path to a repository
-ocp4_workload_devspaces_devworkspace_git_repo: https://github.com/eclipse-che/che-docs
+# ocp4_workload_devspaces_devworkspace_git_repo: https://github.com/eclipse-che/che-docs
+
 # Or the Base followed by userXX followed by repo name
 # ocp4_workload_devspaces_devworkspace_git_repo_base: http://gitea.gitea.svc:3000
 # ocp4_workload_devspaces_devworkspace_git_repo_name: reponame
+
 ocp4_workload_devspaces_devworkspace_git_revision: main
 
 ocp4_workload_devspaces_devworkspace_components:
