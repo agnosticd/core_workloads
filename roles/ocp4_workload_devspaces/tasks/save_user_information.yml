@@ -15,13 +15,13 @@
     _ocp4_workload_devspaces_url: "https://{{ r_devspaces_route.resources[0].spec.host }}"
 
 - name: Save DevSpaces URL (single user)
-  when: ocp4_workload_devspaces_user_count | int == 1
+  when: ocp4_workload_devspaces_user_count is not defined
   agnosticd.core.agnosticd_user_info:
     data:
       devspaces_url: "{{ _ocp4_workload_devspaces_url }}"
 
 - name: Save DevSpaces URL (multiple users)
-  when: ocp4_workload_devspaces_user_count | int > 1
+  when: ocp4_workload_devspaces_user_count is defined
   agnosticd.core.agnosticd_user_info:
     user: "{{ ocp4_workload_devspaces_user_base }}{{ n }}"
     data:
