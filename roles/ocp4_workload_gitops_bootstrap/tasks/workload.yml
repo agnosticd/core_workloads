@@ -11,10 +11,6 @@
   ansible.builtin.debug:
     msg: "{{ _ocp4_workload_gitops_bootstrap_deployer_values | to_yaml }}"
 
-- name: Report boostrap application name
-  ansible.builtin.debug:
-    msg: "Deploying boostrap application: {{ ocp4_workload_gitops_bootstrap_application_name }}"
-
 - name: Set App paths for 'bootstrap', infra + tenants deployment scenario
   when: ocp4_workload_gitops_bootstrap_application_name == 'bootstrap'
   ansible.builtin.set_fact:
@@ -34,7 +30,16 @@
   when: ocp4_workload_gitops_bootstrap_application_name == 'bootstrap-tenant'
   ansible.builtin.set_fact:
     ocp4_workload_gitops_bootstrap_repo_path: "tenant/bootstrap"
-    ocp4_workload_gitops_bootstrap_application_name: "bootstrap-tenant-{{ guid }}"
+    ocp4_workload_gitops_bootstrap_final_application_name: "bootstrap-tenant-{{ guid }}"
+
+- name: Set final_application_name to application_name if final_application_name is not set
+  when: ocp4_workload_gitops_bootstrap_final_application_name is not defined
+  ansible.builtin.set_fact:
+    ocp4_workload_gitops_bootstrap_final_application_name: "{{ ocp4_workload_gitops_bootstrap_application_name }}"
+
+- name: Report boostrap final application name
+  ansible.builtin.debug:
+    msg: "Deploying boostrap final application name: {{ ocp4_workload_gitops_bootstrap_final_application_name }}"
 
 - name: Create bootstrap ArgoCD application
   kubernetes.core.k8s:
