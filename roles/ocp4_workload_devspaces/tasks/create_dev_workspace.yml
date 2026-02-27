@@ -1,0 +1,8 @@
+---
+- name: Create DevWorkspace
+  kubernetes.core.k8s:
+    state: present
+    template: "{{ item }}"
+  loop:
+  - namespace.yaml.j2
+  - devworkspace.yaml.j2

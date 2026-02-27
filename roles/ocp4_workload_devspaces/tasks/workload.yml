@@ -31,8 +31,8 @@
   retries: 30
   delay: 10
 
-- name: Create DevWorkspace
-  when: ocp4_workload_devspaces_devworkspace | bool
+- name: Create DevWorkspace(s)
+  when: ocp4_workload_devspaces_devworkspaces | bool
   block:
   - name: Check {{ ocp4_workload_devspaces_devworkspace_devfile }}
     kubernetes.core.k8s_exec:
@@ -46,63 +46,35 @@
     retries: 15
     delay: 5
 
-  - name: Create DevWorkspace
-    kubernetes.core.k8s:
-      state: present
-      template: "{{ item }}"
-    loop:
-    - namespace.yaml.j2
-    - devworkspace.yaml.j2
+  - name: Create DevWorkspace for single user
+    when: ocp4_workload_devspaces_user_count | int == 1
+    vars:
+      _ocp4_workload_devspaces_devworkspace_namespace: "{{ ocp4_workload_devspaces_devworkspace_namespace_base }}{{ ocp4_workload_devspaces_username }}"
+      _ocp4_workload_devspaces_devworkspace_username: "{{ ocp4_workload_devspaces_username }}"
+      _ocp4_workload_devspaces_devworkspace_git_repo: >-
+        {{ ((ocp4_workload_devspaces_devworkspace_git_repo | default('') | trim | length) > 0)
+        | ternary(ocp4_workload_devspaces_devworkspace_git_repo,
+          (ocp4_workload_devspaces_devworkspace_git_repo_base is defined
+          | ternary(ocp4_workload_devspaces_devworkspace_git_repo_base ~ '/' ~ ocp4_workload_devspaces_user_base ~ '/' ~ (ocp4_workload_devspaces_devworkspace_git_repo_name | default('')),
+          '')) }}
+    ansible.builtin.include_tasks: create_dev_workspace.yml
 
-  - name: Check/recover devworkspace
-    block:
-    - name: Check that devworkspace is running
-      kubernetes.core.k8s_info:
-        api_version: workspace.devfile.io/v1alpha2
-        kind: DevWorkspace
-        name: "{{ ocp4_workload_devspaces_devworkspace_name }}"
-        namespace: "{{ ocp4_workload_devspaces_devworkspace_namespace }}"
-      register: r_devworkspace
-      failed_when: r_devworkspace.resources[0].status.phase | default('') != 'Running'
-      until: r_devworkspace is successful
-      retries: 30
-      delay: 10
-    rescue:
-    - name: Delete devworkspace (rescue)
-      kubernetes.core.k8s:
-        state: absent
-        api_version: workspace.devfile.io/v1alpha2
-        kind: DevWorkspace
-        name: "{{ ocp4_workload_devspaces_devworkspace_name }}"
-        namespace: "{{ ocp4_workload_devspaces_devworkspace_namespace }}"
-
-    - name: wait for devworkspace deletion (rescue)
-      kubernetes.core.k8s_info:
-        api_version: workspace.devfile.io/v1alpha2
-        kind: DevWorkspace
-        name: "{{ ocp4_workload_devspaces_devworkspace_name }}"
-        namespace: "{{ ocp4_workload_devspaces_devworkspace_namespace }}"
-      register: r_devworkspace_deletion
-      until: r_devworkspace_deletion.resources | length == 0
-      retries: 10
-      delay: 5
-
-    - name: Recreate devworkspace (rescue)
-      kubernetes.core.k8s:
-        state: present
-        template: devworkspace.yaml.j2
-
-    - name: Check devworkspace is running (rescue)
-      kubernetes.core.k8s_info:
-        api_version: workspace.devfile.io/v1alpha2
-        kind: DevWorkspace
-        name: "{{ ocp4_workload_devspaces_devworkspace_name }}"
-        namespace: "{{ ocp4_workload_devspaces_devworkspace_namespace }}"
-      register: r_devworkspace_retry
-      failed_when: r_devworkspace_retry.resources[0].status.phase | default('') != 'Running'
-      until: r_devworkspace_retry is successful
-      retries: 30
-      delay: 5
+  - name: Create DevWorkspace for multiple users  
+    when: ocp4_workload_devspaces_user_count | int > 1
+    vars:
+      _ocp4_workload_devspaces_devworkspace_namespace: "{{ ocp4_workload_devspaces_devworkspace_namespace_base }}{{ ocp4_workload_devspaces_user_base }}{{ n }}"
+      _ocp4_workload_devspaces_devworkspace_username: "{{ ocp4_workload_devspaces_user_base }}{{ n }}"
+      _ocp4_workload_devspaces_devworkspace_git_repo: >-
+        {{ ((ocp4_workload_devspaces_devworkspace_git_repo | default('') | trim | length) > 0)
+        | ternary(ocp4_workload_devspaces_devworkspace_git_repo,
+          (ocp4_workload_devspaces_devworkspace_git_repo_base is defined
+          | ternary(ocp4_workload_devspaces_devworkspace_git_repo_base ~ '/' ~ ocp4_workload_devspaces_user_base ~ n ~ '/' ~ (ocp4_workload_devspaces_devworkspace_git_repo_name | default('')),
+          '')) }}
+    ansible.builtin.include_tasks: create_dev_workspace.yml
+    loop: "{{ range(1, ocp4_workload_devspaces_user_count | int + 1) | list }}"
+    loop_control:
+      loop_var: n
+      label: "{{ ocp4_workload_devspaces_user_base }}{{ n }}"
 
 - name: Save user information
   ansible.builtin.include_tasks: save_user_information.yml
