@@ -1,26 +1,42 @@
 ---
-ocp4_workload_devspaces_catalogsource_setup: true
-ocp4_workload_devspaces_catalogsource_name: devspaces-catalogsource
-ocp4_workload_devspaces_catalogsource_image: ""
-ocp4_workload_devspaces_catalogsource_tag: ""
-
 ocp4_workload_devspaces_channel: stable
 ocp4_workload_devspaces_startingcsv: ""
 
+ocp4_workload_devspaces_catalogsource_setup: false
+ocp4_workload_devspaces_catalogsource_name: devspaces-catalogsource
+ocp4_workload_devspaces_catalogsource_image: ""
+ocp4_workload_devspaces_catalogsource_tag: ""
 ocp4_workload_devspaces_namespace: openshift-devspaces
-ocp4_workload_devspaces_user_base: user
-ocp4_workload_devspaces_user_count: 1
 
-ocp4_workload_devspaces_devworkspace: true
-ocp4_workload_devspaces_devworkspace_name: mydevworkspace
-ocp4_workload_devspaces_devworkspace_namespace: devworkspaces
-ocp4_workload_devspaces_devworkspace_username: user1
-ocp4_workload_devspaces_devworkspace_project: myproject
-ocp4_workload_devspaces_devworkspace_git_repo: https://github.com/eclipse-che/che-docs
+ocp4_workload_devspaces_setup_devworkspaces: false
+ocp4_workload_devspaces_devworkspace_devfile: >-
+  http://devspaces-dashboard.openshift-devspaces.svc.cluster.local:8080/dashboard/api/editors/devfile?che-editor=che-incubator/che-code/latest
+
+# Either have one user specified with ocp4_workload_devspaces_username
+ocp4_workload_devspaces_username: user1
+# Or have a number of users starting with ocp4_workload_devspaces_user_base
+# ocp4_workload_devspaces_user_base: user
+# ocp4_workload_devspaces_user_count: 2
+
+ocp4_workload_devspaces_devworkspace_project: project
+ocp4_workload_devspaces_devworkspace_name: workspace
+# Actual namespace will be either ocp4_workload_devspaces_devworkspace_namespace_base-ocp4_workload_devspaces_username
+# or ocp4_workload_devspaces_devworkspace_namespace_base-ocp4_workload_devspaces_user_baseXX
+ocp4_workload_devspaces_devworkspace_namespace_base: devworkspace-
+
+# Repo to be cloned into the devworkspace - one of the two options must be set
+# Either the full path to a repository
+# ocp4_workload_devspaces_devworkspace_git_repo: https://github.com/eclipse-che/che-docs
+
+# Or the Base followed by userXX followed by repo name
+# ocp4_workload_devspaces_devworkspace_git_repo_base: http://gitea.gitea.svc:3000
+# ocp4_workload_devspaces_devworkspace_git_repo_name: reponame
+
 ocp4_workload_devspaces_devworkspace_git_revision: main
+
 ocp4_workload_devspaces_devworkspace_components:
 - name: tooling
   container:
-    image: registry.redhat.io/devspaces/udi-rhel8:latest
-ocp4_workload_devspaces_devworkspace_devfile: >-
-  http://devspaces-dashboard.openshift-devspaces.svc.cluster.local:8080/dashboard/api/editors/devfile?che-editor=che-incubator/che-code/latest
+    image: registry.redhat.io/devspaces/udi-base-rhel10:latest
+    # image: registry.redhat.io/devspaces/udi-rhel8:latest
+    # image: registry.redhat.io/devspaces/udi-rhel9:latest

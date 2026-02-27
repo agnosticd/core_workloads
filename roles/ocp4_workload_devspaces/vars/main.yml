@@ -1,2 +1,5 @@
 ---
+_ocp4_workload_devspaces_devworkspace_namespace: ""
+_ocp4_workload_devspaces_devworkspace_username: ""
 _ocp4_workload_devspaces_url: ""
+_ocp4_workload_devspaces_devworkspace_git_repo: ""
