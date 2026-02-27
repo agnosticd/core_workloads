@@ -46,21 +46,19 @@
     retries: 15
     delay: 5
 
-  - name: Set git repo for single user
-    when: ocp4_workload_devspaces_user_count | int == 1
-    ansible.builtin.set_fact:
+  - name: Create DevWorkspace for single user
+    when: ocp4_workload_devspaces_user_count is not defined
+    vars:
       _ocp4_workload_devspaces_devworkspace_namespace: "{{ ocp4_workload_devspaces_devworkspace_namespace_base }}{{ ocp4_workload_devspaces_username }}"
       _ocp4_workload_devspaces_devworkspace_username: "{{ ocp4_workload_devspaces_username }}"
       _ocp4_workload_devspaces_devworkspace_git_repo: >-
         {{ ocp4_workload_devspaces_devworkspace_git_repo if (ocp4_workload_devspaces_devworkspace_git_repo | default('') | trim | length) > 0
         else (ocp4_workload_devspaces_devworkspace_git_repo_base ~ '/' ~ ocp4_workload_devspaces_user_base ~ '/' ~ (ocp4_workload_devspaces_devworkspace_git_repo_name | default('')) if ocp4_workload_devspaces_devworkspace_git_repo_base is defined else "") }}
 
-  - name: Create DevWorkspace for single user
-    when: ocp4_workload_devspaces_user_count | int == 1
     ansible.builtin.include_tasks: create_dev_workspace.yml
 
   - name: Create DevWorkspace for multiple users
-    when: ocp4_workload_devspaces_user_count | int > 1
+    when: ocp4_workload_devspaces_user_count is defined
     ansible.builtin.include_tasks: create_dev_workspace.yml
     vars:
       _ocp4_workload_devspaces_devworkspace_namespace: "{{ ocp4_workload_devspaces_devworkspace_namespace_base }}{{ ocp4_workload_devspaces_user_base }}{{ n }}"
