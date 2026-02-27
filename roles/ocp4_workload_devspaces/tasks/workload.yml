@@ -52,9 +52,8 @@
       _ocp4_workload_devspaces_devworkspace_namespace: "{{ ocp4_workload_devspaces_devworkspace_namespace_base }}{{ ocp4_workload_devspaces_username }}"
       _ocp4_workload_devspaces_devworkspace_username: "{{ ocp4_workload_devspaces_username }}"
       _ocp4_workload_devspaces_devworkspace_git_repo: >-
-        {{ ocp4_workload_devspaces_devworkspace_git_repo if (ocp4_workload_devspaces_devworkspace_git_repo is defined
+        {{ ocp4_workload_devspaces_devworkspace_git_repo if ocp4_workload_devspaces_devworkspace_git_repo is defined
         else (ocp4_workload_devspaces_devworkspace_git_repo_base ~ '/' ~ ocp4_workload_devspaces_user_base ~ '/' ~ ocp4_workload_devspaces_devworkspace_git_repo_name ) if ocp4_workload_devspaces_devworkspace_git_repo_base is defined else "") }}
-
     ansible.builtin.include_tasks: create_dev_workspace.yml
 
   - name: Create DevWorkspace for multiple users
@@ -64,7 +63,7 @@
       _ocp4_workload_devspaces_devworkspace_namespace: "{{ ocp4_workload_devspaces_devworkspace_namespace_base }}{{ ocp4_workload_devspaces_user_base }}{{ n }}"
       _ocp4_workload_devspaces_devworkspace_username: "{{ ocp4_workload_devspaces_user_base }}{{ n }}"
       _ocp4_workload_devspaces_devworkspace_git_repo: >-
-        {{ ocp4_workload_devspaces_devworkspace_git_repo if (ocp4_workload_devspaces_devworkspace_git_repo is defined
+        {{ ocp4_workload_devspaces_devworkspace_git_repo if ocp4_workload_devspaces_devworkspace_git_repo is defined
         else (ocp4_workload_devspaces_devworkspace_git_repo_base ~ '/' ~ ocp4_workload_devspaces_user_base ~ n ~ '/' ~ ocp4_workload_devspaces_devworkspace_git_repo_name) if ocp4_workload_devspaces_devworkspace_git_repo_base is defined else "") }}
     loop: "{{ range(1, ocp4_workload_devspaces_user_count | int + 1) | list }}"
     loop_control:
