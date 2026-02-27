@@ -6,6 +6,7 @@ ocp4_workload_devspaces_catalogsource_setup: false
 ocp4_workload_devspaces_catalogsource_name: devspaces-catalogsource
 ocp4_workload_devspaces_catalogsource_image: ""
 ocp4_workload_devspaces_catalogsource_tag: ""
+ocp4_workload_devspaces_namespace: openshift-devspaces
 
 ocp4_workload_devspaces_setup_devworkspaces: false
 ocp4_workload_devspaces_devworkspace_devfile: >-
