@@ -30,26 +30,3 @@
     loop_control:
       loop_var: n
       label: "{{ ocp4_workload_devspaces_user_base }}{{ n }}"
-
-  - name: Save DevWorkspace information for a single user
-    when: ocp4_workload_devspaces_user_count | int == 1
-    vars:
-      _devworkspace_path: >-
-        "dashboard/#/ide/{{ ocp4_workload_devspaces_devworkspace_namespace_base }}{{ ocp4_workload_devspaces_devworkspace_name }}/{{ ocp4_workload_devspaces_devworkspace_name }}"
-    agnosticd.core.agnosticd_user_info:
-      data:
-        devworkspace_url: "{{ _ocp4_workload_devspaces_url }}/{{ _devworkspace_path }}"
-
-  - name: Save DevWorkspace information for multiple users
-    when: ocp4_workload_devspaces_user_count | int > 1
-    vars:
-      _devworkspace_path: >-
-        "dashboard/#/ide/{{ ocp4_workload_devspaces_devworkspace_namespace_base }}/{{ ocp4_workload_devspaces_devworkspace_name }}"
-    agnosticd.core.agnosticd_user_info:
-      user: "{{ ocp4_workload_devspaces_user_base }}{{ n }}"
-      data:
-        devworkspace_url: "{{ _ocp4_workload_devspaces_url }}/{{ _devworkspace_path }}"
-    loop: "{{ range(1, ocp4_workload_devspaces_user_count | int + 1) | list }}"
-    loop_control:
-      loop_var: n
-      label: "{{ ocp4_workload_devspaces_user_base }}{{ n }}"
