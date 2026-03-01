@@ -25,7 +25,25 @@ spec:
 {% endif %}
   - kind: quay
     managed: true
-    overrides: {{ ocp4_workload_quay_operator_registry_quay_overrides | default(omit) }}
+{% if ocp4_workload_quay_operator_registry_quay_overrides | bool %}
+    overrides:
+{% if ocp4_workload_quay_operator_registry_quay_overrides_env | bool %}
+      env:
+      - name: WORKER_COUNT
+        value: "{{ ocp4_workload_quay_operator_registry_quay_worker_count }}"
+      - name: WORKER_COUNT_REGISTRY
+        value: "{{ ocp4_workload_quay_operator_registry_quay_worker_count_registry }}"
+{% endif %}
+{% if ocp4_workload_quay_operator_registry_quay_overrides_resources | bool %}
+      resources:
+        requests:
+          cpu: "{{ ocp4_workload_quay_operator_registry_quay_cpu_request }}"
+          memory: "{{ ocp4_workload_quay_operator_registry_quay_memory_request }}"
+        limits:
+          cpu: "{{ ocp4_workload_quay_operator_registry_quay_cpu_limit }}"
+          memory: "{{ ocp4_workload_quay_operator_registry_quay_memory_limit }}"
+{% endif %}
+{% endif %}
   - kind: horizontalpodautoscaler
     managed: {{ ocp4_workload_quay_operator_registry_enable_hpa }}
   - kind: mirror
