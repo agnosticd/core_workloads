@@ -112,18 +112,3 @@ ocp4_workload_quay_operator_registry_quay_memory_limit: ""
 # ocp4_workload_quay_operator_registry_quay_memory_request: "8Gi"
 # ocp4_workload_quay_operator_registry_quay_cpu_limit: "4"
 # ocp4_workload_quay_operator_registry_quay_memory_limit: "16Gi"
-#
-# This will generate the following overrides:
-#   env:
-#   - name: WORKER_COUNT
-#     value: "10"
-#   - name: WORKER_COUNT_REGISTRY
-#     value: "20"
-#   resources:
-#     requests:
-#       cpu: "2"
-#       memory: "8Gi"
-#     limits:
-#       cpu: "4"
-#       memory: "16Gi"
-
