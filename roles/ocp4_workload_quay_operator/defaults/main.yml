@@ -93,8 +93,8 @@ ocp4_workload_quay_operator_registry_quay_overrides_env: true
 ocp4_workload_quay_operator_registry_quay_overrides_resources: true
 
 # Worker counts
-ocp4_workload_quay_operator_registry_quay_worker_count: "10"
-ocp4_workload_quay_operator_registry_quay_worker_count_registry: "20"
+ocp4_workload_quay_operator_registry_quay_worker_count: "2"
+ocp4_workload_quay_operator_registry_quay_worker_count_registry: "8"
 
 # Resource requests and limits
 ocp4_workload_quay_operator_registry_quay_cpu_request: "2"
