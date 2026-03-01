@@ -23,6 +23,9 @@ spec:
     overrides:
       volumeSize: {{ ocp4_workload_quay_operator_registry_clair_volume_size }}
 {% endif %}
+  - kind: quay
+    managed: true
+    overrides: {{ ocp4_workload_quay_operator_registry_quay_overrides | default(omit) }}
   - kind: horizontalpodautoscaler
     managed: {{ ocp4_workload_quay_operator_registry_enable_hpa }}
   - kind: mirror
