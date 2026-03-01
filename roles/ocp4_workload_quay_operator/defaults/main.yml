@@ -86,3 +86,18 @@ ocp4_workload_quay_operator_registry_clair_volume_size: 100Gi
 ocp4_workload_quay_operator_registry_enable_hpa: false
 ocp4_workload_quay_operator_registry_enable_mirror: false
 ocp4_workload_quay_operator_registry_enable_monitoring: false
+# ocp4_workload_quay_operator_registry_quay_overrides:
+#   env:
+#   - name: WORKER_COUNT
+#     value: "10"
+#   - name: WORKER_COUNT_REGISTRY
+#     value: "20"
+#   resources:
+#     requests:
+#       cpu: "2"
+#       memory: "8Gi"
+#     limits:
+#       cpu: "4"
+#       memory: "16Gi"
+    
+    
