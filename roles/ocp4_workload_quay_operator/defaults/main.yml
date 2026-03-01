@@ -89,26 +89,15 @@ ocp4_workload_quay_operator_registry_enable_monitoring: false
 # Quay component overrides - individual values
 # Enable/disable override sections
 ocp4_workload_quay_operator_registry_quay_overrides: false
-ocp4_workload_quay_operator_registry_quay_overrides_env: false
-ocp4_workload_quay_operator_registry_quay_overrides_resources: false
+ocp4_workload_quay_operator_registry_quay_overrides_env: true
+ocp4_workload_quay_operator_registry_quay_overrides_resources: true
 
 # Worker counts
-ocp4_workload_quay_operator_registry_quay_worker_count: ""
-ocp4_workload_quay_operator_registry_quay_worker_count_registry: ""
+ocp4_workload_quay_operator_registry_quay_worker_count: "10"
+ocp4_workload_quay_operator_registry_quay_worker_count_registry: "20"
 
 # Resource requests and limits
-ocp4_workload_quay_operator_registry_quay_cpu_request: ""
-ocp4_workload_quay_operator_registry_quay_memory_request: ""
-ocp4_workload_quay_operator_registry_quay_cpu_limit: ""
-ocp4_workload_quay_operator_registry_quay_memory_limit: ""
-
-# Example usage:
-# ocp4_workload_quay_operator_registry_quay_overrides: true
-# ocp4_workload_quay_operator_registry_quay_overrides_env: true
-# ocp4_workload_quay_operator_registry_quay_worker_count: "10"
-# ocp4_workload_quay_operator_registry_quay_worker_count_registry: "20"
-# ocp4_workload_quay_operator_registry_quay_overrides_resources: true
-# ocp4_workload_quay_operator_registry_quay_cpu_request: "2"
-# ocp4_workload_quay_operator_registry_quay_memory_request: "8Gi"
-# ocp4_workload_quay_operator_registry_quay_cpu_limit: "4"
-# ocp4_workload_quay_operator_registry_quay_memory_limit: "16Gi"
+ocp4_workload_quay_operator_registry_quay_cpu_request: "2"
+ocp4_workload_quay_operator_registry_quay_memory_request: "8Gi"
+ocp4_workload_quay_operator_registry_quay_cpu_limit: "4"
+ocp4_workload_quay_operator_registry_quay_memory_limit: "16Gi"
