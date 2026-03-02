@@ -2,4 +2,26 @@
 
 == Role overview
 
-It configures ODF in external mode and configure the image registry in a PVC
+It configures ODF in external mode and configure the image registry in a PVC.
+
+== NooBaa pvPool scaling
+
+When using clusters with more than 3 workers, both the number of pvPool volumes
+and the per-pod resource requests/limits need to be configured. Otherwise
+workloads like Quay that consume object storage will fail.
+
+Set all of the following in your AgnosticV catalog item:
+
+[source,yaml]
+----
+# Scale pvPool volumes to match worker node count
+ocp4_workload_external_odf_backingstore_pv_volumes: "{{ worker_instance_count | int }}"
+
+# Enable custom resource requests/limits for each BackingStore pod
+ocp4_workload_external_odf_backingstore_custom_resources: true
+ocp4_workload_external_odf_backingstore_cpu_limits: 1000m
+ocp4_workload_external_odf_backingstore_cpu_requests: 800m
+ocp4_workload_external_odf_backingstore_memory_limits: 4000Mi
+ocp4_workload_external_odf_backingstore_memory_requests: 800Mi
+ocp4_workload_external_odf_backingstore_storage_requests: 50Gi
+----
