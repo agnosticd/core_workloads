@@ -1,11 +1,16 @@
 ---
-- name: Set application paths and final application name
-  ansible.builtin.include_tasks: set_application_paths.yml
-
-- name: Remove bootstrap ArgoCD application
+# Delete the bootstrap Application.
+# Because the Application has resources-finalizer.argocd.argoproj.io,
+# ArgoCD will cascade-delete all child Applications and their managed
+# Kubernetes resources before the Application is fully removed.
+- name: Delete bootstrap ArgoCD Application
   kubernetes.core.k8s:
+    state: absent
     api_version: argoproj.io/v1alpha1
     kind: Application
-    name: "{{ ocp4_workload_gitops_bootstrap_final_application_name }}"
+    name: "{{ ocp4_workload_gitops_bootstrap_final_application_name
+              | default(ocp4_workload_gitops_bootstrap_application_name) }}"
     namespace: "{{ ocp4_workload_gitops_bootstrap_namespace }}"
-    state: absent
+    wait: true
+    wait_timeout: 300
+  ignore_errors: true
