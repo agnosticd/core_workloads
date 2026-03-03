@@ -1,9 +1,26 @@
 ---
-# Delete the bootstrap Application.
-# Because the Application has resources-finalizer.argocd.argoproj.io,
-# ArgoCD will cascade-delete all child Applications and their managed
-# Kubernetes resources before the Application is fully removed.
-- name: Delete bootstrap ArgoCD Application
+# Delete bootstrap Applications.
+# resources-finalizer.argocd.argoproj.io causes ArgoCD to cascade-delete
+# all child Applications and their managed resources before removal.
+
+- name: Delete multiple bootstrap Applications (multi-app mode)
+  when: ocp4_workload_gitops_bootstrap_applications | length > 0
+  kubernetes.core.k8s:
+    state: absent
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: "{{ app_item.name }}"
+    namespace: "{{ ocp4_workload_gitops_bootstrap_namespace }}"
+    wait: true
+    wait_timeout: 300
+  loop: "{{ ocp4_workload_gitops_bootstrap_applications }}"
+  loop_control:
+    loop_var: app_item
+    label: "{{ app_item.name }}"
+  ignore_errors: true
+
+- name: Delete single bootstrap Application (single-app mode)
+  when: ocp4_workload_gitops_bootstrap_applications | length == 0
   kubernetes.core.k8s:
     state: absent
     api_version: argoproj.io/v1alpha1

@@ -11,6 +11,54 @@
   ansible.builtin.debug:
     msg: "{{ _ocp4_workload_gitops_bootstrap_deployer_values | to_yaml }}"
 
+
+# ==================================================================
+# Multi-application mode: create multiple Applications in one call.
+# Runs when ocp4_workload_gitops_bootstrap_applications list is set.
+# ==================================================================
+- name: Create multiple bootstrap ArgoCD applications
+  when: ocp4_workload_gitops_bootstrap_applications | length > 0
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: "{{ app_item.name }}"
+        namespace: "{{ ocp4_workload_gitops_bootstrap_namespace }}"
+        finalizers:
+        - resources-finalizer.argocd.argoproj.io
+      spec:
+        project: "{{ app_item.project | default('default') }}"
+        source:
+          repoURL: "{{ app_item.repo_url | default(ocp4_workload_gitops_bootstrap_repo_url) }}"
+          targetRevision: "{{ app_item.repo_revision | default(ocp4_workload_gitops_bootstrap_repo_revision) }}"
+          path: "{{ app_item.path }}"
+          helm:
+            values: |
+              {{ (app_item.helm_values | default({}))
+                 | combine(_ocp4_workload_gitops_bootstrap_deployer_values)
+                 | to_nice_yaml
+                 | indent(width=14, first=False) }}
+        destination:
+          namespace: "{{ ocp4_workload_gitops_bootstrap_namespace }}"
+          server: https://kubernetes.default.svc
+        syncPolicy:
+          automated:
+            prune: false
+            selfHeal: false
+  loop: "{{ ocp4_workload_gitops_bootstrap_applications }}"
+  loop_control:
+    loop_var: app_item
+    label: "{{ app_item.name }}"
+
+- name: End play when multi-application mode used (no single-app logic needed)
+  when: ocp4_workload_gitops_bootstrap_applications | length > 0
+  ansible.builtin.meta: end_play
+
+# ==================================================================
+# Single-application mode (default)
+# ==================================================================
 - name: Set application paths and final application name
   ansible.builtin.include_tasks: set_application_paths.yml
 

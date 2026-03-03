@@ -2,6 +2,23 @@
 ocp4_workload_gitops_bootstrap_repo_url: http://gitea:3000/user/bootstrap
 ocp4_workload_gitops_bootstrap_repo_revision: main
 
+# Multi-application mode: create multiple bootstrap Applications in one role call.
+# When set, all other ocp4_workload_gitops_bootstrap_* vars are ignored.
+# Each entry supports: name, path, project (optional), repo_url (optional),
+#                      repo_revision (optional), helm_values (optional)
+#
+# Example:
+#   ocp4_workload_gitops_bootstrap_applications:
+#   - name: bootstrap-infra
+#     path: infra/bootstrap
+#   - name: bootstrap-platform
+#     path: platform/bootstrap
+#     project: platform
+#     helm_values:
+#       deployer:
+#         domain: "{{ openshift_cluster_ingress_domain }}"
+ocp4_workload_gitops_bootstrap_applications: []
+
 # Examples to support multi-tenancy:
 #
 #   Example 1: Backwards compatibility.  Deploys INFRA and N number of tenants
