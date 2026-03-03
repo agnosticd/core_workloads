@@ -8,6 +8,15 @@ spec:
   central:
     adminPasswordSecret:
       name: acs-password
+{% if ocp4_workload_rhacs_central_resources_update | default(false) | bool %}
+    resources:
+      requests:
+        cpu: '{{ ocp4_workload_rhacs_central_requests_cpu }}'
+        memory: {{ ocp4_workload_rhacs_central_requests_memory }}
+      limits:
+        cpu: '{{ ocp4_workload_rhacs_central_limits_cpu }}'
+        memory: {{ ocp4_workload_rhacs_central_limits_memory }}
+{% endif %}
     exposure:
       loadBalancer:
         enabled: false
@@ -19,6 +28,26 @@ spec:
     persistence:
       persistentVolumeClaim:
         claimName: stackrox-db
+{% if ocp4_workload_rhacs_central_storage_class | default('') | length > 0 %}
+        storageClassName: {{ ocp4_workload_rhacs_central_storage_class }}
+{% endif %}
+{% if ocp4_workload_rhacs_central_db_resources_update | default(false) | bool or ocp4_workload_rhacs_central_storage_class | default('') | length > 0 %}
+    db:
+{% if ocp4_workload_rhacs_central_db_resources_update | default(false) | bool %}
+      resources:
+        requests:
+          cpu: '{{ ocp4_workload_rhacs_central_db_requests_cpu }}'
+          memory: {{ ocp4_workload_rhacs_central_db_requests_memory }}
+        limits:
+          cpu: '{{ ocp4_workload_rhacs_central_db_limits_cpu }}'
+          memory: {{ ocp4_workload_rhacs_central_db_limits_memory }}
+{% endif %}
+{% if ocp4_workload_rhacs_central_storage_class | default('') | length > 0 %}
+      persistence:
+        persistentVolumeClaim:
+          storageClassName: {{ ocp4_workload_rhacs_central_storage_class }}
+{% endif %}
+{% endif %}
   egress:
     connectivityPolicy: Online
   scanner:
@@ -26,11 +55,62 @@ spec:
       scaling:
         autoScaling: Disabled
         replicas: 1
+{% if ocp4_workload_rhacs_scanner_resources_update | default(false) | bool %}
+      resources:
+        requests:
+          cpu: '{{ ocp4_workload_rhacs_scanner_requests_cpu }}'
+          memory: {{ ocp4_workload_rhacs_scanner_requests_memory }}
+        limits:
+          cpu: '{{ ocp4_workload_rhacs_scanner_limits_cpu }}'
+          memory: {{ ocp4_workload_rhacs_scanner_limits_memory }}
+{% endif %}
     scannerComponent: Enabled
 {% if ocp4_workload_rhacs_enable_central_scanner_v4 | bool %}
 {% if ocp4_workload_rhacs_install_operator_channel.split('-')[1] | float >= 4.4 %}
   scannerV4:
+{% if ocp4_workload_rhacs_scanner_v4_resources_update | default(false) | bool or ocp4_workload_rhacs_central_storage_class | default('') | length > 0 %}
+    db:
+{% if ocp4_workload_rhacs_scanner_v4_resources_update | default(false) | bool %}
+      resources:
+        requests:
+          cpu: '{{ ocp4_workload_rhacs_scanner_v4_db_requests_cpu }}'
+          memory: {{ ocp4_workload_rhacs_scanner_v4_db_requests_memory }}
+        limits:
+          cpu: '{{ ocp4_workload_rhacs_scanner_v4_db_limits_cpu }}'
+          memory: {{ ocp4_workload_rhacs_scanner_v4_db_limits_memory }}
+{% endif %}
+{% if ocp4_workload_rhacs_central_storage_class | default('') | length > 0 %}
+      persistence:
+        persistentVolumeClaim:
+          storageClassName: {{ ocp4_workload_rhacs_central_storage_class }}
+{% endif %}
+{% endif %}
+{% if ocp4_workload_rhacs_scanner_v4_resources_update | default(false) | bool %}
+    indexer:
+      scaling:
+        autoScaling: Disabled
+        replicas: {{ ocp4_workload_rhacs_scanner_v4_indexer_replicas }}
+      resources:
+        requests:
+          cpu: '{{ ocp4_workload_rhacs_scanner_v4_indexer_requests_cpu }}'
+          memory: {{ ocp4_workload_rhacs_scanner_v4_indexer_requests_memory }}
+        limits:
+          cpu: '{{ ocp4_workload_rhacs_scanner_v4_indexer_limits_cpu }}'
+          memory: {{ ocp4_workload_rhacs_scanner_v4_indexer_limits_memory }}
+{% endif %}
     matcher:
+{% if ocp4_workload_rhacs_scanner_v4_resources_update | default(false) | bool %}
+      scaling:
+        autoScaling: Disabled
+        replicas: {{ ocp4_workload_rhacs_scanner_v4_matcher_replicas }}
+      resources:
+        requests:
+          cpu: '{{ ocp4_workload_rhacs_scanner_v4_matcher_requests_cpu }}'
+          memory: {{ ocp4_workload_rhacs_scanner_v4_matcher_requests_memory }}
+        limits:
+          cpu: '{{ ocp4_workload_rhacs_scanner_v4_matcher_limits_cpu }}'
+          memory: {{ ocp4_workload_rhacs_scanner_v4_matcher_limits_memory }}
+{% else %}
       resources:
         limits:
           cpu: '2'
@@ -38,6 +118,7 @@ spec:
         requests:
           cpu: '1'
           memory: 1500Mi
+{% endif %}
     scannerComponent: Enabled
 {% endif %}
 {% endif %}

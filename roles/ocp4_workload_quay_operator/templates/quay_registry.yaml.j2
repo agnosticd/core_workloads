@@ -21,12 +21,28 @@ spec:
     managed: {{ ocp4_workload_quay_operator_registry_enable_clair }}
 {% if ocp4_workload_quay_operator_registry_enable_clair | bool %}
     overrides:
+{% if ocp4_workload_quay_operator_registry_clair_replicas | default(1) | int != 1 %}
+      replicas: {{ ocp4_workload_quay_operator_registry_clair_replicas }}
+{% endif %}
       volumeSize: {{ ocp4_workload_quay_operator_registry_clair_volume_size }}
+{% if ocp4_workload_quay_operator_registry_clair_resources_update | default(false) | bool %}
+      resources:
+        requests:
+          cpu: {{ ocp4_workload_quay_operator_registry_clair_requests_cpu }}
+          memory: {{ ocp4_workload_quay_operator_registry_clair_requests_memory }}
+        limits:
+          cpu: '{{ ocp4_workload_quay_operator_registry_clair_limits_cpu }}'
+          memory: {{ ocp4_workload_quay_operator_registry_clair_limits_memory }}
+{% endif %}
 {% endif %}
   - kind: quay
     managed: true
-{% if ocp4_workload_quay_operator_registry_quay_overrides | bool %}
+{% if ocp4_workload_quay_operator_registry_quay_overrides | bool or ocp4_workload_quay_operator_registry_quay_replicas | default(2) | int != 2 %}
     overrides:
+{% if ocp4_workload_quay_operator_registry_quay_replicas | default(2) | int != 2 %}
+      replicas: {{ ocp4_workload_quay_operator_registry_quay_replicas }}
+{% endif %}
+{% if ocp4_workload_quay_operator_registry_quay_overrides | bool %}
 {% if ocp4_workload_quay_operator_registry_quay_overrides_env | bool %}
       env:
       - name: WORKER_COUNT
@@ -43,6 +59,11 @@ spec:
           cpu: "{{ ocp4_workload_quay_operator_registry_quay_cpu_limit }}"
           memory: "{{ ocp4_workload_quay_operator_registry_quay_memory_limit }}"
 {% endif %}
+{% endif %}
+{% endif %}
+{% if ocp4_workload_quay_operator_registry_enable_clairpostgres | default(false) | bool %}
+  - kind: clairpostgres
+    managed: true
 {% endif %}
   - kind: horizontalpodautoscaler
     managed: {{ ocp4_workload_quay_operator_registry_enable_hpa }}

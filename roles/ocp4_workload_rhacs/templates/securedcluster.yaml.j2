@@ -1,0 +1,30 @@
+---
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  namespace: stackrox
+  name: stackrox-secured-cluster-services
+spec:
+  clusterName: production
+{% if ocp4_workload_rhacs_sensor_resources_update | default(false) | bool %}
+  sensor:
+    resources:
+      requests:
+        cpu: '{{ ocp4_workload_rhacs_sensor_requests_cpu }}'
+        memory: {{ ocp4_workload_rhacs_sensor_requests_memory }}
+      limits:
+        cpu: '{{ ocp4_workload_rhacs_sensor_limits_cpu }}'
+        memory: {{ ocp4_workload_rhacs_sensor_limits_memory }}
+{% endif %}
+  admissionControl:
+    listenOnCreates: true
+    listenOnEvents: true
+    listenOnUpdates: true
+    bypass: BreakGlassAnnotation
+    timeoutSeconds: 3
+    contactImageScanners: ScanIfMissing
+  perNode:
+    collector:
+      collection: EBPF
+      imageFlavor: Regular
+    taintToleration: TolerateTaints
