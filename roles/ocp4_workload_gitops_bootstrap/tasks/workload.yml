@@ -11,36 +11,8 @@
   ansible.builtin.debug:
     msg: "{{ _ocp4_workload_gitops_bootstrap_deployer_values | to_yaml }}"
 
-- name: Set App paths for 'bootstrap', infra + tenants deployment scenario
-  when: ocp4_workload_gitops_bootstrap_application_name == 'bootstrap'
-  ansible.builtin.set_fact:
-    ocp4_workload_gitops_bootstrap_repo_path: "bootstrap"
-
-- name: Set App path for 'bootstrap-platform', platform only deployment scenario
-  when: ocp4_workload_gitops_bootstrap_application_name == 'bootstrap-platform'
-  ansible.builtin.set_fact:
-    ocp4_workload_gitops_bootstrap_repo_path: "platform/bootstrap"
-
-- name: Set App path for 'bootstrap-infra', infra only deployment scenario
-  when: ocp4_workload_gitops_bootstrap_application_name == 'bootstrap-infra'
-  ansible.builtin.set_fact:
-    ocp4_workload_gitops_bootstrap_repo_path: "infra/bootstrap"
-
-- name: "Set App path and name for 'bootstrap-tenant', infra only deployment scenario"
-  when: ocp4_workload_gitops_bootstrap_application_name == 'bootstrap-tenant'
-  ansible.builtin.set_fact:
-    ocp4_workload_gitops_bootstrap_repo_path: "tenant/bootstrap"
-    ocp4_workload_gitops_bootstrap_final_application_name: "bootstrap-tenant-{{ guid }}"
-    ocp4_workload_gitops_bootstrap_application_project_name: "tenants"
-
-- name: Set final_application_name to application_name if final_application_name is not set
-  when: ocp4_workload_gitops_bootstrap_final_application_name is not defined
-  ansible.builtin.set_fact:
-    ocp4_workload_gitops_bootstrap_final_application_name: "{{ ocp4_workload_gitops_bootstrap_application_name }}"
-
-- name: Report boostrap final application name
-  ansible.builtin.debug:
-    msg: "Deploying boostrap final application name: {{ ocp4_workload_gitops_bootstrap_final_application_name }}"
+- name: Set application paths and final application name
+  ansible.builtin.include_tasks: set_application_paths.yml
 
 - name: Create bootstrap ArgoCD application
   kubernetes.core.k8s:
