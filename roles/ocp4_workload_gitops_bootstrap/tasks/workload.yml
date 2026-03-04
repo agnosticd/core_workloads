@@ -62,7 +62,7 @@
   kubernetes.core.k8s_info:
     api_version: argoproj.io/v1alpha1
     kind: Application
-    name: "{{ ocp4_workload_gitops_bootstrap_application_name }}"
+    name: "{{ ocp4_workload_gitops_bootstrap_final_application_name }}"
     namespace: openshift-gitops
   register: argocd_bootstrap
   retries: "{{ ocp4_workload_gitops_bootstrap_health_retries }}"
