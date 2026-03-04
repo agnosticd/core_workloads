@@ -107,19 +107,19 @@
 #     api_version: v1
 #     kind: ConfigMap
 #     label_selectors:
-#     - "demo.redhat.com/userinfo"
-#   register: cm_userinfo
+#     - "demo.redhat.com/userdata"
+#   register: cm_userdata
 #
 # - name: If ConfigMaps were found, process them
 #   when:
-#   - cm_userinfo.resources is defined
-#   - cm_userinfo.resources | length | int > 0
+#   - cm_userdata.resources is defined
+#   - cm_userdata.resources | length | int > 0
 #   block:
 #   - name: Add to agnosticd_user_info all data from ConfigMaps except configmap.data.users_json data
 #     agnosticd.core.agnosticd_user_info:
 #       data: >-
 #         {{ item | dict2items | selectattr('key', 'ne', 'users_json') | items2dict }}
-#     loop: "{{ cm_userinfo.resources | map(attribute='data') }}"
+#     loop: "{{ cm_userdata.resources | map(attribute='data') }}"
 #
 #   - name: Prepare data_user_json to add to agnosticd_user_info
 #     ansible.builtin.debug:
@@ -128,7 +128,7 @@
 #   - name: Merge list of all users_json data from all ConfigMaps that have data.users_json
 #     ansible.builtin.set_fact:
 #       data_users_json: "{{ data_users_json | default([]) | combine(item.data.users_json | from_json, recursive=True) }}"
-#     loop: "{{ cm_userinfo.resources }}"
+#     loop: "{{ cm_userdata.resources }}"
 #     when: item.data.users_json is defined
 #
 #   - name: Handle data_users_json data
