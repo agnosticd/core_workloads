@@ -180,26 +180,7 @@
 - name: Install Sensor on OpenShift Container Platform
   kubernetes.core.k8s:
     state: present
-    definition:
-      apiVersion: platform.stackrox.io/v1alpha1
-      kind: SecuredCluster
-      metadata:
-        namespace: stackrox
-        name: stackrox-secured-cluster-services
-      spec:
-        clusterName: production
-        admissionControl:
-          listenOnCreates: true
-          listenOnEvents: true
-          listenOnUpdates: true
-          bypass: BreakGlassAnnotation
-          timeoutSeconds: 3
-          contactImageScanners: ScanIfMissing
-        perNode:
-          collector:
-            collection: EBPF
-            imageFlavor: Regular
-          taintToleration: TolerateTaints
+    definition: "{{ lookup('template', 'securedcluster.yaml.j2') | from_yaml }}"
   register: r_k8s
   until: r_k8s is successful
   retries: 30

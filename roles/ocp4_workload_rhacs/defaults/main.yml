@@ -24,3 +24,58 @@ ocp4_workload_rhacs_collector_config_expternal_ips_enable: true
 # Set the default password for the Central admin user (empty will generate a random password)
 ocp4_workload_rhacs_central_admin_password: ""
 ocp4_workload_rhacs_central_admin_password_length: 18
+
+# --------------------------------
+# Resource Override Variables
+# --------------------------------
+# When _update is false (default), no resource overrides are applied
+# and the role behaves identically to stock upstream.
+# Set _update to true and adjust values to customize resource requests/limits.
+
+# Central pod resources
+ocp4_workload_rhacs_central_resources_update: false
+ocp4_workload_rhacs_central_requests_cpu: "1500m"
+ocp4_workload_rhacs_central_requests_memory: "4Gi"
+ocp4_workload_rhacs_central_limits_cpu: "4"
+ocp4_workload_rhacs_central_limits_memory: "8Gi"
+
+# Central DB resources
+ocp4_workload_rhacs_central_db_resources_update: false
+ocp4_workload_rhacs_central_db_requests_cpu: "4000m"
+ocp4_workload_rhacs_central_db_requests_memory: "8Gi"
+ocp4_workload_rhacs_central_db_limits_cpu: "4"
+ocp4_workload_rhacs_central_db_limits_memory: "8Gi"
+
+# Scanner (v2) analyzer resources
+ocp4_workload_rhacs_scanner_resources_update: false
+ocp4_workload_rhacs_scanner_requests_cpu: "1000m"
+ocp4_workload_rhacs_scanner_requests_memory: "1500Mi"
+ocp4_workload_rhacs_scanner_limits_cpu: "2"
+ocp4_workload_rhacs_scanner_limits_memory: "3Gi"
+
+# Scanner V4 resources (indexer, matcher, db) and replica counts
+ocp4_workload_rhacs_scanner_v4_resources_update: false
+ocp4_workload_rhacs_scanner_v4_indexer_replicas: 3
+ocp4_workload_rhacs_scanner_v4_indexer_requests_cpu: "2"
+ocp4_workload_rhacs_scanner_v4_indexer_requests_memory: "1500Mi"
+ocp4_workload_rhacs_scanner_v4_indexer_limits_cpu: "2"
+ocp4_workload_rhacs_scanner_v4_indexer_limits_memory: "3Gi"
+ocp4_workload_rhacs_scanner_v4_matcher_replicas: 3
+ocp4_workload_rhacs_scanner_v4_matcher_requests_cpu: "1"
+ocp4_workload_rhacs_scanner_v4_matcher_requests_memory: "1500Mi"
+ocp4_workload_rhacs_scanner_v4_matcher_limits_cpu: "2"
+ocp4_workload_rhacs_scanner_v4_matcher_limits_memory: "7Gi"
+ocp4_workload_rhacs_scanner_v4_db_requests_cpu: "200m"
+ocp4_workload_rhacs_scanner_v4_db_requests_memory: "3Gi"
+ocp4_workload_rhacs_scanner_v4_db_limits_cpu: "2"
+ocp4_workload_rhacs_scanner_v4_db_limits_memory: "4Gi"
+
+# Sensor resources (via SecuredCluster CR)
+ocp4_workload_rhacs_sensor_resources_update: false
+ocp4_workload_rhacs_sensor_requests_cpu: "2000m"
+ocp4_workload_rhacs_sensor_requests_memory: "4Gi"
+ocp4_workload_rhacs_sensor_limits_cpu: "4"
+ocp4_workload_rhacs_sensor_limits_memory: "8Gi"
+
+# Storage class for all PVCs (empty = use cluster default)
+ocp4_workload_rhacs_central_storage_class: ""

@@ -101,3 +101,21 @@ ocp4_workload_quay_operator_registry_quay_cpu_request: "2"
 ocp4_workload_quay_operator_registry_quay_memory_request: "8Gi"
 ocp4_workload_quay_operator_registry_quay_cpu_limit: "4"
 ocp4_workload_quay_operator_registry_quay_memory_limit: "16Gi"
+
+# Quay app replica count override (default: operator-managed)
+ocp4_workload_quay_operator_registry_quay_replicas: 2
+
+# Clair resource and replica overrides
+ocp4_workload_quay_operator_registry_clair_resources_update: false
+ocp4_workload_quay_operator_registry_clair_replicas: 1
+ocp4_workload_quay_operator_registry_clair_requests_cpu: "2000m"
+ocp4_workload_quay_operator_registry_clair_requests_memory: "2Gi"
+ocp4_workload_quay_operator_registry_clair_limits_cpu: "2"
+ocp4_workload_quay_operator_registry_clair_limits_memory: "4Gi"
+
+# Explicitly manage the clairpostgres component
+ocp4_workload_quay_operator_registry_enable_clairpostgres: false
+
+# Startup probe override (disabled by default)
+ocp4_workload_quay_operator_registry_startup_probe_update: false
+ocp4_workload_quay_operator_registry_startup_probe_failure_threshold: 30
