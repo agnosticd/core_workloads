@@ -88,7 +88,7 @@
     api_version: argoproj.io/v1alpha1
     kind: Application
     label_selectors:
-      - "app.kubernetes.io/instance={{ ocp4_workload_gitops_bootstrap_application_name }}"
+      - "app.kubernetes.io/instance={{ ocp4_workload_gitops_bootstrap_final_application_name  }}"
   register: _all_apps
   delay: 10
   retries: "{{ ocp4_workload_gitops_bootstrap_application_health_retries }}"
