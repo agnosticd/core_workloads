@@ -93,16 +93,16 @@
     kind: ConfigMap
     label_selectors:
       - "{{ configmap_label }}"
-  register: cm_userdata
+  register: cm_provision_data
 
 - name: Process ConfigMap provision data
   when:
-    - cm_userdata.resources | default([]) | length > 0
+    - cm_provision_data.resources | default([]) | length > 0
   block:
     - name: Merge provision_data from all ConfigMaps
       ansible.builtin.set_fact:
         provision_data: "{{ provision_data | default({}) | combine(item.data.provision_data | from_yaml, recursive=True) }}"
-      loop: "{{ cm_userdata.resources }}"
+      loop: "{{ cm_provision_data.resources }}"
       when: item.data.provision_data is defined
 
     - name: Add per-user data to agnosticd_user_info
