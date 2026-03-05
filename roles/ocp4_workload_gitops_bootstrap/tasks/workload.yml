@@ -84,9 +84,9 @@
 - name: Set the configmap label and retrieve matching ConfigMaps
   vars:
     configmap_label: >-
-      {{ 'demo.redhat.com/tenant-' ~ guid ~ '-userdata'
+      {{ 'demo.redhat.com/tenant-' ~ guid
          if ocp4_workload_gitops_bootstrap_application_name == 'bootstrap-tenant'
-         else 'demo.redhat.com/hub-ssoadmin-userdata' }}
+         else 'demo.redhat.com/infra' }}
 
   kubernetes.core.k8s_info:
     api_version: v1
@@ -95,25 +95,19 @@
       - "{{ configmap_label }}"
   register: cm_userdata
 
-- name: Process ConfigMap user data
+- name: Process ConfigMap provision data
   when:
     - cm_userdata.resources | default([]) | length > 0
   block:
-    - name: 1. Process any top-level data that doesn't belong to a user
-      agnosticd.core.agnosticd_user_info:
-        data: >-
-          {{ item | dict2items | selectattr('key', 'ne', 'user_data') | items2dict }}
-      loop: "{{ cm_userdata.resources | map(attribute='data') }}"
-
-    - name: 2. Merge user_data from all ConfigMaps
+    - name: Merge provision_data from all ConfigMaps
       ansible.builtin.set_fact:
-        data_users: "{{ data_users | default({}) | combine(item.data.user_data | from_yaml, recursive=True) }}"
+        provision_data: "{{ provision_data | default({}) | combine(item.data.provision_data | from_yaml, recursive=True) }}"
       loop: "{{ cm_userdata.resources }}"
-      when: item.data.user_data is defined
+      when: item.data.provision_data is defined
 
-    - name: 3. Add per-user data to agnosticd_user_info
-      when: data_users is defined
+    - name: Add per-user data to agnosticd_user_info
+      when: provision_data is defined
       agnosticd.core.agnosticd_user_info:
         user: "{{ item.key }}"
         data: "{{ item.value }}"
-      loop: "{{ data_users.users | dict2items }}"
+      loop: "{{ provision_data.users | dict2items }}"
