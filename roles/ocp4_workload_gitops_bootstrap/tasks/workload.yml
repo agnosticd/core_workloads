@@ -1,11 +1,24 @@
 ---
-- name: Set _ocp4_workload_gitops_bootstrap_deployer_values
+- name: get ingress controler
+  kubernetes.core.k8s_info:
+    kind: IngressController
+    name: default
+    namespace: openshift-ingress-operator
+  register: r_ingress
+
+- name: get openshift api url
+  kubernetes.core.k8s_info:
+    api_version: config.openshift.io/v1
+    kind: Infrastructure
+    name: cluster
+  register: r_infra
+
+- name: set _ocp4_workload_gitops_bootstrap_deployer_values
   ansible.builtin.set_fact:
     _ocp4_workload_gitops_bootstrap_deployer_values:
       deployer:
-        domain: "{{ openshift_cluster_ingress_domain }}"
-        apiUrl: "{{ openshift_api_url }}"
-        guid: "{{ guid }}"
+        domain: "{{ r_ingress.resources[0].status.domain }}"
+        apiUrl: "{{ r_infra.resources[0].status.apiServerURL }}"
 
 - name: Debug _ocp4_workload_gitops_bootstrap_deployer_values
   ansible.builtin.debug:
