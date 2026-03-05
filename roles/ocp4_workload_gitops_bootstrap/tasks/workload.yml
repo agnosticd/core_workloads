@@ -52,9 +52,9 @@
     - argocd_bootstrap.resources[0].status.sync.status == "Synced"
   ignore_errors: "{{ ocp4_workload_gitops_bootstrap_health_ignore | bool }}"
 
-# - name: Pause for a minute while the bootstrap app deploys
-#   ansible.builtin.pause:
-#     seconds: 60
+- name: Pause for a minute while the bootstrap app deploys
+  ansible.builtin.pause:
+    seconds: 60
 
 - name: Validate all applications with our label in any namespace are healthy and synced
   when: ocp4_workload_gitops_bootstrap_application_wait | bool
