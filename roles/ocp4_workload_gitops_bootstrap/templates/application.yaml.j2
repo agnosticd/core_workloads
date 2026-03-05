@@ -38,10 +38,10 @@ spec:
     syncOptions:
       - RespectIgnoreDifferences=true
   ignoreDifferences:
-  - group: ""
-  kind: ConfigMap
-  name: tenant-*-userdata
-  namespace: openshift-gitops
-  jsonPointers:
-    - /data
+    - group: ""
+      kind: ConfigMap
+      name: tenant-*-userdata
+      namespace: openshift-gitops
+      jsonPointers:
+        - /data
 {% endif %}
