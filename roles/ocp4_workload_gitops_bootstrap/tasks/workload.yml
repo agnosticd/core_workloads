@@ -1,4 +1,6 @@
 ---
+# Do not change this task.  It supports multiple configs.
+# If you need to change variable names, do so in your AgV.
 - name: Set _ocp4_workload_gitops_bootstrap_deployer_values
   ansible.builtin.set_fact:
     _ocp4_workload_gitops_bootstrap_deployer_values:
