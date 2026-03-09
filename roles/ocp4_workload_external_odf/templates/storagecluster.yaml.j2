@@ -9,6 +9,8 @@ spec:
   externalStorage:
     enable: true
   labelSelector: {}
+  multiCloudGateway:
+    disableLoadBalancerService: true  
 {% if ocp4_workload_external_odf_noobaa_custom_resources | default(false) %}
   resources:
     noobaa-core:
