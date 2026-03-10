@@ -258,23 +258,17 @@
     delay: 5
 
   - name: Add ROX_VIRTUAL_MACHINES env to collector DaemonSet compliance container
-    when: ocp4_workload_rhacs_enable_vm_scanning | bool
-    kubernetes.core.k8s:
-      state: patched
-      merge_type: merge
-      api_version: apps/v1
+    kubernetes.core.k8s_json_patch:
       kind: DaemonSet
+      api_version: apps/v1
       name: collector
       namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
-      definition:
-        spec:
-          template:
-            spec:
-              containers:
-              - name: compliance
-                env:
-                - name: ROX_VIRTUAL_MACHINES
-                  value: "true"
+      patch:
+      - op: add
+        path: /spec/template/spec/containers/1/env/-
+        value:
+          name: ROX_VIRTUAL_MACHINES
+          value: "true"
     register: r_collector_patched
     until: r_collector_patched is successful
     retries: 10
