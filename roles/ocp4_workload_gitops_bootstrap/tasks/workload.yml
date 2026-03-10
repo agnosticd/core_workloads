@@ -77,9 +77,45 @@
 ####### Begin processing GitOps output
 #######
 
+# This role will MERGE all the relevant provision_data from all matching configmaps.
+#
 # A TENANT provision should only care about the user_data relevant to that tenant.
 # If there is more than one tenant, do not merge the user_data of the two tenants.
 # bootstrap-platform is a special case, handled later.
+#
+# Expected ConfigMap format for TENANT data:
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: tenant-<GUID>-<SUBJECT>-provisiondata
+#   namespace: <ANY NAMESPACE>
+#   labels:
+#     demo.redhat.com/tenant-<GUID>: "true"
+#   annotations:
+#     argocd.argoproj.io/sync-options: "Prune=true"
+# data:
+#   provision_data: |
+#     <top level provision data>
+#     users:
+#       <USERNAME>:
+#         exampleVar: exampleValue
+#
+# Expected ConfigMap format for INFRA data:
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: infra-<SUBJECT>-provisiondata
+#   namespace: <ANY NAMESPACE>
+#   labels:
+#     demo.redhat.com/infra-<GUID>
+#   annotations:
+#     argocd.argoproj.io/sync-options: "Prune=true"
+# data:
+#   provision_data: |
+#     <top level provision data>
+#     users: # if created
+#       <USERNAME>:
+#         namespace: {{ $nsName }}
 
 - name: Set the configmap label variable
   ansible.builtin.set_fact:
@@ -88,7 +124,7 @@
          if ocp4_workload_gitops_bootstrap_application_name == 'bootstrap-tenant'
          else 'demo.redhat.com/infra' }}
 
-- name: Retrieve matching ConfigMaps and wait for provision_data
+- name: Retrieve matching ConfigMaps and wait for provision_data, if any
   kubernetes.core.k8s_info:
     api_version: v1
     kind: ConfigMap
@@ -102,7 +138,7 @@
     - cm_provision_data.resources | map(attribute='data') | map(attribute='provision_data', default='') | select('ne', '') | list | length == cm_provision_data.resources | length
   failed_when: false
 
-- name: Process ConfigMap provision data
+- name: Process ConfigMap provision data, if any
   when:
     - cm_provision_data.resources | default([]) | length > 0
   block:
@@ -112,18 +148,6 @@
       loop: "{{ cm_provision_data.resources }}"
       when: item.data.provision_data is defined
 
-    - name: Add per-user data to agnosticd_user_info (multi-user)
-      when:
-        - provision_data is defined
-        - provision_data.users is defined
-      agnosticd.core.agnosticd_user_info:
-        user: "{{ item.key }}"
-        data: "{{ item.value }}"
-      loop: "{{ provision_data.users | dict2items }}"
-
-    - name: Add global data to agnosticd_user_info (single-user)
-      when:
-        - provision_data is defined
-        - provision_data.users is not defined
+    - name: Add data to agnosticd_user_info
       agnosticd.core.agnosticd_user_info:
         data: "{{ provision_data }}"
