@@ -111,9 +111,18 @@
       loop: "{{ cm_provision_data.resources }}"
       when: item.data.provision_data is defined
 
-    - name: Add per-user data to agnosticd_user_info
-      when: provision_data is defined
+    - name: Add per-user data to agnosticd_user_info (multi-user)
+      when:
+        - provision_data is defined
+        - provision_data.users is defined
       agnosticd.core.agnosticd_user_info:
         user: "{{ item.key }}"
         data: "{{ item.value }}"
       loop: "{{ provision_data.users | dict2items }}"
+
+    - name: Add global data to agnosticd_user_info (single-user)
+      when:
+        - provision_data is defined
+        - provision_data.users is not defined
+      agnosticd.core.agnosticd_user_info:
+        data: "{{ provision_data }}"
