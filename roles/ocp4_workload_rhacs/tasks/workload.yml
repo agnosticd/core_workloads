@@ -170,7 +170,7 @@
 - name: Install Sensor on OpenShift Container Platform
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'securedcluster.yaml.j2') | from_yaml }}"
+    template: securedcluster.yaml.j2
   register: r_k8s
   until: r_k8s is successful
   retries: 30
