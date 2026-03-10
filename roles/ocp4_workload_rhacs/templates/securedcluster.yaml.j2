@@ -2,8 +2,8 @@
 apiVersion: platform.stackrox.io/v1alpha1
 kind: SecuredCluster
 metadata:
-  namespace: stackrox
   name: stackrox-secured-cluster-services
+  namespace: {{ ocp4_workload_rhacs_central_namespace }}
 spec:
   clusterName: production
 {% if ocp4_workload_rhacs_sensor_resources_update | default(false) | bool %}

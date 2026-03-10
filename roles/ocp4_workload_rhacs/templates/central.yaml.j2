@@ -3,7 +3,7 @@ apiVersion: platform.stackrox.io/v1alpha1
 kind: Central
 metadata:
   name: stackrox-central-services
-  namespace: stackrox
+  namespace: {{ ocp4_workload_rhacs_central_namespace }}
 spec:
   central:
     adminPasswordSecret:
@@ -25,6 +25,7 @@ spec:
         enabled: false
       route:
         enabled: true
+        reencrypt: true
     persistence:
       persistentVolumeClaim:
         claimName: stackrox-db

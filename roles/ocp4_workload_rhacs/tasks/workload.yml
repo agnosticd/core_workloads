@@ -13,14 +13,13 @@
     install_operator_catalogsource_image: "{{ ocp4_workload_rhacs_install_operator_catalog_source_image | default('') }}"
     install_operator_catalogsource_image_tag: "{{ ocp4_workload_rhacs_install_operator_catalog_source_tag | default('') }}"
 
-# install Central
-
+# Install Central
 - name: Create Central Namespace
   kubernetes.core.k8s:
     state: present
     api_version: v1
     kind: Namespace
-    name: stackrox
+    name: "{{ ocp4_workload_rhacs_central_namespace }}"
   register: r_k8s
   until: r_k8s is successful
   retries: 30
@@ -58,7 +57,7 @@
       kind: Secret
       metadata:
         name: acs-password
-        namespace: stackrox
+        namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
       data:
         password: "{{ _ocp4_workload_rhacs_central_admin_password | b64encode }}"
       type: Opaque
@@ -80,22 +79,22 @@
   kubernetes.core.k8s_info:
     kind: Route
     api_version: route.openshift.io/v1
-    namespace: stackrox
+    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
     name: central
   register: r_stackrox_central_route
   retries: 10
   delay: 20
   until:
-    - r_stackrox_central_route.resources[0].spec.host is defined
+  - r_stackrox_central_route.resources[0].spec.host is defined
 
 - name: Store central route as a fact
   ansible.builtin.set_fact:
-    # yamllint disable-line rule:line-length
-    f_stackrox_central_addr: "{{ r_stackrox_central_route.resources[0].spec.host }}"
+    _ocp4_workload_rhacs_central_host: "{{ r_stackrox_central_route.resources[0].spec.host }}"
+    _ocp4_workload_rhacs_central_route: "https://{{ r_stackrox_central_route.resources[0].spec.host }}"
 
 - name: Wait for Central availability
   ansible.builtin.uri:
-    url: "https://{{ f_stackrox_central_addr }}/v1/ping"
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/ping"
     method: GET
     user: admin
     password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
@@ -106,53 +105,53 @@
   retries: 30
   delay: 20
 
-- name: Fix Route to Central
-  when: ocp4_workload_rhacs_enable_route_certs | bool
-  block:
-  - name: Get ingress controller default certificate name
-    kubernetes.core.k8s_info:
-      api_version: operator.openshift.io/v1
-      kind: IngressController
-      name: default
-      namespace: openshift-ingress-operator
-    register: r_ingress_controller
+# - name: Fix Route to Central
+#   when: ocp4_workload_rhacs_enable_route_certs | bool
+#   block:
+#   - name: Get ingress controller default certificate name
+#     kubernetes.core.k8s_info:
+#       api_version: operator.openshift.io/v1
+#       kind: IngressController
+#       name: default
+#       namespace: openshift-ingress-operator
+#     register: r_ingress_controller
 
-  - name: Get ingress certificate secret
-    kubernetes.core.k8s_info:
-      api_version: v1
-      kind: Secret
-      name: "{{ r_ingress_controller.resources[0].spec.defaultCertificate.name | default('router-certs-default') }}"
-      namespace: openshift-ingress
-    register: r_ingress_cert_secret
+#   - name: Get ingress certificate secret
+#     kubernetes.core.k8s_info:
+#       api_version: v1
+#       kind: Secret
+#       name: "{{ r_ingress_controller.resources[0].spec.defaultCertificate.name | default('router-certs-default') }}"
+#       namespace: openshift-ingress
+#     register: r_ingress_cert_secret
 
-  - name: Get StackRox central TLS secret
-    kubernetes.core.k8s_info:
-      api_version: v1
-      kind: Secret
-      name: central-tls
-      namespace: stackrox
-    register: r_central_tls_secret
+#   - name: Get StackRox central TLS secret
+#     kubernetes.core.k8s_info:
+#       api_version: v1
+#       kind: Secret
+#       name: central-tls
+#       namespace: stackrox
+#     register: r_central_tls_secret
 
-  - name: Patch central route with Ingress and CA certificates
-    kubernetes.core.k8s:
-      state: patched
-      api_version: route.openshift.io/v1
-      kind: Route
-      name: central
-      namespace: stackrox
-      definition:
-        spec:
-          tls:
-            termination: reencrypt
-            certificate: "{{ r_ingress_cert_secret.resources[0].data['tls.crt'] | b64decode }}"
-            key: "{{ r_ingress_cert_secret.resources[0].data['tls.key'] | b64decode }}"
-            destinationCACertificate: "{{  r_central_tls_secret.resources[0].data['ca.pem'] | b64decode }}"
-            insecureEdgeTerminationPolicy: Redirect
+#   - name: Patch central route with Ingress and CA certificates
+#     kubernetes.core.k8s:
+#       state: patched
+#       api_version: route.openshift.io/v1
+#       kind: Route
+#       name: central
+#       namespace: stackrox
+#       definition:
+#         spec:
+#           tls:
+#             termination: reencrypt
+#             certificate: "{{ r_ingress_cert_secret.resources[0].data['tls.crt'] | b64decode }}"
+#             key: "{{ r_ingress_cert_secret.resources[0].data['tls.key'] | b64decode }}"
+#             destinationCACertificate: "{{  r_central_tls_secret.resources[0].data['ca.pem'] | b64decode }}"
+#             insecureEdgeTerminationPolicy: Redirect
 
 # ACS Secured Cluster Installation
 - name: Get cluster init bundle
   ansible.builtin.uri:
-    url: "https://{{ f_stackrox_central_addr }}/v1/cluster-init/init-bundles"
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/cluster-init/init-bundles"
     # random name for init-bundle
     body: "{ \"name\": \"prod-{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=8') }}\"}"
     method: POST
@@ -169,7 +168,7 @@
 
 - name: Create init-bundle secrets
   kubernetes.core.k8s:
-    namespace: stackrox
+    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
     state: present
     definition: "{{ f_stackrox_bundle }}"
   register: r_k8s
@@ -191,15 +190,15 @@
     name: sensor
     kind: Deployment
     api_version: apps/v1
-    namespace: stackrox
+    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
   register: r_stackrox_sensor_deployment
   until:
-    - r_stackrox_sensor_deployment.resources[0].status.readyReplicas is defined
-    - r_stackrox_sensor_deployment.resources[0].status.readyReplicas | int >= 1
+  - r_stackrox_sensor_deployment.resources[0].status.readyReplicas is defined
+  - r_stackrox_sensor_deployment.resources[0].status.readyReplicas | int >= 1
   delay: 20
   retries: 15
 
-- name: For fun, create a link in the OpenShift Console
+- name: Create a link in the OpenShift Console
   kubernetes.core.k8s:
     state: present
     definition:
@@ -211,7 +210,7 @@
         applicationMenu:
           imageURL: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/OpenShift-LogoType.svg'
           section: Red Hat Applications
-        href: 'https://{{ f_stackrox_central_addr }}'
+        href: '{{ _ocp4_workload_rhacs_central_route }}'
         location: ApplicationMenu
         text: Red Hat Advanced Cluster Security for Kubernetes
   register: r_k8s
@@ -219,33 +218,18 @@
   retries: 30
   delay: 5
 
-- name: Get the ACS portal route
-  kubernetes.core.k8s_info:
-    api_version: route.openshift.io/v1
-    kind: Route
-    name: central
-    namespace: stackrox
-  register: r_acs_portal_route
-  until: r_acs_portal_route is successful
-  retries: 30
-  delay: 5
-
-- name: Set fact for ACS route
-  ansible.builtin.set_fact:
-    acs_route: "https://{{ r_acs_portal_route.resources[0].spec.host }}"
-
 - name: Print user info
   agnosticd.core.agnosticd_user_info:
     msg: "{{ item }}"
   loop:
   - ""
-  - "Your RHACS console is available at: {{ acs_route }}"
+  - "Your RHACS console is available at: {{ _ocp4_workload_rhacs_central_route }}"
   - "RHACS portal username: admin"
   - "RHACS portal password: {{ _ocp4_workload_rhacs_central_admin_password }}"
 
 - name: Save user data
   agnosticd.core.agnosticd_user_info:
     data:
-      acs_route: "{{ acs_route }}"
+      acs_route: "{{ _ocp4_workload_rhacs_central_route }}"
       acs_portal_username: admin
       acs_portal_password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
