@@ -31,3 +31,17 @@ spec:
     automated:
       prune: false
       selfHeal: false
+{#
+   if this is a tenant bootstrapper, respect ignore differences because the configmap that returns the user data updated by a job
+#}
+{% if ocp4_workload_gitops_bootstrap_application_name == 'bootstrap-tenant' %}
+    syncOptions:
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - group: ""
+      kind: ConfigMap
+      name: tenant-*-userdata-*
+      namespace: openshift-gitops
+      jsonPointers:
+        - /data
+{% endif %}
