@@ -19,18 +19,21 @@
     api_version: v1
     kind: Namespace
     name: "{{ ocp4_workload_rhacs_central_namespace }}"
-  register: r_k8s
-  until: r_k8s is successful
+  register: r_central_namespace
+  until: r_central_namespace is successful
   retries: 30
   delay: 5
 
 - name: Create Certificate for Central
+  when: ocp4_workload_rhacs_enable_route_certs | bool
+  vars:
+    _ocp4_workload_rhacs_cert_cluster_issuer: "{{ ocp4_workload_rhacs_cert_cluster_issuer }}"
   kubernetes.core.k8s:
     state: present
     template: certificate.yaml.j2
-  register: r_k8s
-  until: r_k8s is successful
-  retries: 30
+  register: r_certificate
+  until: r_certificate is successful
+  retries: 5
   delay: 5
 
 - name: Create collector config
@@ -74,19 +77,60 @@
   retries: 30
   delay: 5
 
-- name: Wait for Certificate to be ready
-  kubernetes.core.k8s_info:
-    api_version: cert-manager.io/v1
-    kind: Certificate
-    name: rhacs-central-cert
-    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
-    wait: true
-    wait_sleep: 5
-    wait_timeout: 300
-    wait_condition:
-      type: "Ready"
-      status: "True"
-  register: r_certificate_central
+- name: Get Certificate
+  when: ocp4_workload_rhacs_enable_route_certs | bool
+  block:
+  - name: Wait for Certificate to be ready
+    kubernetes.core.k8s_info:
+      api_version: cert-manager.io/v1
+      kind: Certificate
+      name: rhacs-central-cert
+      namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+      wait: true
+      wait_sleep: 5
+      wait_timeout: 300
+      wait_condition:
+        type: "Ready"
+        status: "True"
+    register: r_certificate_central
+
+  - name: Use Fallback Cluster Issuer in case of failure
+    when:
+    - r_certificate_central is failed
+    - ocp4_workload_rhacs_cert_cluster_issuer_fallback | default("")| length > 0
+    block:
+    - name: Delete certificate
+      kubernetes.core.k8s:
+        state: absent
+        api_version: cert-manager.io/v1
+        kind: Certificate
+        name: rhacs-central-cert
+        namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+
+    - name: Create Certificate for Central using Fallback Cluster Issuer
+      vars:
+        _ocp4_workload_rhacs_cert_cluster_issuer: "{{ ocp4_workload_rhacs_cert_cluster_issuer_fallback }}"
+      kubernetes.core.k8s:
+        state: present
+        template: certificate.yaml.j2
+      register: r_k8s
+      until: r_k8s is successful
+      retries: 30
+      delay: 5
+
+    - name: Wait for Certificate to be ready
+      kubernetes.core.k8s_info:
+        api_version: cert-manager.io/v1
+        kind: Certificate
+        name: rhacs-central-cert
+        namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+        wait: true
+        wait_sleep: 5
+        wait_timeout: 300
+        wait_condition:
+          type: "Ready"
+          status: "True"
+      register: r_certificate_central
 
 - name: Create Central via CR
   kubernetes.core.k8s:
@@ -219,6 +263,16 @@
   - r_stackrox_sensor_deployment.resources[0].status.readyReplicas | int >= 1
   delay: 20
   retries: 15
+
+- name: Create Console Plugin
+  when: ocp4_workload_rhacs_central_enable_console_plugin | bool
+  kubernetes.core.k8s:
+    state: present
+    template: console-plugin.yaml.j2
+  register: r_console_plugin
+  until: r_console_plugin is successful
+  retries: 5
+  delay: 5
 
 - name: Create a link in the OpenShift Console
   kubernetes.core.k8s:

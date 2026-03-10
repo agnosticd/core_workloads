@@ -13,6 +13,6 @@ spec:
   dnsNames:
   - central-{{ ocp4_workload_rhacs_central_namespace }}.{{ openshift_cluster_ingress_domain }}
   issuerRef:
-    name: {{ ocp4_workload_rhacs_cert_cluster_issuer }}
+    name: {{ _ocp4_workload_rhacs_cert_cluster_issuer }}
     kind: ClusterIssuer
     group: cert-manager.io

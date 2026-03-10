@@ -1,6 +1,6 @@
 ---
 ocp4_workload_rhacs_install_operator_namespace: rhacs-operator
-ocp4_workload_rhacs_install_operator_channel: rhacs-4.9
+ocp4_workload_rhacs_install_operator_channel: rhacs-4.10
 
 ocp4_workload_rhacs_install_operator_use_catalog_snapshot: false
 ocp4_workload_rhacs_install_operator_catalog_source_image: quay.io/rhpds/olm_snapshot_redhat_catalog
@@ -13,10 +13,11 @@ ocp4_workload_rhacs_central_namespace: stackrox
 # Enable the new V4 central scanner
 ocp4_workload_rhacs_enable_central_scanner_v4: false
 
-# To avoid browser cert nag screens, this adds the Stackrox CA cert to the Route for Central.
-# change this once we're happy that it works consistently
+# Put a proper certificate on Central
 ocp4_workload_rhacs_enable_route_certs: true
 ocp4_workload_rhacs_cert_cluster_issuer: zerossl-production-aws
+ocp4_workload_rhacs_cert_cluster_issuer_fallback: ""
+# ocp4_workload_rhacs_cert_cluster_issuer_fallback: letsencrypt-production-aws-fallback
 
 # Enable collector config for rhacs 4.8+
 ocp4_workload_rhacs_collector_config_enable: false
@@ -25,6 +26,9 @@ ocp4_workload_rhacs_collector_config_expternal_ips_enable: true
 # Set the default password for the Central admin user (empty will generate a random password)
 ocp4_workload_rhacs_central_admin_password: ""
 ocp4_workload_rhacs_central_admin_password_length: 18
+
+# Enable the Console Plugin. RHACS 4.10 and higher is required
+ocp4_workload_rhacs_central_enable_console_plugin: false
 
 # --------------------------------
 # Resource Override Variables
