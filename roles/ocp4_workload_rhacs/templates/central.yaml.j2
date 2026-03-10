@@ -17,8 +17,10 @@ spec:
         cpu: '{{ ocp4_workload_rhacs_central_limits_cpu }}'
         memory: {{ ocp4_workload_rhacs_central_limits_memory }}
 {% endif %}
+{% if _ocp4_workload_rhacs_central_certificate | bool %}
     defaultTLSSecret:
       name: rhacs-central-tls
+{% endif %}
     exposure:
       loadBalancer:
         enabled: false
