@@ -219,7 +219,7 @@
   retries: 30
   delay: 5
 
-- name: Enable VM scanning
+- name: Enable VM scanning on Hyperconverged
   when: ocp4_workload_rhacs_enable_vm_scanning | bool
   block:
   - name: Ensure that Hyperconverged is installed
@@ -256,6 +256,29 @@
     until: r_hyperconverged_patched is successful
     retries: 5
     delay: 5
+
+  - name: Add ROX_VIRTUAL_MACHINES env to collector DaemonSet compliance container
+    when: ocp4_workload_rhacs_enable_vm_scanning | bool
+    kubernetes.core.k8s:
+      state: patched
+      merge_type: merge
+      api_version: apps/v1
+      kind: DaemonSet
+      name: collector
+      namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+      definition:
+        spec:
+          template:
+            spec:
+              containers:
+              - name: compliance
+                env:
+                - name: ROX_VIRTUAL_MACHINES
+                  value: "true"
+    register: r_collector_patched
+    until: r_collector_patched is successful
+    retries: 10
+    delay: 10
 
 - name: Print user info
   agnosticd.core.agnosticd_user_info:
