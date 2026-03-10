@@ -34,6 +34,6 @@
   register: r_certificate_central
   ignore_errors: true
 
-- name: Sleep for 10 seconds
-  ansible.builtin.pause:
-    seconds: 10
+- name: Debug r_certificate_central
+  ansible.builtin.debug:
+    var: r_certificate_central
