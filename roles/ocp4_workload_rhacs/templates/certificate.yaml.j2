@@ -6,9 +6,7 @@ metadata:
   namespace: {{ ocp4_workload_rhacs_central_namespace }}
 spec:
   secretName: rhacs-central-tls
-  # 90 days
   duration: 2160h
-  # renew 15 days before expiry
   renewBefore: 360h
   dnsNames:
   - central-{{ ocp4_workload_rhacs_central_namespace }}.{{ openshift_cluster_ingress_domain }}
