@@ -13,6 +13,12 @@ ocp4_workload_rhacs_central_namespace: stackrox
 # Enable the new V4 central scanner
 ocp4_workload_rhacs_enable_central_scanner_v4: false
 
+# Enable scanning of VMs
+# OCP Virtualization must also be configured properly
+# oc patch hyperconverged kubevirt-hyperconverged -n openshift-cnv
+# --type='merge' --patch='{"spec":{"configuration":{"developerConfiguration":{"featureGates":["VSOCK"]}}}}'
+ocp4_workload_rhacs_enable_vm_scanning: false
+
 # Put a proper certificate on Central
 # Cert Manager has to be deployed and at least one ClusterIssuer has to be present
 # If multiple ClusterIssuers are present, the role will try each one until a certificate is issued successfully

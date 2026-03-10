@@ -219,6 +219,44 @@
   retries: 30
   delay: 5
 
+- name: Enable VM scanning
+  when: ocp4_workload_rhacs_enable_vm_scanning | bool
+  block:
+  - name: Ensure that Hyperconverged is installed
+    kubernetes.core.k8s_info:
+      api_version: hco.kubevirt.io/v1beta1
+      kind: HyperConverged
+      name: kubevirt-hyperconverged
+      namespace: openshift-cnv
+    register: r_hyperconverged
+    until: r_hyperconverged is successful
+    retries: 30
+    delay: 5
+
+  - name: Fail if Hyperconverged is not installed
+    when: r_hyperconverged.resources | default([]) | length == 0
+    ansible.builtin.fail:
+      msg: "Hyperconverged is not installed"
+
+  - name: Patch Hyperconverged
+    kubernetes.core.k8s:
+      state: patched
+      definition:
+        api_version: hco.kubevirt.io/v1beta1
+        kind: HyperConverged
+        name: kubevirt-hyperconverged
+        namespace: openshift-cnv
+        definition:
+          spec:
+            configuration:
+              developerConfiguration:
+                featureGates:
+                - VSOCK
+      register: r_hyperconverged_patched
+      until: r_hyperconverged_patched is successful
+      retries: 30
+      delay: 5
+
 - name: Print user info
   agnosticd.core.agnosticd_user_info:
     msg: "{{ item }}"
