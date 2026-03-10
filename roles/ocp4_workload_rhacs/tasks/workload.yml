@@ -246,16 +246,15 @@
         kind: HyperConverged
         name: kubevirt-hyperconverged
         namespace: openshift-cnv
-        definition:
-          spec:
-            configuration:
-              developerConfiguration:
-                featureGates:
-                - VSOCK
-      register: r_hyperconverged_patched
-      until: r_hyperconverged_patched is successful
-      retries: 30
-      delay: 5
+        spec:
+          configuration:
+            developerConfiguration:
+              featureGates:
+              - VSOCK
+    register: r_hyperconverged_patched
+    until: r_hyperconverged_patched is successful
+    retries: 30
+    delay: 5
 
 - name: Print user info
   agnosticd.core.agnosticd_user_info:
