@@ -1,39 +1,38 @@
 ---
 # Try issuing a certificate with a single ClusterIssuer.
-# Called in a loop from workload.yml; stops when r_certificate_central is succeeded.
-- name: Delete certificate before retry
-  kubernetes.core.k8s:
-    state: absent
-    api_version: cert-manager.io/v1
-    kind: Certificate
-    name: rhacs-central-cert
-    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
-  register: r_delete_cert
+# Called in a loop from workload.yml; tasks skip when r_certificate_central already succeeded.
+- name: Only execute it not already succeeded
+  when: r_certificate_central is not defined or r_certificate_central is failed
+  block:
+  - name: Delete certificate before retry
+    kubernetes.core.k8s:
+      state: absent
+      api_version: cert-manager.io/v1
+      kind: Certificate
+      name: rhacs-central-cert
+      namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+    register: r_delete_cert
 
-- name: Create Certificate for Central with {{ _ocp4_workload_rhacs_cert_cluster_issuer }}
-  kubernetes.core.k8s:
-    state: present
-    template: certificate.yaml.j2
-  register: r_certificate
-  until: r_certificate is successful
-  retries: 5
-  delay: 5
+  - name: Create Certificate for Central with {{ _ocp4_workload_rhacs_cert_cluster_issuer }}
+    kubernetes.core.k8s:
+      state: present
+      template: certificate.yaml.j2
+    register: r_certificate
+    until: r_certificate is successful
+    retries: 5
+    delay: 5
 
-- name: Wait for Certificate to be ready
-  kubernetes.core.k8s_info:
-    api_version: cert-manager.io/v1
-    kind: Certificate
-    name: rhacs-central-cert
-    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
-    wait: true
-    wait_sleep: 5
-    wait_timeout: 500
-    wait_condition:
-      type: "Ready"
-      status: "True"
-  register: r_certificate_central
-  ignore_errors: true
-
-- name: Stop trying more issuers after success
-  when: r_certificate_central is succeeded
-  meta: end_loop
+  - name: Wait for Certificate to be ready
+    kubernetes.core.k8s_info:
+      api_version: cert-manager.io/v1
+      kind: Certificate
+      name: rhacs-central-cert
+      namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+      wait: true
+      wait_sleep: 5
+      wait_timeout: 500
+      wait_condition:
+        type: "Ready"
+        status: "True"
+    register: r_certificate_central
+    ignore_errors: true
