@@ -34,6 +34,6 @@
   register: r_certificate_central
   ignore_errors: true
 
-- name: Debug r_certificate_central
-  ansible.builtin.debug:
-    var: r_certificate_central
+- name: Stop trying more issuers after success
+  when: r_certificate_central is succeeded
+  meta: end_loop
