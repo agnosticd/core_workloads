@@ -241,11 +241,11 @@
   - name: Patch Hyperconverged
     kubernetes.core.k8s:
       state: patched
+      api_version: hco.kubevirt.io/v1beta1
+      kind: HyperConverged
+      name: kubevirt-hyperconverged
+      namespace: openshift-cnv
       definition:
-        api_version: hco.kubevirt.io/v1beta1
-        kind: HyperConverged
-        name: kubevirt-hyperconverged
-        namespace: openshift-cnv
         spec:
           configuration:
             developerConfiguration:
@@ -253,7 +253,7 @@
               - VSOCK
     register: r_hyperconverged_patched
     until: r_hyperconverged_patched is successful
-    retries: 30
+    retries: 5
     delay: 5
 
 - name: Print user info
