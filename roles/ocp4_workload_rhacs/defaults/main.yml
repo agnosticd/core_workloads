@@ -4,7 +4,7 @@ ocp4_workload_rhacs_install_operator_channel: rhacs-4.10
 
 ocp4_workload_rhacs_install_operator_use_catalog_snapshot: false
 ocp4_workload_rhacs_install_operator_catalog_source_image: quay.io/rhpds/olm_snapshot_redhat_catalog
-ocp4_workload_rhacs_install_operator_catalog_source_tag: "v4.15_2024_04_08"
+ocp4_workload_rhacs_install_operator_catalog_source_tag: "v4.20_2026_03_09"
 
 ocp4_workload_rhacs_automatic_install_plan_approval: true
 ocp4_workload_rhacs_install_operator_starting_csv: ""
@@ -14,6 +14,9 @@ ocp4_workload_rhacs_central_namespace: stackrox
 ocp4_workload_rhacs_enable_central_scanner_v4: false
 
 # Put a proper certificate on Central
+# Cert Manager has to be deployed and at least one ClusterIssuer has to be present
+# If multiple ClusterIssuers are present, the role will try each one until a certificate is issued successfully
+# If no certificate is issued successfully, the role will deploy Central without a proper certificate
 ocp4_workload_rhacs_enable_route_certs: true
 
 # Enable collector config for rhacs 4.8+

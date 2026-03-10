@@ -28,7 +28,7 @@
   when: ocp4_workload_rhacs_collector_config_enable | bool
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'collector-config.yaml.j2') | from_yaml }}"
+    template: collector-config.yaml.j2
   register: r_collector_config
   until: r_collector_config is successful
   retries: 30
@@ -60,8 +60,8 @@
       data:
         password: "{{ _ocp4_workload_rhacs_central_admin_password | b64encode }}"
       type: Opaque
-  register: r_k8s
-  until: r_k8s is successful
+  register: r_secret
+  until: r_secret is successful
   retries: 30
   delay: 5
 
@@ -106,7 +106,7 @@
   retries: 30
   delay: 5
 
-- name: Get Central route
+- name: Get Central Route
   kubernetes.core.k8s_info:
     kind: Route
     api_version: route.openshift.io/v1
@@ -115,10 +115,9 @@
   register: r_stackrox_central_route
   retries: 10
   delay: 20
-  until:
-  - r_stackrox_central_route.resources[0].spec.host is defined
+  until: r_stackrox_central_route.resources[0].spec.host is defined
 
-- name: Store central route as a fact
+- name: Store central Route as a fact
   ansible.builtin.set_fact:
     _ocp4_workload_rhacs_central_host: "{{ r_stackrox_central_route.resources[0].spec.host }}"
     _ocp4_workload_rhacs_central_route: "https://{{ r_stackrox_central_route.resources[0].spec.host }}"
@@ -135,49 +134,6 @@
   until: result.status == 200
   retries: 30
   delay: 20
-
-# - name: Fix Route to Central
-#   when: ocp4_workload_rhacs_enable_route_certs | bool
-#   block:
-#   - name: Get ingress controller default certificate name
-#     kubernetes.core.k8s_info:
-#       api_version: operator.openshift.io/v1
-#       kind: IngressController
-#       name: default
-#       namespace: openshift-ingress-operator
-#     register: r_ingress_controller
-
-#   - name: Get ingress certificate secret
-#     kubernetes.core.k8s_info:
-#       api_version: v1
-#       kind: Secret
-#       name: "{{ r_ingress_controller.resources[0].spec.defaultCertificate.name | default('router-certs-default') }}"
-#       namespace: openshift-ingress
-#     register: r_ingress_cert_secret
-
-#   - name: Get StackRox central TLS secret
-#     kubernetes.core.k8s_info:
-#       api_version: v1
-#       kind: Secret
-#       name: central-tls
-#       namespace: stackrox
-#     register: r_central_tls_secret
-
-#   - name: Patch central route with Ingress and CA certificates
-#     kubernetes.core.k8s:
-#       state: patched
-#       api_version: route.openshift.io/v1
-#       kind: Route
-#       name: central
-#       namespace: stackrox
-#       definition:
-#         spec:
-#           tls:
-#             termination: reencrypt
-#             certificate: "{{ r_ingress_cert_secret.resources[0].data['tls.crt'] | b64decode }}"
-#             key: "{{ r_ingress_cert_secret.resources[0].data['tls.key'] | b64decode }}"
-#             destinationCACertificate: "{{  r_central_tls_secret.resources[0].data['ca.pem'] | b64decode }}"
-#             insecureEdgeTerminationPolicy: Redirect
 
 # ACS Secured Cluster Installation
 - name: Get cluster init bundle
