@@ -241,6 +241,7 @@
   - name: Patch Hyperconverged
     kubernetes.core.k8s:
       state: patched
+      merge_type: merge
       api_version: hco.kubevirt.io/v1beta1
       kind: HyperConverged
       name: kubevirt-hyperconverged
