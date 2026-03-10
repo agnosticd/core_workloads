@@ -7,8 +7,8 @@ metadata:
 spec:
 {% if ocp4_workload_rhacs_enable_vm_scanning | bool %}
   env:
- - name: ROX_VIRTUAL_MACHINES
-   value: "true"
+  - name: ROX_VIRTUAL_MACHINES
+    value: "true"
 {% endif %}
   central:
     adminPasswordSecret:

@@ -104,7 +104,7 @@
     _ocp4_workload_rhacs_central_certificate: "{{ r_certificate_central is defined and r_certificate_central is succeeded }}"
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'central.yaml.j2') | from_yaml }}"
+    template: central.yaml.j2
   register: r_k8s
   until: r_k8s is successful
   retries: 30
