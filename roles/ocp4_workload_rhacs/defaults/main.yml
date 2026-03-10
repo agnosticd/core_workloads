@@ -15,9 +15,6 @@ ocp4_workload_rhacs_enable_central_scanner_v4: false
 
 # Put a proper certificate on Central
 ocp4_workload_rhacs_enable_route_certs: true
-ocp4_workload_rhacs_cert_cluster_issuer: zerossl-production-aws
-ocp4_workload_rhacs_cert_cluster_issuer_fallback: ""
-# ocp4_workload_rhacs_cert_cluster_issuer_fallback: letsencrypt-production-aws-fallback
 
 # Enable collector config for rhacs 4.8+
 ocp4_workload_rhacs_collector_config_enable: false
