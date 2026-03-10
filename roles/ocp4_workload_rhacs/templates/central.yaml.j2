@@ -17,6 +17,8 @@ spec:
         cpu: '{{ ocp4_workload_rhacs_central_limits_cpu }}'
         memory: {{ ocp4_workload_rhacs_central_limits_memory }}
 {% endif %}
+    defaultTLSSecret:
+      name: rhacs-central-tls
     exposure:
       loadBalancer:
         enabled: false
@@ -25,7 +27,6 @@ spec:
         enabled: false
       route:
         enabled: true
-        reencrypt: true
     persistence:
       persistentVolumeClaim:
         claimName: stackrox-db
