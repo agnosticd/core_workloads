@@ -65,8 +65,39 @@
   retries: 30
   delay: 5
 
-- name: Create Certificate for Central
+- name: Check if valid Certificate already exists
   when: ocp4_workload_rhacs_enable_route_certs | bool
+  kubernetes.core.k8s_info:
+    api_version: cert-manager.io/v1
+    kind: Certificate
+    name: rhacs-central-cert
+    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+  register: r_existing_certificate
+
+- name: Set certificate status fact
+  when: ocp4_workload_rhacs_enable_route_certs | bool
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_cert_already_valid: >-
+      {{
+        r_existing_certificate.resources | length > 0
+        and (r_existing_certificate.resources[0].status.conditions
+             | default([])
+             | selectattr('type', 'equalto', 'Ready')
+             | selectattr('status', 'equalto', 'True')
+             | list | length > 0)
+      }}
+
+- name: Use existing certificate
+  when:
+  - ocp4_workload_rhacs_enable_route_certs | bool
+  - _ocp4_workload_rhacs_cert_already_valid | default(false) | bool
+  ansible.builtin.set_fact:
+    r_certificate_central: "{{ r_existing_certificate }}"
+
+- name: Create Certificate for Central
+  when:
+  - ocp4_workload_rhacs_enable_route_certs | bool
+  - not _ocp4_workload_rhacs_cert_already_valid | default(false) | bool
   block:
   - name: Get ClusterIssuer(s)
     kubernetes.core.k8s_info:
