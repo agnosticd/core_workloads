@@ -1,0 +1,58 @@
+---
+# Enable VM scanning on HyperConverged for RHACS
+- name: Ensure that Hyperconverged is installed
+  kubernetes.core.k8s_info:
+    api_version: hco.kubevirt.io/v1beta1
+    kind: HyperConverged
+    name: kubevirt-hyperconverged
+    namespace: openshift-cnv
+  register: r_hyperconverged
+  until: r_hyperconverged is successful
+  retries: 30
+  delay: 5
+
+- name: Fail if Hyperconverged is not installed
+  when: r_hyperconverged.resources | default([]) | length == 0
+  ansible.builtin.fail:
+    msg: "Hyperconverged is not installed"
+
+- name: Patch Hyperconverged
+  kubernetes.core.k8s:
+    state: patched
+    merge_type: merge
+    api_version: hco.kubevirt.io/v1beta1
+    kind: HyperConverged
+    name: kubevirt-hyperconverged
+    namespace: openshift-cnv
+    definition:
+      metadata:
+        annotations:
+          kubevirt.kubevirt.io/jsonpatch: |-
+            [
+              {
+                "op":"add",
+                "path":"/spec/configuration/developerConfiguration/featureGates/-",
+                "value":"VSOCK"
+              }
+            ]
+  register: r_hyperconverged_patched
+  until: r_hyperconverged_patched is successful
+  retries: 5
+  delay: 5
+
+- name: Add ROX_VIRTUAL_MACHINES env to collector DaemonSet compliance container
+  kubernetes.core.k8s_json_patch:
+    kind: DaemonSet
+    api_version: apps/v1
+    name: collector
+    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+    patch:
+    - op: add
+      path: /spec/template/spec/containers/1/env/-
+      value:
+        name: ROX_VIRTUAL_MACHINES
+        value: "true"
+  register: r_collector_patched
+  until: r_collector_patched is successful
+  retries: 10
+  delay: 10

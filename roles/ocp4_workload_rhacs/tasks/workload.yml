@@ -65,70 +65,9 @@
   retries: 30
   delay: 5
 
-- name: Check if valid Certificate already exists
+- name: Set up Certificate for Central
   when: ocp4_workload_rhacs_enable_route_certs | bool
-  kubernetes.core.k8s_info:
-    api_version: cert-manager.io/v1
-    kind: Certificate
-    name: rhacs-central-cert
-    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
-  register: r_existing_certificate
-
-- name: Set certificate status fact
-  when: ocp4_workload_rhacs_enable_route_certs | bool
-  ansible.builtin.set_fact:
-    _ocp4_workload_rhacs_cert_already_valid: >-
-      {{
-        r_existing_certificate.resources | length > 0
-        and (r_existing_certificate.resources[0].status.conditions
-             | default([])
-             | selectattr('type', 'equalto', 'Ready')
-             | selectattr('status', 'equalto', 'True')
-             | list | length > 0)
-      }}
-
-- name: Use existing certificate
-  when:
-  - ocp4_workload_rhacs_enable_route_certs | bool
-  - _ocp4_workload_rhacs_cert_already_valid | default(false) | bool
-  ansible.builtin.set_fact:
-    r_certificate_central: "{{ r_existing_certificate }}"
-
-- name: Create Certificate for Central
-  when:
-  - ocp4_workload_rhacs_enable_route_certs | bool
-  - not _ocp4_workload_rhacs_cert_already_valid | default(false) | bool
-  block:
-  - name: Get ClusterIssuer(s)
-    kubernetes.core.k8s_info:
-      api_version: cert-manager.io/v1
-      kind: ClusterIssuer
-    register: r_cluster_issuers
-    until: r_cluster_issuers is successful
-    retries: 5
-    delay: 5
-
-  - name: Fail if no ClusterIssuer is found but certificates are requested
-    when: r_cluster_issuers.resources | length == 0
-    ansible.builtin.fail:
-      msg: "No ClusterIssuer found to issue certificates for Central"
-
-  - name: Build list of ClusterIssuers to try (fallback issuers last)
-    ansible.builtin.set_fact:
-      _cluster_issuers_to_try: >-
-        {{
-          (r_cluster_issuers.resources | map(attribute='metadata.name') | list | reject('search', 'fallback') | list)
-          + (r_cluster_issuers.resources | map(attribute='metadata.name') | list | select('search', 'fallback') | list)
-        }}
-
-  - name: Try each ClusterIssuer until certificate is issued successfully
-    when: r_certificate_central is not defined or r_certificate_central is failed
-    vars:
-      _ocp4_workload_rhacs_cert_cluster_issuer: "{{ item }}"
-    ansible.builtin.include_tasks: try_certificate_issuer.yml
-    loop: "{{ _cluster_issuers_to_try }}"
-    loop_control:
-      label: "{{ item }}"
+  ansible.builtin.include_tasks: certificate.yml
 
 - name: Create Central
   vars:
@@ -152,7 +91,7 @@
   delay: 20
   until: r_stackrox_central_route.resources[0].spec.host is defined
 
-- name: Store Central Route as a fact
+- name: Store Central Route facts
   ansible.builtin.set_fact:
     _ocp4_workload_rhacs_central_host: "{{ r_stackrox_central_route.resources[0].spec.host }}"
     _ocp4_workload_rhacs_central_route: "https://{{ r_stackrox_central_route.resources[0].spec.host }}"
@@ -252,63 +191,7 @@
 
 - name: Enable VM scanning on Hyperconverged
   when: ocp4_workload_rhacs_enable_vm_scanning | bool
-  block:
-  - name: Ensure that Hyperconverged is installed
-    kubernetes.core.k8s_info:
-      api_version: hco.kubevirt.io/v1beta1
-      kind: HyperConverged
-      name: kubevirt-hyperconverged
-      namespace: openshift-cnv
-    register: r_hyperconverged
-    until: r_hyperconverged is successful
-    retries: 30
-    delay: 5
-
-  - name: Fail if Hyperconverged is not installed
-    when: r_hyperconverged.resources | default([]) | length == 0
-    ansible.builtin.fail:
-      msg: "Hyperconverged is not installed"
-
-  - name: Patch Hyperconverged
-    kubernetes.core.k8s:
-      state: patched
-      merge_type: merge
-      api_version: hco.kubevirt.io/v1beta1
-      kind: HyperConverged
-      name: kubevirt-hyperconverged
-      namespace: openshift-cnv
-      definition:
-        metadata:
-          annotations:
-            kubevirt.kubevirt.io/jsonpatch: |-
-              [
-                {
-                  "op":"add",
-                  "path":"/spec/configuration/developerConfiguration/featureGates/-",
-                  "value":"VSOCK"
-                }
-              ]
-    register: r_hyperconverged_patched
-    until: r_hyperconverged_patched is successful
-    retries: 5
-    delay: 5
-
-  - name: Add ROX_VIRTUAL_MACHINES env to collector DaemonSet compliance container
-    kubernetes.core.k8s_json_patch:
-      kind: DaemonSet
-      api_version: apps/v1
-      name: collector
-      namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
-      patch:
-      - op: add
-        path: /spec/template/spec/containers/1/env/-
-        value:
-          name: ROX_VIRTUAL_MACHINES
-          value: "true"
-    register: r_collector_patched
-    until: r_collector_patched is successful
-    retries: 10
-    delay: 10
+  ansible.builtin.include_tasks: hyperconverged.yml
 
 - name: Print user info
   agnosticd.core.agnosticd_user_info:
