@@ -93,7 +93,7 @@
   vars:
     ansible_ssh_extra_args: "-F /dev/null"
   ansible.builtin.blockinfile:
-    path: "/home/{{ student_name }}/.bashrc"
+    path: "/home/{{ bastion_ansible_user }}/.bashrc"
     block: |
       export ROX_CENTRAL_ADDRESS={{ _ocp4_workload_rhacs_central_route }}
       export ROX_API_TOKEN={{ _ocp4_workload_rhacs_rox_api_token }}
