@@ -195,6 +195,10 @@
   when: ocp4_workload_rhacs_enable_vm_scanning | bool
   ansible.builtin.include_tasks: hyperconverged.yml
 
+- name: Install roxctl on the Bastion host
+  when: ocp4_workload_rhacs_install_roxctl | bool
+  ansible.builtin.include_tasks: roxctl.yml
+
 - name: Print user info
   agnosticd.core.agnosticd_user_info:
     msg: "{{ item }}"

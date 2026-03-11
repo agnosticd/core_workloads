@@ -36,6 +36,10 @@ ocp4_workload_rhacs_central_admin_password_length: 18
 # Enable the Console Plugin. RHACS 4.10 and higher is required
 ocp4_workload_rhacs_central_enable_console_plugin: false
 
+# Install roxctl on the Bastion host
+ocp4_workload_rhacs_install_roxctl: false
+ocp4_workload_rhacs_roxctl_url: https://mirror.openshift.com/pub/rhacs/assets/latest/bin/linux/roxctl
+
 # --------------------------------
 # Resource Override Variables
 # --------------------------------
