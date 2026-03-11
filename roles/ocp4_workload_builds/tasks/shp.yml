@@ -67,8 +67,6 @@
       mode: ug=rwx,o=rx
       owner: root
       group: root
-    args:
-      creates: /usr/bin/shp
 
   - name: Remove shp-linux-amd64
     ansible.builtin.file:
