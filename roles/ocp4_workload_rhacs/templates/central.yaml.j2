@@ -5,12 +5,13 @@ metadata:
   name: stackrox-central-services
   namespace: {{ ocp4_workload_rhacs_central_namespace }}
 spec:
-{% if ocp4_workload_rhacs_enable_vm_scanning | bool %}
-  env:
-  - name: ROX_VIRTUAL_MACHINES
-    value: "true"
-{% endif %}
   central:
+{% if ocp4_workload_rhacs_enable_vm_scanning | bool %}
+    customize:
+      envVars:
+      - name: ROX_VIRTUAL_MACHINES
+        value: "true"
+{% endif %}
     adminPasswordSecret:
       name: acs-password
 {% if ocp4_workload_rhacs_central_resources_update | default(false) | bool %}

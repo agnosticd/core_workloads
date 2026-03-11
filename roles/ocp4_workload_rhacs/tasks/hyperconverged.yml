@@ -40,19 +40,19 @@
   retries: 5
   delay: 5
 
-- name: Add ROX_VIRTUAL_MACHINES env to collector DaemonSet compliance container
-  kubernetes.core.k8s_json_patch:
-    kind: DaemonSet
-    api_version: apps/v1
-    name: collector
-    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
-    patch:
-    - op: add
-      path: /spec/template/spec/containers/1/env/-
-      value:
-        name: ROX_VIRTUAL_MACHINES
-        value: "true"
-  register: r_collector_patched
-  until: r_collector_patched is successful
-  retries: 10
-  delay: 10
+# - name: Add ROX_VIRTUAL_MACHINES env to collector DaemonSet compliance container
+#   kubernetes.core.k8s_json_patch:
+#     kind: DaemonSet
+#     api_version: apps/v1
+#     name: collector
+#     namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+#     patch:
+#     - op: add
+#       path: /spec/template/spec/containers/1/env/-
+#       value:
+#         name: ROX_VIRTUAL_MACHINES
+#         value: "true"
+#   register: r_collector_patched
+#   until: r_collector_patched is successful
+#   retries: 10
+#   delay: 10
