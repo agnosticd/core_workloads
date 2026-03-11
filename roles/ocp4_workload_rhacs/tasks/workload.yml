@@ -147,18 +147,19 @@
   retries: 30
   delay: 5
 
-- name: Wait for SecuredCluster sensor to be ready
+- name: Wait for SecuredCluster to be ready
   kubernetes.core.k8s_info:
-    name: sensor
-    kind: Deployment
-    api_version: apps/v1
+    api_version: platform.stackrox.io/v1alpha1
+    kind: SecuredCluster
+    name: stackrox-secured-cluster-services
     namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
-  register: r_securedcluster_sensor_deployment
-  until:
-  - r_securedcluster_sensor_deployment.resources[0].status.readyReplicas is defined
-  - r_securedcluster_sensor_deployment.resources[0].status.readyReplicas | int >= 1
-  delay: 20
-  retries: 15
+    wait: true
+    wait_sleep: 5
+    wait_timeout: 600
+    wait_condition:
+      type: "Available"
+      status: "True"
+      reason: "DeploymentsReady"
 
 - name: Create Console Plugin
   when: ocp4_workload_rhacs_central_enable_console_plugin | bool
