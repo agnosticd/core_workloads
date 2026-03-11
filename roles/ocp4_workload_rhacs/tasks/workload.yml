@@ -247,11 +247,16 @@
       name: kubevirt-hyperconverged
       namespace: openshift-cnv
       definition:
-        spec:
-          configuration:
-            developerConfiguration:
-              featureGates:
-              - VSOCK
+        metadata:
+        annotations:
+          kubevirt.kubevirt.io/jsonpatch: |-
+            [
+              {
+                "op":"add",
+                "path":"/spec/configuration/developerConfiguration/featureGates/-",
+                "value":"VSOCK"
+              }
+            ]      
     register: r_hyperconverged_patched
     until: r_hyperconverged_patched is successful
     retries: 5
