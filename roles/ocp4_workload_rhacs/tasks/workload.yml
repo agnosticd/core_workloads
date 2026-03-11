@@ -250,13 +250,13 @@
         metadata:
           annotations:
             kubevirt.kubevirt.io/jsonpatch: |-
-            [
-              {
-                "op":"add",
-                "path":"/spec/configuration/developerConfiguration/featureGates/-",
-                "value":"VSOCK"
-              }
-            ]      
+              [
+                {
+                  "op":"add",
+                  "path":"/spec/configuration/developerConfiguration/featureGates/-",
+                  "value":"VSOCK"
+                }
+              ]
     register: r_hyperconverged_patched
     until: r_hyperconverged_patched is successful
     retries: 5
