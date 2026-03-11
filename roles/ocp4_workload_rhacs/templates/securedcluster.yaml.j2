@@ -7,10 +7,10 @@ metadata:
 spec:
   clusterName: production
 {% if ocp4_workload_rhacs_enable_vm_scanning | bool %}
-    customize:
-      envVars:
-      - name: ROX_VIRTUAL_MACHINES
-        value: "true"
+  customize:
+    envVars:
+    - name: ROX_VIRTUAL_MACHINES
+      value: "true"
 {% endif %}
 {% if ocp4_workload_rhacs_sensor_resources_update | default(false) | bool %}
   sensor:
