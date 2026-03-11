@@ -4,7 +4,7 @@
     var: groups['bastions']
 
 - name: Set bastion host from inventory group
-  when: groups['bastions'] is defined and groups['bastions'] | length > 0
+  when: "'bastions' in groups and groups['bastions'] | length > 0"
   ansible.builtin.set_fact:
     _bastion_host: "{{ groups['bastions'][0] }}"
 
