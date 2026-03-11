@@ -1,0 +1,100 @@
+---
+- name: Set bastion host from inventory group
+  when: "'bastions' in groups and groups['bastions'] | length > 0"
+  ansible.builtin.set_fact:
+    _bastion_host: "{{ groups['bastions'][0] }}"
+
+- name: Add bastion host dynamically from variables
+  when:
+  - _bastion_host is not defined
+  - bastion_ansible_host is defined
+  - bastion_ansible_user is defined
+  - bastion_ansible_ssh_pass is defined
+  block:
+  - name: Add bastion to inventory
+    ansible.builtin.add_host:
+      name: "{{ bastion_ansible_host }}"
+      groups: bastions
+      ansible_user: "{{ bastion_ansible_user }}"
+      ansible_ssh_pass: "{{ bastion_ansible_ssh_pass }}"
+      ansible_port: "{{ bastion_ansible_port | default(22) }}"
+
+  - name: Set bastion host fact from variables
+    ansible.builtin.set_fact:
+      _bastion_host: "{{ bastion_ansible_host }}"
+
+- name: Skip roxctl installation when no bastion available
+  when: _bastion_host is not defined
+  ansible.builtin.debug:
+    msg: "No bastion host available - skipping roxctl installation"
+
+- name: Try to install roxctl
+  when: _bastion_host is defined
+  become: true
+  delegate_to: "{{ _bastion_host }}"
+  vars:
+    ansible_ssh_extra_args: "-F /dev/null"
+  ansible.builtin.get_url:
+    url: "{{ ocp4_workload_rhacs_roxctl_url }}"
+    dest: /usr/bin/roxctl
+    validate_certs: false
+    owner: root
+    group: root
+    mode: ug=rwx,o=rx
+  retries: 10
+  delay: 5
+  register: r_roxctl
+  ignore_errors: true
+
+- name: Generate ROX API token
+  when: _bastion_host is defined
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/apitokens/generate"
+    method: POST
+    user: admin
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Content-Type: application/json
+    body_format: json
+    body:
+      name: rhacs-config-script-token
+      roles:
+      - Admin
+    timeout: 60
+    status_code: 200
+  register: r_rox_api_token
+  retries: 5
+  delay: 10
+  until: r_rox_api_token is succeeded
+  ignore_errors: true
+
+- name: Set ROX API token fact
+  when:
+  - _bastion_host is defined
+  - r_rox_api_token is succeeded
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_rox_api_token: "{{ r_rox_api_token.json.token }}"
+
+- name: Warn if ROX API token generation failed
+  when:
+  - _bastion_host is defined
+  - r_rox_api_token is not succeeded
+  ansible.builtin.debug:
+    msg: "Failed to generate ROX API token - skipping roxctl environment setup"
+
+- name: Set Environment Variables for roxctl
+  when:
+  - _bastion_host is defined
+  - _ocp4_workload_rhacs_rox_api_token is defined
+  become: true
+  delegate_to: "{{ _bastion_host }}"
+  vars:
+    ansible_ssh_extra_args: "-F /dev/null"
+  ansible.builtin.blockinfile:
+    path: "/home/{{ bastion_ansible_user }}/.bashrc"
+    block: |
+      export ROX_CENTRAL_ADDRESS={{ _ocp4_workload_rhacs_central_route }}
+      export ROX_API_TOKEN={{ _ocp4_workload_rhacs_rox_api_token }}
+    marker: "# {mark} ANSIBLE MANAGED BLOCK: roxctl"

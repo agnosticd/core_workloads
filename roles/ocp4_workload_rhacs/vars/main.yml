@@ -1,2 +1,7 @@
 ---
 _ocp4_workload_rhacs_central_admin_password: ""
+_ocp4_workload_rhacs_central_route: ""
+_ocp4_workload_rhacs_central_host: ""
+_ocp4_workload_rhacs_cert_cluster_issuer: ""
+_ocp4_workload_rhacs_central_certificate: false
+_ocp4_workload_rhacs_rox_api_token: ""

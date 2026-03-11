@@ -1,0 +1,23 @@
+---
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  name: advanced-cluster-security
+spec:
+  displayName: Red Hat Advanced Cluster Security for OpenShift
+  backend:
+    service:
+      basePath: /proxy/central/static/ocp-plugin
+      name: sensor-proxy
+      namespace: {{ ocp4_workload_rhacs_central_namespace }}
+      port: 443
+    type: Service
+  proxy:
+  - alias: api-service
+    authorization: UserToken
+    endpoint:
+      service:
+        name: sensor-proxy
+        namespace: {{ ocp4_workload_rhacs_central_namespace }}
+        port: 443
+      type: Service

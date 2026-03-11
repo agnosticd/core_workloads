@@ -3,8 +3,14 @@ apiVersion: platform.stackrox.io/v1alpha1
 kind: Central
 metadata:
   name: stackrox-central-services
-  namespace: stackrox
+  namespace: {{ ocp4_workload_rhacs_central_namespace }}
 spec:
+{% if ocp4_workload_rhacs_enable_vm_scanning | bool %}
+  customize:
+    envVars:
+    - name: ROX_VIRTUAL_MACHINES
+      value: "true"
+{% endif %}
   central:
     adminPasswordSecret:
       name: acs-password
@@ -16,6 +22,10 @@ spec:
       limits:
         cpu: '{{ ocp4_workload_rhacs_central_limits_cpu }}'
         memory: {{ ocp4_workload_rhacs_central_limits_memory }}
+{% endif %}
+{% if _ocp4_workload_rhacs_central_certificate | bool %}
+    defaultTLSSecret:
+      name: rhacs-central-tls
 {% endif %}
     exposure:
       loadBalancer:

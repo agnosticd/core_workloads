@@ -1,10 +1,10 @@
 ---
 ocp4_workload_rhacs_install_operator_namespace: rhacs-operator
-ocp4_workload_rhacs_install_operator_channel: rhacs-4.9
+ocp4_workload_rhacs_install_operator_channel: rhacs-4.10
 
 ocp4_workload_rhacs_install_operator_use_catalog_snapshot: false
 ocp4_workload_rhacs_install_operator_catalog_source_image: quay.io/rhpds/olm_snapshot_redhat_catalog
-ocp4_workload_rhacs_install_operator_catalog_source_tag: "v4.15_2024_04_08"
+ocp4_workload_rhacs_install_operator_catalog_source_tag: "v4.20_2026_03_09"
 
 ocp4_workload_rhacs_automatic_install_plan_approval: true
 ocp4_workload_rhacs_install_operator_starting_csv: ""
@@ -13,8 +13,16 @@ ocp4_workload_rhacs_central_namespace: stackrox
 # Enable the new V4 central scanner
 ocp4_workload_rhacs_enable_central_scanner_v4: false
 
-# To avoid browser cert nag screens, this adds the Stackrox CA cert to the Route for Central.
-# change this once we're happy that it works consistently
+# Enable scanning of VMs
+# OCP Virtualization must also be configured properly
+# oc patch hyperconverged kubevirt-hyperconverged -n openshift-cnv
+# --type='merge' --patch='{"spec":{"configuration":{"developerConfiguration":{"featureGates":["VSOCK"]}}}}'
+ocp4_workload_rhacs_enable_vm_scanning: false
+
+# Put a proper certificate on Central
+# Cert Manager has to be deployed and at least one ClusterIssuer has to be present
+# If multiple ClusterIssuers are present, the role will try each one until a certificate is issued successfully
+# If no certificate is issued successfully, the role will deploy Central without a proper certificate
 ocp4_workload_rhacs_enable_route_certs: true
 
 # Enable collector config for rhacs 4.8+
@@ -24,6 +32,13 @@ ocp4_workload_rhacs_collector_config_expternal_ips_enable: true
 # Set the default password for the Central admin user (empty will generate a random password)
 ocp4_workload_rhacs_central_admin_password: ""
 ocp4_workload_rhacs_central_admin_password_length: 18
+
+# Enable the Console Plugin. RHACS 4.10 and higher is required
+ocp4_workload_rhacs_central_enable_console_plugin: false
+
+# Install roxctl on the Bastion host
+ocp4_workload_rhacs_install_roxctl: false
+ocp4_workload_rhacs_roxctl_url: https://mirror.openshift.com/pub/rhacs/assets/latest/bin/linux/roxctl
 
 # --------------------------------
 # Resource Override Variables

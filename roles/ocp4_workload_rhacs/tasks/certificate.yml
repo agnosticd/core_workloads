@@ -1,0 +1,60 @@
+---
+# Check for existing valid certificate and skip provisioning if found
+- name: Check if valid Certificate already exists
+  kubernetes.core.k8s_info:
+    api_version: cert-manager.io/v1
+    kind: Certificate
+    name: rhacs-central-cert
+    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+  register: r_existing_certificate
+
+- name: Set certificate status fact
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_cert_already_valid: >-
+      {{
+        r_existing_certificate.resources | length > 0
+        and (r_existing_certificate.resources[0].status.conditions
+             | default([])
+             | selectattr('type', 'equalto', 'Ready')
+             | selectattr('status', 'equalto', 'True')
+             | list | length > 0)
+      }}
+
+- name: Use existing certificate
+  when: _ocp4_workload_rhacs_cert_already_valid | bool
+  ansible.builtin.set_fact:
+    r_certificate_central: "{{ r_existing_certificate }}"
+
+- name: Create Certificate for Central
+  when: not _ocp4_workload_rhacs_cert_already_valid | bool
+  block:
+  - name: Get ClusterIssuer(s)
+    kubernetes.core.k8s_info:
+      api_version: cert-manager.io/v1
+      kind: ClusterIssuer
+    register: r_cluster_issuers
+    until: r_cluster_issuers is successful
+    retries: 5
+    delay: 5
+
+  - name: Fail if no ClusterIssuer is found but certificates are requested
+    when: r_cluster_issuers.resources | length == 0
+    ansible.builtin.fail:
+      msg: "No ClusterIssuer found to issue certificates for Central"
+
+  - name: Build list of ClusterIssuers to try (fallback issuers last)
+    ansible.builtin.set_fact:
+      _cluster_issuers_to_try: >-
+        {{
+          (r_cluster_issuers.resources | map(attribute='metadata.name') | list | reject('search', 'fallback') | list)
+          + (r_cluster_issuers.resources | map(attribute='metadata.name') | list | select('search', 'fallback') | list)
+        }}
+
+  - name: Try each ClusterIssuer until certificate is issued successfully
+    when: r_certificate_central is not defined or r_certificate_central is failed
+    vars:
+      _ocp4_workload_rhacs_cert_cluster_issuer: "{{ item }}"
+    ansible.builtin.include_tasks: try_certificate_issuer.yml
+    loop: "{{ _cluster_issuers_to_try }}"
+    loop_control:
+      label: "{{ item }}"
