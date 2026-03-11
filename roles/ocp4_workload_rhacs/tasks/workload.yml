@@ -248,8 +248,8 @@
       namespace: openshift-cnv
       definition:
         metadata:
-        annotations:
-          kubevirt.kubevirt.io/jsonpatch: |-
+          annotations:
+            kubevirt.kubevirt.io/jsonpatch: |-
             [
               {
                 "op":"add",
