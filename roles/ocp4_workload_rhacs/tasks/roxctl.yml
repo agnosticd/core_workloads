@@ -43,4 +43,58 @@
     mode: ug=rwx,o=rx
   retries: 10
   delay: 5
+  register: r_roxctl
   ignore_errors: true
+
+- name: Generate ROX API token
+  when: _bastion_host is defined
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/apitokens/generate"
+    method: POST
+    user: admin
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Content-Type: application/json
+    body_format: json
+    body:
+      name: rhacs-config-script-token
+      roles:
+      - Admin
+    timeout: 60
+    status_code: 200
+  register: r_rox_api_token
+  retries: 5
+  delay: 10
+  until: r_rox_api_token is succeeded
+  ignore_errors: true
+
+- name: Set ROX API token fact
+  when:
+  - _bastion_host is defined
+  - r_rox_api_token is succeeded
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_rox_api_token: "{{ r_rox_api_token.json.token }}"
+
+- name: Warn if ROX API token generation failed
+  when:
+  - _bastion_host is defined
+  - r_rox_api_token is not succeeded
+  ansible.builtin.debug:
+    msg: "Failed to generate ROX API token - skipping roxctl environment setup"
+
+- name: Set Environment Variables for roxctl
+  when:
+  - _bastion_host is defined
+  - _ocp4_workload_rhacs_rox_api_token is defined
+  become: true
+  delegate_to: "{{ _bastion_host }}"
+  vars:
+    ansible_ssh_extra_args: "-F /dev/null"
+  ansible.builtin.blockinfile:
+    path: "/home/{{ student_name }}/.bashrc"
+    block: |
+      export ROX_CENTRAL_ADDRESS={{ _ocp4_workload_rhacs_central_route }}
+      export ROX_API_TOKEN={{ _ocp4_workload_rhacs_rox_api_token }}
+    marker: "# {mark} ANSIBLE MANAGED BLOCK: roxctl"
