@@ -1,0 +1,3 @@
+= ocp4_workload_builds - Install Red Hat OpenShift Builds
+
+See defaults/main.yml for variables to set.

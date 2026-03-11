@@ -1,0 +1,36 @@
+---
+- name: Install OpenShift Builds operator
+  ansible.builtin.include_role:
+    name: install_operator
+  vars:
+    install_operator_action: install
+    install_operator_name: openshift-builds-operator
+    install_operator_namespace: openshift-builds
+    install_operator_channel: "{{ ocp4_workload_builds_channel }}"
+    install_operator_catalog: redhat-operators
+    install_operator_automatic_install_plan_approval: "{{ ocp4_workload_builds_automatic_install_plan_approval }}"
+    install_operator_starting_csv: "{{ ocp4_workload_builds_starting_csv }}"
+    install_operator_catalogsource_setup: "{{ ocp4_workload_builds_use_catalog_snapshot }}"
+    install_operator_catalogsource_name: "{{ ocp4_workload_builds_catalogsource_name }}"
+    install_operator_catalogsource_namespace: openshift-operators
+    install_operator_catalogsource_image: "{{ ocp4_workload_builds_catalog_snapshot_image | default('') }}"
+    install_operator_catalogsource_image_tag: "{{ ocp4_workload_builds_catalog_snapshot_image_tag }}"
+
+- name: Wait until shipwright build controller pods are ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: openshift-builds
+    name: shipwright-build-controller
+  register: r_shipwright_controller_deployment
+  retries: 40
+  delay: 10
+  until:
+  - r_shipwright_controller_deployment.resources is defined
+  - r_shipwright_controller_deployment.resources | length | int > 0
+  - r_shipwright_controller_deployment.resources[0].status.readyReplicas is defined
+  - r_shipwright_controller_deployment.resources[0].status.readyReplicas | int == r_shipwright_controller_deployment.resources[0].spec.replicas | int
+
+- name: Install Builds CLI tools on the Bastion host
+  when: ocp4_workload_builds_install_cli_tools | bool
+  ansible.builtin.include_tasks: shp.yml

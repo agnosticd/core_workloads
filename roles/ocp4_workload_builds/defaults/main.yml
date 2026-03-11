@@ -1,0 +1,41 @@
+---
+# Defaults values below are for latest channel
+
+# Channel to use for the OpenShift Builds subscription
+ocp4_workload_builds_channel: latest
+
+# Set automatic InstallPlan approval. Must be set to false when specifying a starting_csv
+ocp4_workload_builds_automatic_install_plan_approval: true
+
+# Set a starting ClusterServiceVersion.
+# Recommended to leave empty to get latest in the channel when not using
+# a catalog snapshot.
+# Highly recommended to be set when using a catalog snapshot but can be
+# empty to get the latest available in the channel at the time when
+# the catalog snapshot got created.
+# Match the first part of the CSV name to the nameprefix below
+ocp4_workload_builds_starting_csv: ""
+# ocp4_workload_builds_starting_csv: openshift-builds-operator.v1.7.0
+
+# Attempt to install the CLI tools on the Bastion.
+ocp4_workload_builds_install_cli_tools: false
+ocp4_workload_builds_install_cli_tools_url: https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/openshift-builds/1.3.0-258/shp-linux-amd64.tar.gz
+
+# --------------------------------
+# Operator Catalog Snapshot Settings
+# --------------------------------
+# See https://github.com/redhat-cop/agnosticd/blob/development/docs/Operator_Catalog_Snapshots.adoc
+# for instructions on how to set up catalog snapshot images
+
+# Use a catalog snapshot
+ocp4_workload_builds_use_catalog_snapshot: false
+
+# Catalog Source Name when using a catalog snapshot. This should be unique
+# in the cluster to avoid clashes
+ocp4_workload_builds_catalogsource_name: redhat-operators-snapshot-builds
+
+# Catalog snapshot image
+ocp4_workload_builds_catalog_snapshot_image: quay.io/rhpds/olm_snapshot_redhat_catalog
+
+# Catalog snapshot image tag
+ocp4_workload_builds_catalog_snapshot_image_tag: v4.21_2026_03_09
