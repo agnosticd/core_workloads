@@ -1,7 +1,11 @@
 ---
 - name: Debug bastion host
   ansible.builtin.debug:
-    var: groups['bastions']
+    msg:
+      - "groups['bastions']: {{ groups['bastions'] | default('not defined') }}"
+      - "bastion_ansible_host: {{ bastion_ansible_host | default('not defined') }}"
+      - "bastion_ansible_user: {{ bastion_ansible_user | default('not defined') }}"
+      - "bastion_ansible_port: {{ bastion_ansible_port | default('not defined') }}"
 
 - name: Set bastion host from inventory group
   when: "'bastions' in groups and groups['bastions'] | length > 0"
