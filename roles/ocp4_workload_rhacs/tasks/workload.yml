@@ -80,6 +80,20 @@
   retries: 30
   delay: 5
 
+- name: Wait for Central availability
+  kubernetes.core.k8s_info:
+    api_version: platform.stackrox.io/v1alpha1
+    kind: Central
+    name: stackrox-central-services
+    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+    wait: true
+    wait_sleep: 5
+    wait_timeout: 600
+    wait_condition:
+      type: "Available"
+      status: "True"
+      reason: "DeploymentsReady"
+
 - name: Get Central Route
   kubernetes.core.k8s_info:
     kind: Route
@@ -95,19 +109,6 @@
   ansible.builtin.set_fact:
     _ocp4_workload_rhacs_central_host: "{{ r_stackrox_central_route.resources[0].spec.host }}"
     _ocp4_workload_rhacs_central_route: "https://{{ r_stackrox_central_route.resources[0].spec.host }}"
-
-- name: Wait for Central availability
-  ansible.builtin.uri:
-    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/ping"
-    method: GET
-    user: admin
-    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
-    force_basic_auth: true
-    validate_certs: false
-  register: result
-  until: result.status == 200
-  retries: 30
-  delay: 20
 
 # ACS Secured Cluster Installation
 - name: Get cluster init bundle
