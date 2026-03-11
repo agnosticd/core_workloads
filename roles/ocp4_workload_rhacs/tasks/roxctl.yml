@@ -1,4 +1,8 @@
 ---
+- name: Debug bastion host
+  ansible.builtin.debug:
+    var: groups['bastions']
+
 - name: Set bastion host from inventory group
   when: groups['bastions'] is defined and groups['bastions'] | length > 0
   ansible.builtin.set_fact:
