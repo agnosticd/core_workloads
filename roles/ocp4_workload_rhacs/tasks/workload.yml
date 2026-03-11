@@ -90,9 +90,9 @@
     wait_sleep: 5
     wait_timeout: 600
     wait_condition:
-      type: "Available"
+      type: "Deployed"
       status: "True"
-      reason: "DeploymentsReady"
+      reason: "InstallSuccessful"
 
 - name: Get Central Route
   kubernetes.core.k8s_info:
