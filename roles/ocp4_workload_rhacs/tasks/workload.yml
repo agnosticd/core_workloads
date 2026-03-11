@@ -1,5 +1,5 @@
 ---
-- name: Install Operator
+- name: Install RHACS Operator
   ansible.builtin.include_role:
     name: install_operator
   vars:
@@ -21,7 +21,7 @@
     name: "{{ ocp4_workload_rhacs_central_namespace }}"
   register: r_central_namespace
   until: r_central_namespace is successful
-  retries: 30
+  retries: 5
   delay: 5
 
 - name: Create collector config
@@ -31,7 +31,7 @@
     template: collector-config.yaml.j2
   register: r_collector_config
   until: r_collector_config is successful
-  retries: 30
+  retries: 5
   delay: 5
 
 - name: Generate admin password
@@ -75,9 +75,9 @@
   kubernetes.core.k8s:
     state: present
     template: central.yaml.j2
-  register: r_k8s
-  until: r_k8s is successful
-  retries: 30
+  register: r_central
+  until: r_central is successful
+  retries: 5
   delay: 5
 
 - name: Wait for Central availability
@@ -101,8 +101,8 @@
     namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
     name: central
   register: r_stackrox_central_route
-  retries: 10
-  delay: 20
+  retries: 5
+  delay: 5
   until: r_stackrox_central_route.resources[0].spec.host is defined
 
 - name: Store Central Route facts
@@ -110,7 +110,7 @@
     _ocp4_workload_rhacs_central_host: "{{ r_stackrox_central_route.resources[0].spec.host }}"
     _ocp4_workload_rhacs_central_route: "https://{{ r_stackrox_central_route.resources[0].spec.host }}"
 
-# ACS Secured Cluster Installation
+# ACS Secured Cluster (Sensor) Installation
 - name: Get cluster init bundle
   ansible.builtin.uri:
     url: "{{ _ocp4_workload_rhacs_central_route }}/v1/cluster-init/init-bundles"
@@ -135,7 +135,7 @@
     definition: "{{ f_stackrox_bundle }}"
   register: r_init_bundle
   until: r_init_bundle is successful
-  retries: 30
+  retries: 5
   delay: 5
 
 - name: Deploy SecuredCluster
@@ -144,7 +144,7 @@
     template: securedcluster.yaml.j2
   register: r_securedcluster
   until: r_securedcluster is successful
-  retries: 30
+  retries: 5
   delay: 5
 
 - name: Wait for SecuredCluster to be ready
@@ -186,8 +186,8 @@
         href: '{{ _ocp4_workload_rhacs_central_route }}'
         location: ApplicationMenu
         text: Red Hat Advanced Cluster Security for Kubernetes
-  register: r_k8s
-  until: r_k8s is successful
+  register: r_console_link
+  until: r_console_link is successful
   retries: 30
   delay: 5
 
