@@ -80,19 +80,21 @@
   retries: 5
   delay: 5
 
-- name: Wait for Central availability
+- name: Wait for Central availability                                                                                                                                                    
   kubernetes.core.k8s_info:
-    api_version: platform.stackrox.io/v1alpha1
+    api_version: platform.stackrox.io/v1alpha1                                                                                                                                           
     kind: Central
     name: stackrox-central-services
     namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
-    wait: true
-    wait_sleep: 5
-    wait_timeout: 600
-    wait_condition:
-      type: "Deployed"
-      status: "True"
-      reason: "InstallSuccessful"
+  register: r_central
+  until: >-
+    (r_central.resources[0].status | default({})).conditions | default([]) |
+    selectattr('status', 'equalto', 'True') |
+    selectattr('type', 'in', ['Available', 'Deployed']) |
+    selectattr('reason', 'in', ['DeploymentsReady', 'InstallSuccessful']) |
+    list | length > 0
+  retries: 120
+  delay: 5
 
 - name: Get Central Route
   kubernetes.core.k8s_info:
@@ -158,19 +160,21 @@
   retries: 5
   delay: 5
 
-- name: Wait for SecuredCluster to be ready
+- name: Wait for SecuredCluster to be ready                                                                                                                    
   kubernetes.core.k8s_info:
-    api_version: platform.stackrox.io/v1alpha1
+    api_version: platform.stackrox.io/v1alpha1                                                                                                                                           
     kind: SecuredCluster
     name: stackrox-secured-cluster-services
     namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
-    wait: true
-    wait_sleep: 5
-    wait_timeout: 600
-    wait_condition:
-      type: "Available"
-      status: "True"
-      reason: "DeploymentsReady"
+  register: r_secured_cluster
+  until: >-
+    (r_secured_cluster.resources[0].status | default({})).conditions | default([]) |
+    selectattr('status', 'equalto', 'True') |
+    selectattr('type', 'in', ['Available', 'Deployed']) |
+    selectattr('reason', 'in', ['DeploymentsReady', 'InstallSuccessful']) |
+    list | length > 0
+  retries: 120
+  delay: 5
 
 - name: Create Console Plugin
   when: ocp4_workload_rhacs_central_enable_console_plugin | bool
