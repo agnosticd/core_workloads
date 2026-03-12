@@ -82,7 +82,7 @@
 
 - name: Wait for Central availability
   kubernetes.core.k8s_info:
-    api_version: platform.stackrox.io/v1alpha1                                                                                                                                           
+    api_version: platform.stackrox.io/v1alpha1
     kind: Central
     name: stackrox-central-services
     namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
@@ -162,7 +162,7 @@
 
 - name: Wait for SecuredCluster to be ready
   kubernetes.core.k8s_info:
-    api_version: platform.stackrox.io/v1alpha1                                                                                                                                           
+    api_version: platform.stackrox.io/v1alpha1
     kind: SecuredCluster
     name: stackrox-secured-cluster-services
     namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
