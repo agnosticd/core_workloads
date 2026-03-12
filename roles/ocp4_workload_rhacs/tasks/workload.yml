@@ -89,9 +89,15 @@
   register: r_central
   until: >-
     (r_central.resources[0].status | default({})).conditions | default([]) |
+    selectattr('type', 'equalto', 'Available') |
     selectattr('status', 'equalto', 'True') |
-    selectattr('type', 'in', ['Available', 'Deployed']) |
-    selectattr('reason', 'in', ['DeploymentsReady', 'InstallSuccessful']) |
+    selectattr('reason', 'equalto', 'DeploymentsReady') |
+    list | length > 0
+    or
+    (r_central.resources[0].status | default({})).conditions | default([]) |
+    selectattr('type', 'equalto', 'Deployed') |
+    selectattr('status', 'equalto', 'True') |
+    selectattr('reason', 'equalto', 'InstallSuccessful') |
     list | length > 0
   retries: 120
   delay: 5
@@ -169,9 +175,15 @@
   register: r_secured_cluster
   until: >-
     (r_secured_cluster.resources[0].status | default({})).conditions | default([]) |
+    selectattr('type', 'equalto', 'Available') |
     selectattr('status', 'equalto', 'True') |
-    selectattr('type', 'in', ['Available', 'Deployed']) |
-    selectattr('reason', 'in', ['DeploymentsReady', 'InstallSuccessful']) |
+    selectattr('reason', 'equalto', 'DeploymentsReady') |
+    list | length > 0
+    or
+    (r_secured_cluster.resources[0].status | default({})).conditions | default([]) |
+    selectattr('type', 'equalto', 'Deployed') |
+    selectattr('status', 'equalto', 'True') |
+    selectattr('reason', 'equalto', 'InstallSuccessful') |
     list | length > 0
   retries: 120
   delay: 5
