@@ -80,7 +80,7 @@
   retries: 5
   delay: 5
 
-- name: Wait for Central availability                                                                                                                                                    
+- name: Wait for Central availability
   kubernetes.core.k8s_info:
     api_version: platform.stackrox.io/v1alpha1                                                                                                                                           
     kind: Central
@@ -160,7 +160,7 @@
   retries: 5
   delay: 5
 
-- name: Wait for SecuredCluster to be ready                                                                                                                    
+- name: Wait for SecuredCluster to be ready
   kubernetes.core.k8s_info:
     api_version: platform.stackrox.io/v1alpha1                                                                                                                                           
     kind: SecuredCluster
