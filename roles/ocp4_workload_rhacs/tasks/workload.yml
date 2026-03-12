@@ -110,6 +110,17 @@
     _ocp4_workload_rhacs_central_host: "{{ r_stackrox_central_route.resources[0].spec.host }}"
     _ocp4_workload_rhacs_central_route: "https://{{ r_stackrox_central_route.resources[0].spec.host }}"
 
+- name: Wait for StackRox Central to return 200 status
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_rhacs_central_route }}"
+    method: GET
+    validate_certs: false
+    status_code: 200
+  register: r_stackrox_central_check
+  until: r_stackrox_central_check.status == 200
+  retries: 60
+  delay: 5
+
 # ACS Secured Cluster (Sensor) Installation
 - name: Get cluster init bundle
   ansible.builtin.uri:
