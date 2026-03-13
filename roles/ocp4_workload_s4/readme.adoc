@@ -80,7 +80,7 @@ Username and password can be passed in as parameters. If not provided, username 
 * `ocp4_workload_s4_route_enabled`: Enable OpenShift Route for UI (default: `true`)
 * `ocp4_workload_s4_route_host`: Custom hostname (default: auto-generated)
 * `ocp4_workload_s4_route_tls_termination`: TLS termination (default: `edge`)
-* `ocp4_workload_s4_route_s3_enabled`: Enable Route for S3 API (default: `true`)
+* `ocp4_workload_s4_route_s3_api_enabled`: Enable Route for S3 API (default: `true`)
 
 === Bucket Creation
 
@@ -142,7 +142,7 @@ Username and password can be passed in as parameters. If not provided, username 
       ocp4_workload_s4_storage_data_storage_class: ocs-storagecluster-ceph-rbd
       ocp4_workload_s4_access_key_id: my-access-key
       ocp4_workload_s4_secret_access_key: my-secret-key
-      ocp4_workload_s4_route_s3_enabled: true
+      ocp4_workload_s4_route_s3_api_enabled: true
       ocp4_workload_s4_buckets:
       - production-data
 ----

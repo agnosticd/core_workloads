@@ -88,7 +88,7 @@
     _ocp4_workload_s4_route_url: "https://{{ r_s4_route.resources[0].spec.host }}"
 
 - name: Get S3 API route (if enabled)
-  when: ocp4_workload_s4_route_s3_enabled | bool
+  when: ocp4_workload_s4_route_s3_api_enabled | bool
   kubernetes.core.k8s_info:
     api_version: route.openshift.io/v1
     kind: Route
@@ -104,7 +104,7 @@
 
 - name: Set S3 API endpoint URL
   when:
-  - ocp4_workload_s4_route_s3_enabled | bool
+  - ocp4_workload_s4_route_s3_api_enabled | bool
   - r_s4_api_route.resources | length > 0
   ansible.builtin.set_fact:
     _ocp4_workload_s4_s3_endpoint_external: "https://{{ r_s4_api_route.resources[0].spec.host }}"
@@ -152,7 +152,7 @@
       - msg: "S3 Endpoint (internal): {{ _ocp4_workload_s4_s3_endpoint_internal }}"
         when: true
       - msg: "S3 Endpoint (external): {{ _ocp4_workload_s4_s3_endpoint_external }}"
-        when: "{{ ocp4_workload_s4_route_s3_enabled | bool and _ocp4_workload_s4_s3_endpoint_external is defined }}"
+        when: "{{ ocp4_workload_s4_route_s3_api_enabled | bool and _ocp4_workload_s4_s3_endpoint_external is defined }}"
       - msg: "S3 Buckets Created: {{ ocp4_workload_s4_buckets | join(', ') }}"
         when: "{{ ocp4_workload_s4_buckets | default([]) | length > 0 }}"
 

@@ -92,8 +92,8 @@ spec:
 
           # S3 API Route
           s3Api:
-            enabled: {{ ocp4_workload_s4_route_s3_enabled | lower }}
-{% if ocp4_workload_s4_route_s3_enabled %}
+            enabled: {{ ocp4_workload_s4_route_s3_api_enabled | lower }}
+{% if ocp4_workload_s4_route_s3_api_enabled %}
 {% if ocp4_workload_s4_route_s3_host | length > 0 %}
             host: {{ ocp4_workload_s4_route_s3_host }}
 {% endif %}
