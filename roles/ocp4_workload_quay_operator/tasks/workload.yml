@@ -77,26 +77,12 @@
     ansible.builtin.set_fact:
       _ocp4_workload_quay_operator_registry_route: "{{ ocp4_workload_quay_operator_registry_hostname }}.{{ openshift_cluster_ingress_domain }}"
 
-  # Original Noobaa flow - unchanged from main branch
   - name: Create Quay Registry Resources
-    when: not (ocp4_workload_quay_operator_s4_storage_enabled | bool)
     kubernetes.core.k8s:
       state: present
       definition: "{{ lookup('template', item ) | from_yaml }}"
     loop:
     - quay_namespace.yaml.j2
-    - config_bundle_secret.yaml.j2
-    - quay_registry.yaml.j2
-
-  # S4 storage flow - new conditional logic
-  - name: Create Quay Registry Resources (S4 mode)
-    when: ocp4_workload_quay_operator_s4_storage_enabled | bool
-    kubernetes.core.k8s:
-      state: present
-      definition: "{{ lookup('template', item ) | from_yaml }}"
-    loop:
-    - quay_namespace.yaml.j2
-    - s4_credentials_secret.yaml.j2
     - config_bundle_secret.yaml.j2
     - quay_registry.yaml.j2
 
