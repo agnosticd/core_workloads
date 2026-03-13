@@ -105,5 +105,3 @@ ocp4_workload_s4_enable_user_info_data: true
 # Wait for deployment
 # --------------------------------------------------
 ocp4_workload_s4_wait_for_deployment: true
-ocp4_workload_s4_wait_retries: 60
-ocp4_workload_s4_wait_delay: 10
