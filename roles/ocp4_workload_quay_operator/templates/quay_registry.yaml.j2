@@ -10,7 +10,7 @@ spec:
   - kind: postgres
     managed: true
   - kind: objectstorage
-    managed: false
+    managed: {{ 'false' if ocp4_workload_quay_operator_use_s4_storage | bool else 'true' }}
   - kind: redis
     managed: true
   - kind: tls

@@ -5,8 +5,8 @@
 * This role can
 ** install the Quay Operator
 ** use a previously installed Red Hat Quay Operator to deploy a Quay Registry into an OpenShift Cluster.
-* The cluster *must* have S4 storage deployed (using `ocp4_workload_s4` role).
-* Quay uses S4 S3-compatible storage backend instead of OpenShift Container Storage (Noobaa).
+* By default, the cluster *must* have OpenShift Container Storage (Noobaa) installed.
+* Optionally, S4 S3-compatible storage can be used instead of Noobaa.
 
 * The role consists of the following tasks files:
 ** Tasks: link:./tasks/pre_workload.yml[pre_workload.yml] - Sets up an
@@ -29,17 +29,38 @@
 
 == Prerequisites
 
-=== S4 Storage
+=== Storage Backend Options
 
-This role *requires* S4 storage to be deployed first. S4 provides S3-compatible object storage for Quay.
+This role supports two storage backends for Quay:
 
-Deploy S4 before deploying Quay:
+1. **Noobaa/OpenShift Container Storage** (default)
+2. **S4 Storage** (optional, S3-compatible)
+
+==== Option 1: Noobaa Storage (Default)
+
+The cluster *must* have OpenShift Container Storage installed with Noobaa.
+
+[source,yaml]
+----
+workloads:
+- agnosticd.core_workloads.ocp4_workload_quay_operator
+
+# Uses default storage (Noobaa/OCS)
+# No additional configuration required
+----
+
+==== Option 2: S4 Storage (Optional)
+
+To use S4 storage instead of Noobaa, S4 must be deployed first using the `ocp4_workload_s4` role.
 
 [source,yaml]
 ----
 workloads:
 - agnosticd.core_workloads.ocp4_workload_s4
 - agnosticd.core_workloads.ocp4_workload_quay_operator
+
+# Enable S4 storage backend
+ocp4_workload_quay_operator_use_s4_storage: true
 
 # S4 configuration
 ocp4_workload_s4_buckets:
@@ -48,12 +69,19 @@ ocp4_workload_s4_buckets:
 # S4 credentials (must match Quay configuration)
 ocp4_workload_s4_access_key_id: s4admin
 ocp4_workload_s4_secret_access_key: s4secret
+
+# Quay S4 settings (optional, uses defaults if not specified)
+ocp4_workload_quay_operator_s4_namespace: s4
+ocp4_workload_quay_operator_s4_bucket_name: quay-registry
+ocp4_workload_quay_operator_s4_access_key: s4admin
+ocp4_workload_quay_operator_s4_secret_key: s4secret
 ----
 
-=== S4 Configuration Variables
+=== S4 Storage Configuration Variables
 
-If you need to customize the S4 integration, these variables control the S3 storage backend:
+When using S4 storage (`ocp4_workload_quay_operator_use_s4_storage: true`), these variables control the S3 storage backend:
 
+* `ocp4_workload_quay_operator_use_s4_storage`: Enable S4 storage backend (default: `false`)
 * `ocp4_workload_quay_operator_s4_namespace`: Namespace where S4 is deployed (default: `s4`)
 * `ocp4_workload_quay_operator_s4_bucket_name`: S3 bucket name for Quay (default: `quay-registry`)
 * `ocp4_workload_quay_operator_s4_access_key`: S3 access key (default: `s4admin`)

@@ -1,19 +1,37 @@
 ---
-# Quay uses S4 storage for object storage backend
-# Verify S4 is deployed and available
-- name: Check S4 service exists
-  kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Service
-    name: s4
-    namespace: "{{ ocp4_workload_quay_operator_s4_namespace }}"
-  register: r_s4_service
+# Validate storage backend based on configuration
+- name: Validate storage backend
+  block:
+  - name: Check S4 service exists
+    when: ocp4_workload_quay_operator_use_s4_storage | bool
+    kubernetes.core.k8s_info:
+      api_version: v1
+      kind: Service
+      name: s4
+      namespace: "{{ ocp4_workload_quay_operator_s4_namespace }}"
+    register: r_s4_service
 
-- name: Assert that S4 service exists
-  ansible.builtin.assert:
-    that:
-    - r_s4_service.resources | length == 1
-    fail_msg: "S4 storage service not found in namespace {{ ocp4_workload_quay_operator_s4_namespace }}. Deploy S4 first using ocp4_workload_s4 role."
+  - name: Assert that S4 service exists
+    when: ocp4_workload_quay_operator_use_s4_storage | bool
+    ansible.builtin.assert:
+      that:
+      - r_s4_service.resources | length == 1
+      fail_msg: "S4 storage service not found in namespace {{ ocp4_workload_quay_operator_s4_namespace }}. Deploy S4 first using ocp4_workload_s4 role."
+
+  - name: Check Noobaa BucketClass exists
+    when: not (ocp4_workload_quay_operator_use_s4_storage | bool)
+    kubernetes.core.k8s_info:
+      api_version: noobaa.io/v1alpha1
+      kind: BucketClass
+      namespace: openshift-storage
+    register: r_bucket_class
+
+  - name: Assert that Noobaa BucketClass exists
+    when: not (ocp4_workload_quay_operator_use_s4_storage | bool)
+    ansible.builtin.assert:
+      that:
+      - r_bucket_class.resources | length == 1
+      fail_msg: "Quay must be installed on a cluster with OpenShift Container Storage configured - and a Bucket Class deployed."
 
 - name: Install Quay Operator
   when: ocp4_workload_quay_operator_install_operator | bool
@@ -59,7 +77,20 @@
     ansible.builtin.set_fact:
       _ocp4_workload_quay_operator_registry_route: "{{ ocp4_workload_quay_operator_registry_hostname }}.{{ openshift_cluster_ingress_domain }}"
 
+  # Original Noobaa flow - unchanged from main branch
+  - name: Create Quay Registry Resources
+    when: not (ocp4_workload_quay_operator_use_s4_storage | bool)
+    kubernetes.core.k8s:
+      state: present
+      definition: "{{ lookup('template', item ) | from_yaml }}"
+    loop:
+    - quay_namespace.yaml.j2
+    - config_bundle_secret.yaml.j2
+    - quay_registry.yaml.j2
+
+  # S4 storage flow - new conditional logic
   - name: Delete existing config bundle secret to force recreation
+    when: ocp4_workload_quay_operator_use_s4_storage | bool
     kubernetes.core.k8s:
       state: absent
       api_version: v1
@@ -68,7 +99,8 @@
       namespace: "{{ ocp4_workload_quay_operator_registry_namespace }}"
     ignore_errors: true
 
-  - name: Create Quay Registry Resources
+  - name: Create Quay Registry Resources (S4 mode)
+    when: ocp4_workload_quay_operator_use_s4_storage | bool
     kubernetes.core.k8s:
       state: present
       definition: "{{ lookup('template', item ) | from_yaml }}"
@@ -178,20 +210,23 @@
         state: present
         definition: "{{ lookup('template', 'quay-admin-token-secret.yml.j2') | from_yaml }}"
 
-  - name: Display Quay deployment information
-    ansible.builtin.debug:
-      msg:
-      - "========================================="
-      - "Red Hat Quay Deployment Complete"
-      - "========================================="
-      - "Quay Registry URL: {{ r_quay_registry.resources[0].status.registryEndpoint }}"
-      - "Admin Username: {{ ocp4_workload_quay_operator_registry_admin_user }}"
-      - "Admin Password: {{ _ocp4_workload_quay_operator_registry_admin_password }}"
-      - "Admin Token: {{ _ocp4_workload_quay_operator_registry_admin_token }}"
-      - ""
-      - "Storage Backend: S4 (S3-compatible)"
-      - "S3 Bucket: {{ ocp4_workload_quay_operator_s4_bucket_name }}"
-      - "========================================="
+  - name: Save user data for Quay console URL
+    agnosticd.core.agnosticd_user_info:
+      msg: "Red Hat Quay is available at {{ r_quay_registry.resources[0].status.registryEndpoint }}"
+      data:
+        quay_console_url: "{{ r_quay_registry.resources[0].status.registryEndpoint }}"
+
+  - name: Save user data for Quay admin user
+    when: ocp4_workload_quay_operator_registry_configure_admin | bool
+    agnosticd.core.agnosticd_user_info:
+      msg: >-
+        "A Quay Super User '{{ ocp4_workload_quay_operator_registry_admin_user }}' has been created."
+        "The super user password is {{ _ocp4_workload_quay_operator_registry_admin_password }}".
+        "The token for the super user is {{ _ocp4_workload_quay_operator_registry_admin_token }}".
+      data:
+        quay_admin_username: "{{ ocp4_workload_quay_operator_registry_admin_user }}"
+        quay_admin_password: "{{ _ocp4_workload_quay_operator_registry_admin_password }}"
+        quay_admin_token: "{{ _ocp4_workload_quay_operator_registry_admin_token }}"
 
   # Only for old versions of Quay. Newer versions don't have a config editor anymore
   - name: Get and save Quay config editor credentials secret
@@ -205,10 +240,13 @@
         namespace: "{{ ocp4_workload_quay_operator_registry_namespace }}"
       register: r_config_editor_secret
 
-    - name: Display Quay config editor information
-      ansible.builtin.debug:
-        msg:
-        - "Red Hat Quay Config Editor"
-        - "  URL: {{ r_quay_registry.resources[0].status.configEditorEndpoint }}"
-        - "  Username: quayconfig"
-        - "  Password: {{ r_config_editor_secret.resources[0].data.password | b64decode }}"
+    - name: Save user data for Quay config editor
+      agnosticd.core.agnosticd_user_info:
+        msg: >-
+          "Red Hat Quay Config is available at {{ r_quay_registry.resources[0].status.configEditorEndpoint }}."
+          "- Config User: quayconfig."
+          "- Config Password: {{ r_config_editor_secret.resources[0].data.password | b64decode }}."
+        data:
+          quay_config_url: "{{ r_quay_registry.resources[0].status.configEditorEndpoint }}"
+          quay_config_username: "quayconfig"
+          quay_config_password: "{{ r_config_editor_secret.resources[0].data.password | b64decode }}"
