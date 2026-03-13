@@ -3,7 +3,7 @@
 - name: Validate storage backend
   block:
   - name: Check S4 service exists
-    when: ocp4_workload_quay_operator_use_s4_storage | bool
+    when: ocp4_workload_quay_operator_s4_storage_enabled | bool
     kubernetes.core.k8s_info:
       api_version: v1
       kind: Service
@@ -12,14 +12,14 @@
     register: r_s4_service
 
   - name: Assert that S4 service exists
-    when: ocp4_workload_quay_operator_use_s4_storage | bool
+    when: ocp4_workload_quay_operator_s4_storage_enabled | bool
     ansible.builtin.assert:
       that:
       - r_s4_service.resources | length == 1
       fail_msg: "S4 storage service not found in namespace {{ ocp4_workload_quay_operator_s4_namespace }}. Deploy S4 first using ocp4_workload_s4 role."
 
   - name: Check Noobaa BucketClass exists
-    when: not (ocp4_workload_quay_operator_use_s4_storage | bool)
+    when: not (ocp4_workload_quay_operator_s4_storage_enabled | bool)
     kubernetes.core.k8s_info:
       api_version: noobaa.io/v1alpha1
       kind: BucketClass
@@ -27,7 +27,7 @@
     register: r_bucket_class
 
   - name: Assert that Noobaa BucketClass exists
-    when: not (ocp4_workload_quay_operator_use_s4_storage | bool)
+    when: not (ocp4_workload_quay_operator_s4_storage_enabled | bool)
     ansible.builtin.assert:
       that:
       - r_bucket_class.resources | length == 1
@@ -79,7 +79,7 @@
 
   # Original Noobaa flow - unchanged from main branch
   - name: Create Quay Registry Resources
-    when: not (ocp4_workload_quay_operator_use_s4_storage | bool)
+    when: not (ocp4_workload_quay_operator_s4_storage_enabled | bool)
     kubernetes.core.k8s:
       state: present
       definition: "{{ lookup('template', item ) | from_yaml }}"
@@ -90,7 +90,7 @@
 
   # S4 storage flow - new conditional logic
   - name: Create Quay Registry Resources (S4 mode)
-    when: ocp4_workload_quay_operator_use_s4_storage | bool
+    when: ocp4_workload_quay_operator_s4_storage_enabled | bool
     kubernetes.core.k8s:
       state: present
       definition: "{{ lookup('template', item ) | from_yaml }}"

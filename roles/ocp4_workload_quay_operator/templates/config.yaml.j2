@@ -6,7 +6,7 @@ SUPER_USERS:
 - {{ ocp4_workload_quay_operator_registry_admin_user }}
 FEATURE_USER_INITIALIZE: true
 {% endif %}
-{% if ocp4_workload_quay_operator_use_s4_storage | bool %}
+{% if ocp4_workload_quay_operator_s4_storage_enabled | bool %}
 # S4 Storage Configuration
 DISTRIBUTED_STORAGE_CONFIG:
   s4storage:

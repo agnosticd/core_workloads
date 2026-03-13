@@ -60,7 +60,7 @@ workloads:
 - agnosticd.core_workloads.ocp4_workload_quay_operator
 
 # Enable S4 storage backend
-ocp4_workload_quay_operator_use_s4_storage: true
+ocp4_workload_quay_operator_s4_storage_enabled: true
 
 # S4 configuration
 ocp4_workload_s4_buckets:
@@ -79,9 +79,9 @@ ocp4_workload_quay_operator_s4_secret_key: s4secret
 
 === S4 Storage Configuration Variables
 
-When using S4 storage (`ocp4_workload_quay_operator_use_s4_storage: true`), these variables control the S3 storage backend:
+When using S4 storage (`ocp4_workload_quay_operator_s4_storage_enabled: true`), these variables control the S3 storage backend:
 
-* `ocp4_workload_quay_operator_use_s4_storage`: Enable S4 storage backend (default: `false`)
+* `ocp4_workload_quay_operator_s4_storage_enabled`: Enable S4 storage backend (default: `false`)
 * `ocp4_workload_quay_operator_s4_namespace`: Namespace where S4 is deployed (default: `s4`)
 * `ocp4_workload_quay_operator_s4_bucket_name`: S3 bucket name for Quay (default: `quay-registry`)
 * `ocp4_workload_quay_operator_s4_access_key`: S3 access key (default: `s4admin`)
