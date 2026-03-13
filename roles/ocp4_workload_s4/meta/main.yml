@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_s4
+  author: Red Hat GPTE
+  description: |
+    Deploy S4 (Super Simple Storage Service) on OpenShift using GitOps.
+    S4 provides S3-compatible object storage with a modern web UI.
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms: []
+  galaxy_tags:
+  - ocp
+  - openshift
+  - s3
+  - storage
+  - gitops
+  - argocd
+dependencies: []

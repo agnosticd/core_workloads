@@ -1,0 +1,51 @@
+---
+# --------------------------------------------------
+# S4 Workload Removal Tasks
+# --------------------------------------------------
+
+- name: Delete bucket creation jobs
+  kubernetes.core.k8s:
+    state: absent
+    api_version: batch/v1
+    kind: Job
+    namespace: "{{ ocp4_workload_s4_namespace }}"
+    label_selectors:
+    - "app.kubernetes.io/component=bucket-creator"
+
+- name: Delete ArgoCD Application
+  kubernetes.core.k8s:
+    state: absent
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: "{{ ocp4_workload_s4_application_name }}"
+    namespace: "{{ ocp4_workload_s4_gitops_namespace }}"
+
+- name: Wait for Application deletion
+  kubernetes.core.k8s_info:
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: "{{ ocp4_workload_s4_application_name }}"
+    namespace: "{{ ocp4_workload_s4_gitops_namespace }}"
+  register: r_application
+  retries: 30
+  delay: 10
+  until: r_application.resources | length == 0
+
+- name: Delete S4 namespace
+  when: ocp4_workload_s4_namespace_create | bool
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: Namespace
+    name: "{{ ocp4_workload_s4_namespace }}"
+
+- name: Wait for namespace deletion
+  when: ocp4_workload_s4_namespace_create | bool
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Namespace
+    name: "{{ ocp4_workload_s4_namespace }}"
+  register: r_namespace
+  retries: 60
+  delay: 5
+  until: r_namespace.resources | length == 0

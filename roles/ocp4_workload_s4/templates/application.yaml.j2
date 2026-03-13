@@ -1,0 +1,123 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ ocp4_workload_s4_application_name }}
+  namespace: {{ ocp4_workload_s4_gitops_namespace }}
+  labels:
+    app.kubernetes.io/name: s4
+    app.kubernetes.io/component: application
+spec:
+  project: default
+  source:
+    repoURL: {{ ocp4_workload_s4_chart_repo }}
+    targetRevision: {{ ocp4_workload_s4_chart_revision }}
+    path: {{ ocp4_workload_s4_chart_path }}
+    helm:
+      values: |
+        # Image configuration
+        image:
+          repository: {{ ocp4_workload_s4_image_repository }}
+          tag: {{ ocp4_workload_s4_image_tag }}
+          pullPolicy: {{ ocp4_workload_s4_image_pull_policy }}
+
+        # S3 backend configuration
+        s3:
+          endpoint: 'http://localhost:7480'
+          region: 'us-east-1'
+          accessKeyId: {{ ocp4_workload_s4_access_key_id }}
+          secretAccessKey: {{ ocp4_workload_s4_secret_access_key }}
+
+        # Authentication configuration
+        auth:
+          enabled: {{ ocp4_workload_s4_auth_enabled | lower }}
+{% if ocp4_workload_s4_auth_enabled %}
+          username: {{ ocp4_workload_s4_auth_username }}
+          password: {{ _ocp4_workload_s4_auth_password }}
+          jwtExpirationHours: {{ ocp4_workload_s4_auth_jwt_expiration_hours }}
+          cookieRequireHttps: {{ ocp4_workload_s4_auth_cookie_require_https | lower }}
+{% endif %}
+
+        # Storage configuration
+        storage:
+          localPaths: '{{ ocp4_workload_s4_storage_local_paths }}'
+          maxFileSizeGB: {{ ocp4_workload_s4_storage_max_file_size_gb }}
+          maxConcurrentTransfers: {{ ocp4_workload_s4_storage_max_concurrent_transfers }}
+
+          # RGW data volume
+          data:
+            size: {{ ocp4_workload_s4_storage_data_size }}
+{% if ocp4_workload_s4_storage_data_storage_class | length > 0 %}
+            storageClass: {{ ocp4_workload_s4_storage_data_storage_class }}
+{% endif %}
+            accessMode: {{ ocp4_workload_s4_storage_data_access_mode }}
+
+          # Local storage volume
+          localStorage:
+            enabled: {{ ocp4_workload_s4_storage_local_enabled | lower }}
+{% if ocp4_workload_s4_storage_local_enabled %}
+            size: {{ ocp4_workload_s4_storage_local_size }}
+{% if ocp4_workload_s4_storage_local_storage_class | length > 0 %}
+            storageClass: {{ ocp4_workload_s4_storage_local_storage_class }}
+{% endif %}
+            accessMode: {{ ocp4_workload_s4_storage_local_access_mode }}
+{% endif %}
+
+        # Resource limits and requests
+        resources:
+          requests:
+            cpu: {{ ocp4_workload_s4_resources_requests_cpu }}
+            memory: {{ ocp4_workload_s4_resources_requests_memory }}
+          limits:
+            cpu: {{ ocp4_workload_s4_resources_limits_cpu }}
+            memory: {{ ocp4_workload_s4_resources_limits_memory }}
+
+        # Service configuration
+        service:
+          type: ClusterIP
+          port: 5000
+          s3Port: 7480
+
+        # OpenShift Route configuration
+        route:
+          enabled: {{ ocp4_workload_s4_route_enabled | lower }}
+{% if ocp4_workload_s4_route_enabled %}
+{% if ocp4_workload_s4_route_host | length > 0 %}
+          host: {{ ocp4_workload_s4_route_host }}
+{% endif %}
+          tls:
+            termination: {{ ocp4_workload_s4_route_tls_termination }}
+            insecureEdgeTerminationPolicy: {{ ocp4_workload_s4_route_tls_insecure_policy }}
+{% endif %}
+
+          # S3 API Route
+          s3Api:
+            enabled: {{ ocp4_workload_s4_route_s3_enabled | lower }}
+{% if ocp4_workload_s4_route_s3_enabled %}
+{% if ocp4_workload_s4_route_s3_host | length > 0 %}
+            host: {{ ocp4_workload_s4_route_s3_host }}
+{% endif %}
+            tls:
+              termination: {{ ocp4_workload_s4_route_tls_termination }}
+              insecureEdgeTerminationPolicy: {{ ocp4_workload_s4_route_tls_insecure_policy }}
+{% endif %}
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ ocp4_workload_s4_namespace }}
+
+  syncPolicy:
+{% if ocp4_workload_s4_sync_policy_automated %}
+    automated:
+      prune: {{ ocp4_workload_s4_sync_policy_prune | lower }}
+      selfHeal: {{ ocp4_workload_s4_sync_policy_self_heal | lower }}
+{% endif %}
+    syncOptions:
+    - CreateNamespace=true
+    - RespectIgnoreDifferences=true
+    retry:
+      limit: {{ ocp4_workload_s4_sync_retry_limit }}
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

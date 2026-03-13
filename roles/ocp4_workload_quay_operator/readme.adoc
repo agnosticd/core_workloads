@@ -5,7 +5,8 @@
 * This role can
 ** install the Quay Operator
 ** use a previously installed Red Hat Quay Operator to deploy a Quay Registry into an OpenShift Cluster.
-* The cluster *must* have OpenShift Container Storage installed.
+* The cluster *must* have S4 storage deployed (using `ocp4_workload_s4` role).
+* Quay uses S4 S3-compatible storage backend instead of OpenShift Container Storage (Noobaa).
 
 * The role consists of the following tasks files:
 ** Tasks: link:./tasks/pre_workload.yml[pre_workload.yml] - Sets up an
@@ -25,6 +26,40 @@
  delete the workload
 *** This role removes the Red Hat Quay Registry project (and therefore Red Hat Quay Registry)
 *** Debug task will print out: `remove_workload Tasks completed successfully.`
+
+== Prerequisites
+
+=== S4 Storage
+
+This role *requires* S4 storage to be deployed first. S4 provides S3-compatible object storage for Quay.
+
+Deploy S4 before deploying Quay:
+
+[source,yaml]
+----
+workloads:
+- agnosticd.core_workloads.ocp4_workload_s4
+- agnosticd.core_workloads.ocp4_workload_quay_operator
+
+# S4 configuration
+ocp4_workload_s4_buckets:
+- quay-registry  # Required bucket for Quay
+
+# S4 credentials (must match Quay configuration)
+ocp4_workload_s4_access_key_id: s4admin
+ocp4_workload_s4_secret_access_key: s4secret
+----
+
+=== S4 Configuration Variables
+
+If you need to customize the S4 integration, these variables control the S3 storage backend:
+
+* `ocp4_workload_quay_operator_s4_namespace`: Namespace where S4 is deployed (default: `s4`)
+* `ocp4_workload_quay_operator_s4_bucket_name`: S3 bucket name for Quay (default: `quay-registry`)
+* `ocp4_workload_quay_operator_s4_access_key`: S3 access key (default: `s4admin`)
+* `ocp4_workload_quay_operator_s4_secret_key`: S3 secret key (default: `s4secret`)
+* `ocp4_workload_quay_operator_s4_endpoint`: S3 endpoint URL (default: auto-configured internal endpoint)
+* `ocp4_workload_quay_operator_s4_region`: S3 region (default: `us-east-1`)
 
 == Review the defaults variable file
 

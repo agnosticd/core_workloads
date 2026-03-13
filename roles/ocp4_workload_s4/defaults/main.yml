@@ -1,0 +1,109 @@
+---
+# S4 (Super Simple Storage Service) workload configuration
+
+# --------------------------------------------------
+# Namespace configuration
+# --------------------------------------------------
+ocp4_workload_s4_namespace: s4
+ocp4_workload_s4_namespace_create: true
+
+# --------------------------------------------------
+# ArgoCD Application configuration
+# --------------------------------------------------
+ocp4_workload_s4_application_name: s4
+ocp4_workload_s4_gitops_namespace: openshift-gitops
+
+# Helm chart configuration
+ocp4_workload_s4_chart_repo: https://github.com/rh-aiservices-bu/s4
+ocp4_workload_s4_chart_revision: main
+ocp4_workload_s4_chart_path: charts/s4
+
+# --------------------------------------------------
+# S4 Deployment configuration
+# --------------------------------------------------
+# Image configuration
+ocp4_workload_s4_image_repository: quay.io/rh-aiservices-bu/s4
+ocp4_workload_s4_image_tag: latest
+ocp4_workload_s4_image_pull_policy: Always
+
+# S3 credentials
+ocp4_workload_s4_access_key_id: s4admin
+ocp4_workload_s4_secret_access_key: s4secret
+
+# Authentication configuration
+# Username and password can be passed in as parameters.
+# If not provided, username defaults to 'admin' and password is auto-generated.
+ocp4_workload_s4_auth_enabled: true
+ocp4_workload_s4_auth_username: admin  # Default username (can be overridden)
+ocp4_workload_s4_auth_password: ""  # Pass in a password or leave empty for auto-generation
+ocp4_workload_s4_auth_password_length: 16  # Length of auto-generated password
+ocp4_workload_s4_auth_jwt_expiration_hours: 8
+ocp4_workload_s4_auth_cookie_require_https: true
+
+# --------------------------------------------------
+# Storage configuration
+# --------------------------------------------------
+# RGW data volume (Ceph/SQLite storage)
+ocp4_workload_s4_storage_data_size: 10Gi
+ocp4_workload_s4_storage_data_storage_class: ""  # Empty for default
+ocp4_workload_s4_storage_data_access_mode: ReadWriteOnce
+
+# Local storage volume (optional, for local file browser)
+ocp4_workload_s4_storage_local_enabled: false
+ocp4_workload_s4_storage_local_size: 50Gi
+ocp4_workload_s4_storage_local_storage_class: ""
+ocp4_workload_s4_storage_local_access_mode: ReadWriteOnce
+ocp4_workload_s4_storage_local_paths: ""  # Comma-separated paths
+
+# Storage limits
+ocp4_workload_s4_storage_max_file_size_gb: 20
+ocp4_workload_s4_storage_max_concurrent_transfers: 2
+
+# --------------------------------------------------
+# Resource configuration
+# --------------------------------------------------
+ocp4_workload_s4_resources_requests_cpu: 250m
+ocp4_workload_s4_resources_requests_memory: 512Mi
+ocp4_workload_s4_resources_limits_cpu: 2000m
+ocp4_workload_s4_resources_limits_memory: 2Gi
+
+# --------------------------------------------------
+# Route configuration
+# --------------------------------------------------
+ocp4_workload_s4_route_enabled: true
+ocp4_workload_s4_route_host: ""  # Auto-generated if empty
+ocp4_workload_s4_route_tls_termination: edge
+ocp4_workload_s4_route_tls_insecure_policy: Redirect
+
+# S3 API Route (enabled by default for S3 API access)
+ocp4_workload_s4_route_s3_enabled: true
+ocp4_workload_s4_route_s3_host: ""  # Auto-generated if empty
+
+# --------------------------------------------------
+# Bucket creation configuration
+# --------------------------------------------------
+# List of S3 buckets to create automatically
+# If empty or not defined, no buckets will be created
+# Example: ['datasets', 'ml-models', 'backups']
+ocp4_workload_s4_buckets: []
+
+# --------------------------------------------------
+# ArgoCD sync configuration
+# --------------------------------------------------
+ocp4_workload_s4_sync_policy_automated: true
+ocp4_workload_s4_sync_policy_self_heal: true
+ocp4_workload_s4_sync_policy_prune: true
+ocp4_workload_s4_sync_retry_limit: 5
+
+# --------------------------------------------------
+# User info configuration
+# --------------------------------------------------
+ocp4_workload_s4_enable_user_info_messages: true
+ocp4_workload_s4_enable_user_info_data: true
+
+# --------------------------------------------------
+# Wait for deployment
+# --------------------------------------------------
+ocp4_workload_s4_wait_for_deployment: true
+ocp4_workload_s4_wait_retries: 60
+ocp4_workload_s4_wait_delay: 10
