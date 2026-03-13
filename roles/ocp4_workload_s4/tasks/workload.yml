@@ -158,13 +158,13 @@
 
   - name: Print S4 information
     when: item.when | bool
-    agnosticd_user_info:
+    agnosticd.core.agnosticd_user_info:
       msg: "{{ item.msg }}"
     loop: "{{ _s4_user_info_messages }}"
 
 - name: Save S4 data for user
   when: ocp4_workload_s4_enable_user_info_data | bool
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     data:
       s4_web_ui_url: "{{ _ocp4_workload_s4_route_url }}"
       s4_ui_username: "{{ ocp4_workload_s4_auth_username }}"
