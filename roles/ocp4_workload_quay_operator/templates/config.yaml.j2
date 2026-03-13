@@ -6,3 +6,19 @@ SUPER_USERS:
 - {{ ocp4_workload_quay_operator_registry_admin_user }}
 FEATURE_USER_INITIALIZE: true
 {% endif %}
+{% if ocp4_workload_quay_operator_s4_storage_enabled | bool %}
+# S4 Storage Configuration
+DISTRIBUTED_STORAGE_CONFIG:
+  s4storage:
+    - RadosGWStorage
+    - hostname: s4.{{ ocp4_workload_quay_operator_s4_namespace }}.svc.cluster.local
+      port: 7480
+      is_secure: false
+      bucket_name: {{ ocp4_workload_quay_operator_s4_bucket_name }}
+      storage_path: /datastorage/registry
+      access_key: {{ ocp4_workload_quay_operator_s4_access_key }}
+      secret_key: {{ ocp4_workload_quay_operator_s4_secret_key }}
+DISTRIBUTED_STORAGE_DEFAULT_LOCATIONS: []
+DISTRIBUTED_STORAGE_PREFERENCE:
+- s4storage
+{% endif %}

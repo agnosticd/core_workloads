@@ -1,0 +1,177 @@
+---
+# --------------------------------------------------
+# S4 Workload Deployment Tasks
+# --------------------------------------------------
+
+- name: Set internal variables
+  ansible.builtin.set_fact:
+    _ocp4_workload_s4_auth_password: >-
+      {{ ocp4_workload_s4_auth_password
+      if ocp4_workload_s4_auth_password | length > 0
+      else lookup('password', '/dev/null length={{ ocp4_workload_s4_auth_password_length }} chars=ascii_letters,digits') }}
+    _ocp4_workload_s4_route_url: ""
+    _ocp4_workload_s4_s3_api_endpoint_internal: "http://s4.{{ ocp4_workload_s4_namespace }}.svc.cluster.local:7480"
+
+- name: Create S4 namespace
+  when: ocp4_workload_s4_namespace_create | bool
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ ocp4_workload_s4_namespace }}"
+        labels:
+          argocd.argoproj.io/managed-by: "{{ ocp4_workload_s4_gitops_namespace }}"
+
+- name: Create ArgoCD Application for S4
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'application.yaml.j2') | from_yaml }}"
+
+- name: Wait for S4 Application to sync
+  when: ocp4_workload_s4_wait_for_deployment | bool
+  kubernetes.core.k8s_info:
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: "{{ ocp4_workload_s4_application_name }}"
+    namespace: "{{ ocp4_workload_s4_gitops_namespace }}"
+  register: r_application
+  retries: 60
+  delay: 10
+  until:
+  - r_application.resources is defined
+  - r_application.resources | length > 0
+  - r_application.resources[0].status is defined
+  - r_application.resources[0].status.sync is defined
+  - r_application.resources[0].status.sync.status == 'Synced'
+  - r_application.resources[0].status.health is defined
+  - r_application.resources[0].status.health.status == 'Healthy'
+
+- name: Wait for S4 deployment to be ready
+  when: ocp4_workload_s4_wait_for_deployment | bool
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: s4
+    namespace: "{{ ocp4_workload_s4_namespace }}"
+  register: r_s4_deployment
+  retries: 60
+  delay: 10
+  until:
+  - r_s4_deployment.resources is defined
+  - r_s4_deployment.resources | length > 0
+  - r_s4_deployment.resources[0].status is defined
+  - r_s4_deployment.resources[0].status.readyReplicas is defined
+  - r_s4_deployment.resources[0].status.readyReplicas | int == 1
+
+- name: Get S4 route
+  when: ocp4_workload_s4_route_enabled | bool
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: s4
+    namespace: "{{ ocp4_workload_s4_namespace }}"
+  register: r_s4_route
+  retries: 30
+  delay: 5
+  until:
+  - r_s4_route.resources is defined
+  - r_s4_route.resources | length > 0
+  - r_s4_route.resources[0].spec.host is defined
+
+- name: Set S4 route URL
+  when:
+  - ocp4_workload_s4_route_enabled | bool
+  - r_s4_route.resources | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_s4_route_url: "https://{{ r_s4_route.resources[0].spec.host }}"
+
+- name: Get S3 API route (if enabled)
+  when: ocp4_workload_s4_route_s3_api_enabled | bool
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: s4-api
+    namespace: "{{ ocp4_workload_s4_namespace }}"
+  register: r_s4_api_route
+  retries: 30
+  delay: 5
+  until:
+  - r_s4_api_route.resources is defined
+  - r_s4_api_route.resources | length > 0
+  - r_s4_api_route.resources[0].spec.host is defined
+
+- name: Set S3 API endpoint URL
+  when:
+  - ocp4_workload_s4_route_s3_api_enabled | bool
+  - r_s4_api_route.resources | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_s4_s3_api_endpoint_external: "https://{{ r_s4_api_route.resources[0].spec.host }}"
+
+- name: Create S3 bucket(s)
+  when: ocp4_workload_s4_buckets | default([]) | length > 0
+  block:
+  - name: Create buckets
+    kubernetes.core.k8s:
+      state: present
+      definition: "{{ lookup('template', 'bucket-job.yaml.j2') | from_yaml }}"
+    loop: "{{ ocp4_workload_s4_buckets }}"
+    loop_control:
+      loop_var: bucket_name
+
+  - name: Wait for bucket creation job(s) to complete
+    kubernetes.core.k8s_info:
+      api_version: batch/v1
+      kind: Job
+      namespace: "{{ ocp4_workload_s4_namespace }}"
+      label_selectors:
+      - "app.kubernetes.io/component=bucket-creator"
+    register: r_bucket_jobs
+    retries: 30
+    delay: 5
+    until:
+    - r_bucket_jobs.resources is defined
+    - r_bucket_jobs.resources | length > 0
+    - r_bucket_jobs.resources | selectattr('status.succeeded', 'defined') | selectattr('status.succeeded', 'equalto', 1) | list | length == (ocp4_workload_s4_buckets | length)
+
+- name: Report S4 information to user
+  when: ocp4_workload_s4_enable_user_info_messages | bool
+  block:
+  - name: Set S4 user info messages
+    ansible.builtin.set_fact:
+      _s4_user_info_messages:
+      - msg: "S4 Web UI: {{ _ocp4_workload_s4_route_url }}"
+        when: "{{ _ocp4_workload_s4_route_url | length > 0 }}"
+      - msg: "S4 UI Login: {{ ocp4_workload_s4_auth_username }} / {{ _ocp4_workload_s4_auth_password }}"
+        when: "{{ ocp4_workload_s4_auth_enabled | bool }}"
+      - msg: "S3 Access Key: {{ ocp4_workload_s4_access_key_id }}"
+        when: true
+      - msg: "S3 Secret Key: {{ ocp4_workload_s4_secret_access_key }}"
+        when: true
+      - msg: "S3 Endpoint (internal): {{ _ocp4_workload_s4_s3_api_endpoint_internal }}"
+        when: true
+      - msg: "S3 Endpoint (external): {{ _ocp4_workload_s4_s3_api_endpoint_external }}"
+        when: "{{ ocp4_workload_s4_route_s3_api_enabled | bool and _ocp4_workload_s4_s3_api_endpoint_external is defined }}"
+      - msg: "S3 Buckets Created: {{ ocp4_workload_s4_buckets | join(', ') }}"
+        when: "{{ ocp4_workload_s4_buckets | default([]) | length > 0 }}"
+
+  - name: Print S4 information
+    when: item.when | bool
+    agnosticd.core.agnosticd_user_info:
+      msg: "{{ item.msg }}"
+    loop: "{{ _s4_user_info_messages }}"
+
+- name: Save S4 data for user
+  when: ocp4_workload_s4_enable_user_info_data | bool
+  agnosticd.core.agnosticd_user_info:
+    data:
+      s4_web_ui_url: "{{ _ocp4_workload_s4_route_url }}"
+      s4_ui_username: "{{ ocp4_workload_s4_auth_username }}"
+      s4_ui_password: "{{ _ocp4_workload_s4_auth_password }}"
+      s4_s3_access_key_id: "{{ ocp4_workload_s4_access_key_id }}"
+      s4_s3_secret_access_key: "{{ ocp4_workload_s4_secret_access_key }}"
+      s4_s3_api_endpoint_internal: "{{ _ocp4_workload_s4_s3_api_endpoint_internal }}"
+      s4_s3_api_endpoint_external: "{{ _ocp4_workload_s4_s3_api_endpoint_external | default('') }}"
+      s4_buckets: "{{ ocp4_workload_s4_buckets | default([]) }}"
+      s4_namespace: "{{ ocp4_workload_s4_namespace }}"

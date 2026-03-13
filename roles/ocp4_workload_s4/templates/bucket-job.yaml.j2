@@ -1,0 +1,80 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-bucket-{{ bucket_name }}
+  namespace: {{ ocp4_workload_s4_namespace }}
+  labels:
+    app.kubernetes.io/name: s4
+    app.kubernetes.io/component: bucket-creator
+    app.kubernetes.io/bucket: {{ bucket_name }}
+spec:
+  backoffLimit: 5
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: s4
+        app.kubernetes.io/component: bucket-creator
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: s4
+      containers:
+      - name: create-bucket
+        image: quay.io/minio/mc:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Configuring S3 client..."
+          mc alias set s4 http://s4.{{ ocp4_workload_s4_namespace }}.svc.cluster.local:7480 \
+            $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY --insecure
+
+          echo "Waiting for S3 service to be ready..."
+          MAX_RETRIES=60
+          RETRY=0
+          until mc ls s4 --insecure 2>/dev/null; do
+            RETRY=$((RETRY+1))
+            if [ $RETRY -gt $MAX_RETRIES ]; then
+              echo "ERROR: S3 service did not become ready after $MAX_RETRIES attempts"
+              echo "Attempting bucket creation anyway..."
+              break
+            fi
+            echo "S3 service not ready yet (attempt $RETRY/$MAX_RETRIES), waiting..."
+            sleep 5
+          done
+
+          echo "Creating bucket: {{ bucket_name }}"
+          if mc ls s4/{{ bucket_name }} --insecure 2>/dev/null; then
+            echo "Bucket {{ bucket_name }} already exists"
+          else
+            mc mb s4/{{ bucket_name }} --insecure
+            echo "Bucket {{ bucket_name }} created successfully"
+          fi
+
+          echo "Verifying bucket exists..."
+          mc ls s4/{{ bucket_name }} --insecure
+          echo "Bucket creation complete"
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: {{ ocp4_workload_s4_access_key_id }}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: {{ ocp4_workload_s4_secret_access_key }}
+        - name: HOME
+          value: /tmp
+        - name: MC_CONFIG_DIR
+          value: /tmp/.mc
+        volumeMounts:
+        - name: mc-config
+          mountPath: /tmp
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+      volumes:
+      - name: mc-config
+        emptyDir: {}

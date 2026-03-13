@@ -1,0 +1,242 @@
+= ocp4_workload_s4 - Deploy S4 Storage Service
+
+== Role overview
+
+* This role deploys S4 (Super Simple Storage Service) on OpenShift using GitOps/ArgoCD
+* S4 provides S3-compatible object storage with a modern web UI
+* Includes Ceph RADOS Gateway (RGW) backed by filesystem storage
+* Supports optional automatic S3 bucket creation
+
+== Features
+
+* GitOps-based deployment using OpenShift GitOps (ArgoCD)
+* S3-compatible API endpoint (port 7480)
+* Modern React-based web UI (port 5000)
+* Optional authentication for web UI
+* Configurable persistent storage
+* Optional automatic bucket creation
+* OpenShift Route integration for external access
+* Production-ready resource limits and health checks
+
+== Deployment
+
+This role assumes OpenShift GitOps is already installed in the `openshift-gitops` namespace.
+
+The role performs the following tasks:
+
+* Creates the S4 namespace (default: `s4`)
+* Deploys an ArgoCD Application resource pointing to the S4 Helm chart
+* Waits for the Application to sync and become healthy
+* Optionally creates S3 bucket(s) using Kubernetes Jobs
+* Reports access information to users (URLs, credentials)
+
+== Variables
+
+=== Namespace Configuration
+
+* `ocp4_workload_s4_namespace`: Namespace for S4 deployment (default: `s4`)
+* `ocp4_workload_s4_namespace_create`: Create the namespace (default: `true`)
+
+=== ArgoCD Configuration
+
+* `ocp4_workload_s4_application_name`: ArgoCD Application name (default: `s4`)
+* `ocp4_workload_s4_gitops_namespace`: OpenShift GitOps namespace (default: `openshift-gitops`)
+* `ocp4_workload_s4_chart_repo`: Helm chart repository URL (default: `https://github.com/rh-aiservices-bu/s4`)
+* `ocp4_workload_s4_chart_revision`: Git branch/tag (default: `main`)
+* `ocp4_workload_s4_chart_path`: Path to chart in repo (default: `charts/s4`)
+
+=== S3 Credentials
+
+* `ocp4_workload_s4_access_key_id`: S3 access key (default: `s4admin`)
+* `ocp4_workload_s4_secret_access_key`: S3 secret key (default: `s4secret`)
+
+=== Authentication
+
+Username and password can be passed in as parameters. If not provided, username defaults to `admin` and password is auto-generated.
+
+* `ocp4_workload_s4_auth_enabled`: Enable web UI authentication (default: `true`)
+* `ocp4_workload_s4_auth_username`: UI username (default: `admin`, can be overridden)
+* `ocp4_workload_s4_auth_password`: UI password (pass in custom password or leave empty for auto-generation)
+* `ocp4_workload_s4_auth_password_length`: Length of auto-generated password (default: `16`)
+* `ocp4_workload_s4_auth_jwt_expiration_hours`: JWT token expiration (default: `8`)
+
+=== Storage Configuration
+
+* `ocp4_workload_s4_storage_data_size`: RGW data volume size (default: `10Gi`)
+* `ocp4_workload_s4_storage_data_storage_class`: Storage class for data (default: empty = default class)
+* `ocp4_workload_s4_storage_local_enabled`: Enable local storage volume (default: `false`)
+* `ocp4_workload_s4_storage_local_size`: Local storage volume size (default: `50Gi`)
+* `ocp4_workload_s4_storage_max_file_size_gb`: Max file size in GB (default: `20`)
+
+=== Resource Limits
+
+* `ocp4_workload_s4_resources_requests_cpu`: CPU request (default: `250m`)
+* `ocp4_workload_s4_resources_requests_memory`: Memory request (default: `512Mi`)
+* `ocp4_workload_s4_resources_limits_cpu`: CPU limit (default: `2000m`)
+* `ocp4_workload_s4_resources_limits_memory`: Memory limit (default: `2Gi`)
+
+=== Route Configuration
+
+* `ocp4_workload_s4_route_enabled`: Enable OpenShift Route for UI (default: `true`)
+* `ocp4_workload_s4_route_host`: Custom hostname (default: auto-generated)
+* `ocp4_workload_s4_route_tls_termination`: TLS termination (default: `edge`)
+* `ocp4_workload_s4_route_s3_api_enabled`: Enable Route for S3 API (default: `true`)
+
+=== Bucket Creation
+
+* `ocp4_workload_s4_buckets`: List of S3 bucket names to create (default: `[]`)
+** If empty or not defined, no buckets will be created
+** Example: `['datasets', 'ml-models', 'backups']`
+
+=== Sync Policy
+
+* `ocp4_workload_s4_sync_policy_automated`: Enable automated sync (default: `true`)
+* `ocp4_workload_s4_sync_policy_self_heal`: Enable self-healing (default: `true`)
+* `ocp4_workload_s4_sync_policy_prune`: Enable resource pruning (default: `true`)
+
+== Example Usage
+
+=== Basic Deployment
+
+[source,yaml]
+----
+- name: Deploy S4
+  hosts: localhost
+  tasks:
+  - name: Include S4 workload
+    include_role:
+      name: ocp4_workload_s4
+----
+
+=== With Bucket Creation
+
+[source,yaml]
+----
+- name: Deploy S4 with buckets
+  hosts: localhost
+  tasks:
+  - name: Include S4 workload
+    include_role:
+      name: ocp4_workload_s4
+    vars:
+      ocp4_workload_s4_buckets:
+      - my-data-bucket
+      - ml-models
+      - datasets
+      - backups
+----
+
+=== Custom Configuration
+
+[source,yaml]
+----
+- name: Deploy S4 with custom settings
+  hosts: localhost
+  tasks:
+  - name: Include S4 workload
+    include_role:
+      name: ocp4_workload_s4
+    vars:
+      ocp4_workload_s4_namespace: object-storage
+      ocp4_workload_s4_storage_data_size: 100Gi
+      ocp4_workload_s4_storage_data_storage_class: ocs-storagecluster-ceph-rbd
+      ocp4_workload_s4_access_key_id: my-access-key
+      ocp4_workload_s4_secret_access_key: my-secret-key
+      ocp4_workload_s4_route_s3_api_enabled: true
+      ocp4_workload_s4_buckets:
+      - production-data
+----
+
+=== Custom Authentication Credentials
+
+[source,yaml]
+----
+- name: Deploy S4 with custom credentials
+  hosts: localhost
+  tasks:
+  - name: Include S4 workload
+    include_role:
+      name: ocp4_workload_s4
+    vars:
+      ocp4_workload_s4_auth_username: myuser
+      ocp4_workload_s4_auth_password: MySecureP@ssw0rd
+      ocp4_workload_s4_access_key_id: custom-access-key
+      ocp4_workload_s4_secret_access_key: custom-secret-key-123456
+----
+
+== Accessing S4
+
+After deployment, users will receive:
+
+* *Web UI URL*: Access the modern web interface
+* *UI Credentials*: Username and password for UI login
+* *S3 Access Key*: For S3 API authentication
+* *S3 Secret Key*: For S3 API authentication
+* *S3 Endpoint (internal)*: For pod-to-pod communication
+* *S3 Endpoint (external)*: If S3 route is enabled
+
+== Using S3 API
+
+You can use any S3-compatible client (AWS CLI, boto3, mc, etc.):
+
+[source,bash]
+----
+# Using AWS CLI
+aws configure set aws_access_key_id s4admin
+aws configure set aws_secret_access_key s4secret
+aws --endpoint-url https://s3-route-url s3 ls
+
+# Using MinIO Client (mc)
+mc alias set mys4 https://s3-route-url s4admin s4secret
+mc ls mys4
+mc mb mys4/mybucket
+mc cp file.txt mys4/mybucket/
+----
+
+== Removal
+
+To remove the S4 deployment:
+
+[source,yaml]
+----
+- name: Remove S4
+  hosts: localhost
+  tasks:
+  - name: Include S4 workload
+    include_role:
+      name: ocp4_workload_s4
+    vars:
+      ACTION: destroy
+----
+
+This will:
+
+* Delete bucket creation jobs
+* Delete the ArgoCD Application (which removes all S4 resources)
+* Delete the S4 namespace
+
+NOTE: Bucket data is stored in the persistent volumes. Removing the workload will delete the PVCs and all data unless you have external backups.
+
+== Predefined Variables
+
+The following variables are always available:
+
+* `openshift_console_url`: The URL of the OpenShift console
+* `openshift_api_url`: The OpenShift API endpoint URL
+* `openshift_cluster_ingress_domain`: The domain used for ingress controllers
+
+== S4 Architecture
+
+S4 combines several components in a single container:
+
+* *Ceph RADOS Gateway (RGW)*: Provides S3-compatible API
+* *SQLite Backend*: Lightweight metadata storage (single replica only)
+* *React Web UI*: Modern interface for file management
+* *File Browser*: Browse and manage files/objects
+
+The deployment uses:
+
+* Kubernetes Deployment (1 replica - SQLite limitation)
+* PersistentVolumeClaim for RGW data storage
+* OpenShift Route for external access
+* Service for internal cluster access
