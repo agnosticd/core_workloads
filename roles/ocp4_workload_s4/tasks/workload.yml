@@ -10,7 +10,7 @@
       if ocp4_workload_s4_auth_password | length > 0
       else lookup('password', '/dev/null length={{ ocp4_workload_s4_auth_password_length }} chars=ascii_letters,digits') }}
     _ocp4_workload_s4_route_url: ""
-    _ocp4_workload_s4_s3_endpoint_internal: "http://s4.{{ ocp4_workload_s4_namespace }}.svc.cluster.local:7480"
+    _ocp4_workload_s4_s3_api_endpoint_internal: "http://s4.{{ ocp4_workload_s4_namespace }}.svc.cluster.local:7480"
 
 - name: Create S4 namespace
   when: ocp4_workload_s4_namespace_create | bool
@@ -107,7 +107,7 @@
   - ocp4_workload_s4_route_s3_api_enabled | bool
   - r_s4_api_route.resources | length > 0
   ansible.builtin.set_fact:
-    _ocp4_workload_s4_s3_endpoint_external: "https://{{ r_s4_api_route.resources[0].spec.host }}"
+    _ocp4_workload_s4_s3_api_endpoint_external: "https://{{ r_s4_api_route.resources[0].spec.host }}"
 
 - name: Create S3 bucket(s)
   when: ocp4_workload_s4_buckets | default([]) | length > 0
@@ -149,10 +149,10 @@
         when: true
       - msg: "S3 Secret Key: {{ ocp4_workload_s4_secret_access_key }}"
         when: true
-      - msg: "S3 Endpoint (internal): {{ _ocp4_workload_s4_s3_endpoint_internal }}"
+      - msg: "S3 Endpoint (internal): {{ _ocp4_workload_s4_s3_api_endpoint_internal }}"
         when: true
-      - msg: "S3 Endpoint (external): {{ _ocp4_workload_s4_s3_endpoint_external }}"
-        when: "{{ ocp4_workload_s4_route_s3_api_enabled | bool and _ocp4_workload_s4_s3_endpoint_external is defined }}"
+      - msg: "S3 Endpoint (external): {{ _ocp4_workload_s4_s3_api_endpoint_external }}"
+        when: "{{ ocp4_workload_s4_route_s3_api_enabled | bool and _ocp4_workload_s4_s3_api_endpoint_external is defined }}"
       - msg: "S3 Buckets Created: {{ ocp4_workload_s4_buckets | join(', ') }}"
         when: "{{ ocp4_workload_s4_buckets | default([]) | length > 0 }}"
 
@@ -171,7 +171,7 @@
       s4_ui_password: "{{ _ocp4_workload_s4_auth_password }}"
       s4_s3_access_key_id: "{{ ocp4_workload_s4_access_key_id }}"
       s4_s3_secret_access_key: "{{ ocp4_workload_s4_secret_access_key }}"
-      s4_s3_endpoint_internal: "{{ _ocp4_workload_s4_s3_endpoint_internal }}"
-      s4_s3_endpoint_external: "{{ _ocp4_workload_s4_s3_endpoint_external | default('') }}"
+      s4_s3_api_endpoint_internal: "{{ _ocp4_workload_s4_s3_api_endpoint_internal }}"
+      s4_s3_api_endpoint_external: "{{ _ocp4_workload_s4_s3_api_endpoint_external | default('') }}"
       s4_buckets: "{{ ocp4_workload_s4_buckets | default([]) }}"
       s4_namespace: "{{ ocp4_workload_s4_namespace }}"
