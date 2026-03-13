@@ -77,7 +77,7 @@ ocp4_workload_s4_route_tls_insecure_policy: Redirect
 
 # S3 API Route (enabled by default for S3 API access)
 ocp4_workload_s4_route_s3_api_enabled: true
-ocp4_workload_s4_route_s3_host: ""  # Auto-generated if empty
+ocp4_workload_s4_route_s3_api_host: ""  # Auto-generated if empty
 
 # --------------------------------------------------
 # Bucket creation configuration

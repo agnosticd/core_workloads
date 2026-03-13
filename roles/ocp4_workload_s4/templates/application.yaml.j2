@@ -94,8 +94,8 @@ spec:
           s3Api:
             enabled: {{ ocp4_workload_s4_route_s3_api_enabled | lower }}
 {% if ocp4_workload_s4_route_s3_api_enabled %}
-{% if ocp4_workload_s4_route_s3_host | length > 0 %}
-            host: {{ ocp4_workload_s4_route_s3_host }}
+{% if ocp4_workload_s4_route_s3_api_host | length > 0 %}
+            host: {{ ocp4_workload_s4_route_s3_api_host }}
 {% endif %}
             tls:
               termination: {{ ocp4_workload_s4_route_tls_termination }}
