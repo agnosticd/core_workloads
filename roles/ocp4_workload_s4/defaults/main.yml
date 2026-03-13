@@ -15,7 +15,7 @@ ocp4_workload_s4_gitops_namespace: openshift-gitops
 
 # Helm chart configuration
 ocp4_workload_s4_chart_repo: https://github.com/rh-aiservices-bu/s4
-ocp4_workload_s4_chart_revision: main
+ocp4_workload_s4_chart_revision: v0.3.2
 ocp4_workload_s4_chart_path: charts/s4
 
 # --------------------------------------------------
