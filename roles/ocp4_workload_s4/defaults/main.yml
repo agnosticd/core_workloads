@@ -23,8 +23,8 @@ ocp4_workload_s4_chart_path: charts/s4
 # --------------------------------------------------
 # Image configuration
 ocp4_workload_s4_image_repository: quay.io/rh-aiservices-bu/s4
-ocp4_workload_s4_image_tag: latest
-ocp4_workload_s4_image_pull_policy: Always
+ocp4_workload_s4_image_tag: 0.3.2
+ocp4_workload_s4_image_pull_policy: IfNotPresent
 
 # S3 credentials
 ocp4_workload_s4_access_key_id: s4admin
