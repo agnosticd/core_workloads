@@ -37,17 +37,26 @@
     retries: 5
     delay: 5
 
+  - name: Filter to Ready ClusterIssuers only
+    ansible.builtin.set_fact:
+      _ready_cluster_issuers: >-
+        {{
+          r_cluster_issuers.resources
+          | json_query("[?status.conditions[?type=='Ready' && status=='True']]")
+          | default([])
+        }}
+
   - name: Fail if no ClusterIssuer is found but certificates are requested
-    when: r_cluster_issuers.resources | length == 0
+    when: _ready_cluster_issuers | length == 0
     ansible.builtin.fail:
-      msg: "No ClusterIssuer found to issue certificates for Central"
+      msg: "No Ready ClusterIssuer found to issue certificates for Central"
 
   - name: Build list of ClusterIssuers to try (fallback issuers last)
     ansible.builtin.set_fact:
       _cluster_issuers_to_try: >-
         {{
-          (r_cluster_issuers.resources | map(attribute='metadata.name') | list | reject('search', 'fallback') | list)
-          + (r_cluster_issuers.resources | map(attribute='metadata.name') | list | select('search', 'fallback') | list)
+          (_ready_cluster_issuers | map(attribute='metadata.name') | list | reject('search', 'fallback') | list)
+          + (_ready_cluster_issuers | map(attribute='metadata.name') | list | select('search', 'fallback') | list)
         }}
 
   - name: Try each ClusterIssuer until certificate is issued successfully
