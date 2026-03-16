@@ -148,6 +148,6 @@
       loop: "{{ cm_provision_data.resources }}"
       when: item.data.provision_data is defined
 
-    - name: Add data to agnosticd_user_info
-      agnosticd.core.agnosticd_user_info:
-        data: "{{ provision_data }}"
+    # - name: Add data to agnosticd_user_info
+    #   agnosticd.core.agnosticd_user_info:
+    #     data: "{{ provision_data }}"
