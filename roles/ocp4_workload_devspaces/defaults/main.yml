@@ -8,6 +8,10 @@ ocp4_workload_devspaces_catalogsource_image: ""
 ocp4_workload_devspaces_catalogsource_tag: ""
 ocp4_workload_devspaces_namespace: openshift-devspaces
 
+# Workspace limits
+ocp4_workload_devspaces_max_number_of_workspaces: 2
+ocp4_workload_devspaces_max_number_of_running_workspaces: 1
+
 ocp4_workload_devspaces_setup_devworkspaces: false
 ocp4_workload_devspaces_devworkspace_devfile: >-
   http://devspaces-dashboard.openshift-devspaces.svc.cluster.local:8080/dashboard/api/editors/devfile?che-editor=che-incubator/che-code/latest
