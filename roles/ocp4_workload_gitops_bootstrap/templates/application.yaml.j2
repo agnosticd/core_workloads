@@ -2,12 +2,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: "{{ ocp4_workload_gitops_bootstrap_final_application_name }}"
+  name: "{{ ocp4_workload_gitops_bootstrap_application_name }}"
   namespace: {{ ocp4_workload_gitops_bootstrap_namespace }}
   finalizers:
   - resources-finalizer.argocd.argoproj.io
 spec:
-  project: "{{ ocp4_workload_gitops_bootstrap_application_project_name | default('default') }}"
+  project: "{{ ocp4_workload_gitops_bootstrap_application_project }}"
   source:
     repoURL: {{ ocp4_workload_gitops_bootstrap_repo_url }}
     targetRevision: {{ ocp4_workload_gitops_bootstrap_repo_revision }}
