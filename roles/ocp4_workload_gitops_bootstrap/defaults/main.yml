@@ -2,9 +2,6 @@
 ocp4_workload_gitops_bootstrap_repo_url: http://gitea:3000/user/bootstrap
 ocp4_workload_gitops_bootstrap_repo_revision: main
 
-ocp4_workload_gitops_bootstrap_tenant: false
-ocp4_workload_gitops_bootstrap_tenant_name: ""
-
 ocp4_workload_gitops_bootstrap_application_name: bootstrap
 ocp4_workload_gitops_bootstrap_repo_path: ""
 
