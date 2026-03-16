@@ -138,16 +138,16 @@
     - cm_provision_data.resources | map(attribute='data') | map(attribute='provision_data', default='') | select('ne', '') | list | length == cm_provision_data.resources | length
   failed_when: false
 
-- name: Process ConfigMap provision data, if any
-  when:
-    - cm_provision_data.resources | default([]) | length > 0
-  block:
-    - name: Merge provision_data from all ConfigMaps
-      ansible.builtin.set_fact:
-        provision_data: "{{ provision_data | default({}) | combine(item.data.provision_data | from_yaml, recursive=True) }}"
-      loop: "{{ cm_provision_data.resources }}"
-      when: item.data.provision_data is defined
+# - name: Process ConfigMap provision data, if any
+#   when:
+#     - cm_provision_data.resources | default([]) | length > 0
+#   block:
+#     - name: Merge provision_data from all ConfigMaps
+#       ansible.builtin.set_fact:
+#         provision_data: "{{ provision_data | default({}) | combine(item.data.provision_data | from_yaml, recursive=True) }}"
+#       loop: "{{ cm_provision_data.resources }}"
+#       when: item.data.provision_data is defined
 
-    # - name: Add data to agnosticd_user_info
-    #   agnosticd.core.agnosticd_user_info:
-    #     data: "{{ provision_data }}"
+#     - name: Add data to agnosticd_user_info
+#       agnosticd.core.agnosticd_user_info:
+#         data: "{{ provision_data }}"
