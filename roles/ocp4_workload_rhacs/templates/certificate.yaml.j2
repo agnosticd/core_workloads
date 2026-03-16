@@ -8,8 +8,13 @@ spec:
   secretName: rhacs-central-tls
   duration: 2160h
   renewBefore: 360h
+  commonName: central-{{ ocp4_workload_rhacs_central_namespace }}.{{ openshift_cluster_ingress_domain }}
   dnsNames:
   - central-{{ ocp4_workload_rhacs_central_namespace }}.{{ openshift_cluster_ingress_domain }}
+  usages:
+  - server auth
+  privateKey:
+    rotationPolicy: Always
   issuerRef:
     name: {{ _ocp4_workload_rhacs_cert_cluster_issuer }}
     kind: ClusterIssuer
