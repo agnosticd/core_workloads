@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_ansible_bootstrap
+  author: Red Hat
+  description: |
+    Cluster-level Ansible bootstrap for multi-user OpenShift labs.
+    Calls lab developer roles from a pre-installed Ansible collection
+    to deploy and remove cluster-wide resources.
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms: []
+  galaxy_tags:
+  - ocp
+  - openshift
+dependencies: []

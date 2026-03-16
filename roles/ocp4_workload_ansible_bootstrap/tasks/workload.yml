@@ -1,0 +1,6 @@
+---
+- name: Run cluster bootstrap roles
+  ansible.builtin.include_role:
+    name: "{{ item }}"
+  loop: "{{ ocp4_workload_ansible_bootstrap_provision_roles }}"
+  when: ocp4_workload_ansible_bootstrap_provision_roles | length > 0

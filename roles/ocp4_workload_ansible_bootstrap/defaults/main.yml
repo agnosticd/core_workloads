@@ -1,0 +1,12 @@
+---
+# Roles from the lab developer's collection to run on provision.
+# Use collection-qualified names: namespace.collection.role_name
+# e.g. acme.my_lab.bootstrap_cluster
+#
+# Roles are executed in the order listed.
+ocp4_workload_ansible_bootstrap_provision_roles: []
+
+# Roles from the lab developer's collection to run on destroy.
+# If empty, no lab-specific removal is attempted on destroy.
+# Roles are executed in the order listed.
+ocp4_workload_ansible_bootstrap_remove_roles: []

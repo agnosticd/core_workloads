@@ -1,0 +1,30 @@
+---
+# If ocp4_workload_ansible_bootstrap_remove_roles is defined and non-empty,
+# those roles are used explicitly.
+#
+# If it is empty (the default), the provision_roles are run in REVERSE
+# order — mirroring how the AgnosticD 'namespace' config works.
+# Lab developer roles are expected to route on ACTION in main.yml so that
+# include_role executes their removal path automatically when ACTION=="destroy".
+- name: Set effective removal roles
+  ansible.builtin.set_fact:
+    _ansible_bootstrap_remove_roles: >-
+      {{ ocp4_workload_ansible_bootstrap_remove_roles
+         if ocp4_workload_ansible_bootstrap_remove_roles | length > 0
+         else ocp4_workload_ansible_bootstrap_provision_roles | reverse | list }}
+
+- name: Debug — removal roles to execute
+  ansible.builtin.debug:
+    msg: >-
+      {{
+        'Using explicit remove_roles: ' ~ _ansible_bootstrap_remove_roles | join(', ')
+        if ocp4_workload_ansible_bootstrap_remove_roles | length > 0
+        else 'No remove_roles defined — running provision_roles in reverse: ' ~ _ansible_bootstrap_remove_roles | join(', ')
+      }}
+
+- name: Run cluster removal roles
+  ansible.builtin.include_role:
+    name: "{{ item }}"
+  loop: "{{ _ansible_bootstrap_remove_roles }}"
+  when: _ansible_bootstrap_remove_roles | length > 0
+  ignore_errors: true
