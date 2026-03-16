@@ -2,9 +2,17 @@
 ocp4_workload_gitops_bootstrap_repo_url: http://gitea:3000/user/bootstrap
 ocp4_workload_gitops_bootstrap_repo_revision: main
 
+# The name of the ArgoCD application to create for bootstrapping.
+# If you are deploying a tenant application, this should be unique across all tenants.
+# You should use "bootstrap-{{ guid }}"
 ocp4_workload_gitops_bootstrap_application_name: bootstrap
+
+# The path within the git repository where the ArgoCD application manifests are located.
 ocp4_workload_gitops_bootstrap_repo_path: ""
 
+# The ArgoCD project to deploy the bootstrap application into.
+# This is not the same as the git repo path.
+# You should use "tenants" if deploying a tenant application.
 ocp4_workload_gitops_bootstrap_application_project: default
 
 # We cannot do k8s_info on annotations,
