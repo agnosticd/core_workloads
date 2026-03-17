@@ -1,11 +1,9 @@
 ---
-- name: Set application paths and final application name
-  ansible.builtin.include_tasks: set_application_paths.yml
 
 - name: Remove bootstrap ArgoCD application
   kubernetes.core.k8s:
     api_version: argoproj.io/v1alpha1
     kind: Application
-    name: "{{ ocp4_workload_gitops_bootstrap_final_application_name }}"
+    name: "{{ ocp4_workload_gitops_bootstrap_application_name }}"
     namespace: "{{ ocp4_workload_gitops_bootstrap_namespace }}"
     state: absent
