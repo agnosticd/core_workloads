@@ -2,18 +2,26 @@
 ocp4_workload_gitops_bootstrap_repo_url: http://gitea:3000/user/bootstrap
 ocp4_workload_gitops_bootstrap_repo_revision: main
 
-# The name of the ArgoCD application to create for bootstrapping.
-# If you are deploying a tenant application, this should be unique across all tenants.
-# You should use "bootstrap-{{ guid }}"
+# Examples to support multi-tenancy:
+#
+#   Example 1: Backwards compatibility.  Deploys INFRA and N number of tenants
+#     ocp4_workload_gitops_bootstrap_application_name: 'bootstrap'
+#     ocp4_workload_gitops_bootstrap_repo_path: ""
+#     ocp4_workload_gitops_bootstrap_helm_values:
+#       user:
+#         count: 3
+#
+#   Example 2: Deploy ONLY the infra:
+#     ocp4_workload_gitops_bootstrap_application_name: 'bootstrap-infra'
+#     ocp4_workload_gitops_bootstrap_repo_path: infra
+#
+#   Example 3: Deploy ONE tenant
+#     ocp4_workload_gitops_bootstrap_application_name: 'bootstrap-tenant-{{ guid }}'
+#     ocp4_workload_gitops_bootstrap_repo_path: tenant
+
 ocp4_workload_gitops_bootstrap_application_name: bootstrap
-
-# The path within the git repository where the ArgoCD application manifests are located.
 ocp4_workload_gitops_bootstrap_repo_path: ""
-
-# The ArgoCD project to deploy the bootstrap application into.
-# This is not the same as the git repo path.
-# You should use "tenants" if deploying a tenant application.
-ocp4_workload_gitops_bootstrap_application_project: default
+#'bootstrap-tenant-{{ guid }}' or 'bootstrap-infra' or 'bootstrap'
 
 # We cannot do k8s_info on annotations,
 # so when deploying openshift_gitops,
