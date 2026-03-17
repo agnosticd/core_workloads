@@ -13,8 +13,38 @@
   ansible.builtin.debug:
     msg: "{{ _ocp4_workload_gitops_bootstrap_deployer_values | to_yaml }}"
 
-- name: Set application paths and final application name
-  ansible.builtin.include_tasks: set_application_paths.yml
+- name: Check if ArgoCD application already exists
+  kubernetes.core.k8s_info:
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: "{{ ocp4_workload_gitops_bootstrap_application_name }}"
+    namespace: "{{ ocp4_workload_gitops_bootstrap_namespace }}"
+  register: _existing_application
+
+- name: Fail if ArgoCD application already exists
+  ansible.builtin.fail:
+    msg: >-
+      ArgoCD Application '{{ ocp4_workload_gitops_bootstrap_application_name }}'
+      already exists in namespace '{{ ocp4_workload_gitops_bootstrap_namespace }}').
+      If you are running a tenant application, set a unique name.
+  when: _existing_application.resources | length > 0
+
+- name: Ensure ArgoCD AppProject exists
+  when: ocp4_workload_gitops_bootstrap_application_project != 'default'
+  block:
+    - name: Check if ArgoCD AppProject exists
+      kubernetes.core.k8s_info:
+        api_version: argoproj.io/v1alpha1
+        kind: AppProject
+        name: "{{ ocp4_workload_gitops_bootstrap_application_project }}"
+        namespace: openshift-gitops
+      register: _existing_appproject
+
+    - name: Create ArgoCD AppProject
+      when: _existing_appproject.resources | length == 0
+      kubernetes.core.k8s:
+        state: present
+        template: appproject.yaml.j2
 
 - name: Create bootstrap ArgoCD application
   kubernetes.core.k8s:
@@ -36,7 +66,7 @@
   kubernetes.core.k8s_info:
     api_version: argoproj.io/v1alpha1
     kind: Application
-    name: "{{ ocp4_workload_gitops_bootstrap_final_application_name }}"
+    name: "{{ ocp4_workload_gitops_bootstrap_application_name }}"
     namespace: openshift-gitops
   register: argocd_bootstrap
   retries: "{{ ocp4_workload_gitops_bootstrap_health_retries }}"
@@ -62,7 +92,7 @@
     api_version: argoproj.io/v1alpha1
     kind: Application
     label_selectors:
-      - "app.kubernetes.io/instance={{ ocp4_workload_gitops_bootstrap_final_application_name  }}"
+      - "app.kubernetes.io/instance={{ ocp4_workload_gitops_bootstrap_application_name }}"
   register: _all_apps
   delay: 10
   retries: "{{ ocp4_workload_gitops_bootstrap_application_health_retries }}"

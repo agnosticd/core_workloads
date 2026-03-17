@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: "{{ ocp4_workload_gitops_bootstrap_application_project }}"
+  namespace: openshift-gitops
+spec:
+  description: "Auto-created project for {{ ocp4_workload_gitops_bootstrap_application_project }}"
+  sourceRepos:
+    - '*'
+  destinations:
+    - namespace: '*'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
