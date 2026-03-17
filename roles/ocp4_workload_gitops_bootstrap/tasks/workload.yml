@@ -29,6 +29,23 @@
       If you are running a tenant application, set a unique name.
   when: _existing_application.resources | length > 0
 
+- name: Ensure ArgoCD AppProject exists
+  when: ocp4_workload_gitops_bootstrap_application_project != 'default'
+  block:
+    - name: Check if ArgoCD AppProject exists
+      kubernetes.core.k8s_info:
+        api_version: argoproj.io/v1alpha1
+        kind: AppProject
+        name: "{{ ocp4_workload_gitops_bootstrap_application_project }}"
+        namespace: openshift-gitops
+      register: _existing_appproject
+
+    - name: Create ArgoCD AppProject
+      when: _existing_appproject.resources | length == 0
+      kubernetes.core.k8s:
+        state: present
+        template: appproject.yaml.j2
+
 - name: Create bootstrap ArgoCD application
   kubernetes.core.k8s:
     state: present
