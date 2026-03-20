@@ -27,7 +27,7 @@
 - name: Create ArgoCD Application for S4
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'application.yaml.j2') | from_yaml }}"
+    template: application.yaml.j2
 
 - name: Wait for S4 Application to sync
   when: ocp4_workload_s4_wait_for_deployment | bool
@@ -115,7 +115,7 @@
   - name: Create buckets
     kubernetes.core.k8s:
       state: present
-      definition: "{{ lookup('template', 'bucket-job.yaml.j2') | from_yaml }}"
+      template: bucket-job.yaml.j2
     loop: "{{ ocp4_workload_s4_buckets }}"
     loop_control:
       loop_var: bucket_name
@@ -124,16 +124,18 @@
     kubernetes.core.k8s_info:
       api_version: batch/v1
       kind: Job
+      name: "create-bucket-{{ bucket_name }}"
       namespace: "{{ ocp4_workload_s4_namespace }}"
-      label_selectors:
-      - "app.kubernetes.io/component=bucket-creator"
-    register: r_bucket_jobs
-    retries: 30
-    delay: 5
-    until:
-    - r_bucket_jobs.resources is defined
-    - r_bucket_jobs.resources | length > 0
-    - r_bucket_jobs.resources | selectattr('status.succeeded', 'defined') | selectattr('status.succeeded', 'equalto', 1) | list | length == (ocp4_workload_s4_buckets | length)
+      wait: true
+      wait_condition:
+        type: Complete
+        status: 'True'
+        reason: CompletionsReached
+      wait_sleep: 5
+      wait_timeout: 150
+    loop: "{{ ocp4_workload_s4_buckets }}"
+    loop_control:
+      loop_var: bucket_name
 
 - name: Report S4 information to user
   when: ocp4_workload_s4_enable_user_info_messages | bool
