@@ -5,8 +5,10 @@ galaxy_info:
   description: |
     AgnosticD workload role that runs FTL (Finish The Labs) E2E checks
     directly inside the AAP Execution Environment using the rhdp.ftl collection.
+    Technology-agnostic: works with any lab type (OpenShift, RHEL, AAP, AI, etc.)
+    by delegating all lab-specific logic to the lab's own grade/solve playbooks.
     Supports E2E Readiness Check (environment validation) and E2E Full Lab Check
-    (automated solve + grade). Works for both sandbox (single-user) and classical
+    (automated solve + grade), for both sandbox (single-user) and classical
     (multi-user, parallel async) catalogs.
   license: MIT
   min_ansible_version: "2.9"
@@ -14,6 +16,8 @@ galaxy_info:
   galaxy_tags:
     - ocp
     - openshift
+    - rhel
+    - aap
     - ftl
     - grading
 dependencies: []
