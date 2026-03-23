@@ -1,0 +1,90 @@
+---
+# ocp4_workload_ftl_grader — multi-user (classical catalog)
+# Fans out E2E checks across all N users in parallel using async.
+
+- name: Build user list
+  ansible.builtin.set_fact:
+    ftl_user_list: >-
+      {{ range(1, ocp4_workload_ftl_grader_user_count | int + 1) |
+         map('string') |
+         map('regex_replace', '^(.*)$', ocp4_workload_ftl_grader_user_prefix + '\1') |
+         list }}
+
+- name: Set FTL lab path from collection root
+  ansible.builtin.set_fact:
+    ftl_lab_path: "{{ role_path | dirname | dirname }}/labs/{{ ocp4_workload_ftl_grader_lab_id }}"
+    ftl_roles_path: "{{ role_path | dirname }}"
+
+# ── E2E Readiness Check — parallel across all users ──────────────────────────
+- name: Launch E2E Readiness Check for all users in parallel
+  when: ftl_e2e_readiness_check | default(false) | bool
+  ansible.builtin.command:
+    cmd: "ansible-playbook -i localhost, -c local {{ ftl_lab_path }}/grade_e2e_readiness.yml"
+  environment:
+    ANSIBLE_ROLES_PATH: "{{ ftl_roles_path }}"
+    LAB_USER: "{{ item }}"
+    OPENSHIFT_CLUSTER_INGRESS_DOMAIN: "{{ ocp4_workload_ftl_grader_ingress_domain }}"
+    GITEA_ADMIN_USER: "{{ ocp4_workload_ftl_grader_gitea_admin_user }}"
+    GITEA_ADMIN_PASSWORD: "{{ ocp4_workload_ftl_grader_gitea_admin_password }}"
+  loop: "{{ ftl_user_list }}"
+  async: 600
+  poll: 0
+  register: r_readiness_jobs
+  failed_when: false
+
+- name: Wait for all E2E Readiness Checks to complete
+  when: ftl_e2e_readiness_check | default(false) | bool
+  ansible.builtin.async_status:
+    jid: "{{ item.ansible_job_id }}"
+  loop: "{{ r_readiness_jobs.results | default([]) }}"
+  register: r_readiness_status
+  until: r_readiness_status.finished
+  retries: 40
+  delay: 15
+  failed_when: false
+
+- name: Collect and report E2E Readiness results
+  when: ftl_e2e_readiness_check | default(false) | bool
+  ansible.builtin.include_tasks: collect_results.yml
+  vars:
+    ftl_result_type: e2e_readiness
+    ftl_result_users: "{{ ftl_user_list }}"
+
+# ── E2E Full Lab Check — parallel across all users ───────────────────────────
+- name: Launch E2E Full Lab Check for all users in parallel
+  when: ftl_e2e_full_lab_check | default(false) | bool
+  ansible.builtin.shell: |
+    for f in $(ls {{ ftl_lab_path }}/solve_module_*.yml | sort); do
+      ANSIBLE_ROLES_PATH={{ ftl_roles_path }} ansible-playbook -i localhost, -c local $f || exit 1
+    done
+    for f in $(ls {{ ftl_lab_path }}/grade_module_*.yml | sort); do
+      ANSIBLE_ROLES_PATH={{ ftl_roles_path }} ansible-playbook -i localhost, -c local $f || exit 1
+    done
+  environment:
+    LAB_USER: "{{ item }}"
+    OPENSHIFT_CLUSTER_INGRESS_DOMAIN: "{{ ocp4_workload_ftl_grader_ingress_domain }}"
+    GITEA_ADMIN_USER: "{{ ocp4_workload_ftl_grader_gitea_admin_user }}"
+    GITEA_ADMIN_PASSWORD: "{{ ocp4_workload_ftl_grader_gitea_admin_password }}"
+  loop: "{{ ftl_user_list }}"
+  async: 3600
+  poll: 0
+  register: r_fulllab_jobs
+  failed_when: false
+
+- name: Wait for all E2E Full Lab Checks to complete
+  when: ftl_e2e_full_lab_check | default(false) | bool
+  ansible.builtin.async_status:
+    jid: "{{ item.ansible_job_id }}"
+  loop: "{{ r_fulllab_jobs.results | default([]) }}"
+  register: r_fulllab_status
+  until: r_fulllab_status.finished
+  retries: 120
+  delay: 30
+  failed_when: false
+
+- name: Collect and report E2E Full Lab results
+  when: ftl_e2e_full_lab_check | default(false) | bool
+  ansible.builtin.include_tasks: collect_results.yml
+  vars:
+    ftl_result_type: full_lab
+    ftl_result_users: "{{ ftl_user_list }}"

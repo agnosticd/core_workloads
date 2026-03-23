@@ -1,0 +1,24 @@
+---
+# FTL lab identifier — must match the lab directory name in FTL collection
+# e.g. "mcp-with-openshift", "ocp4-getting-started"
+ocp4_workload_ftl_grader_lab_id: ""
+
+# Platform checkboxes — set via AgV catalog parameters
+ftl_e2e_readiness_check: false
+ftl_e2e_full_lab_check: false
+
+# Grading report output directory (FTL default)
+ocp4_workload_ftl_grader_report_dir: "/tmp/grading_dir"
+
+# Cluster ingress domain — passed from AgD provisioning vars
+ocp4_workload_ftl_grader_ingress_domain: "{{ openshift_cluster_ingress_domain | default('') }}"
+
+# Gitea admin credentials — read from Showroom ConfigMap by default
+# Can be overridden via AgV vars if known at provision time
+ocp4_workload_ftl_grader_gitea_admin_user: ""
+ocp4_workload_ftl_grader_gitea_admin_password: ""
+
+# Number of users for multi-user (classical) catalog
+# Automatically set to 1 for sandbox
+ocp4_workload_ftl_grader_user_count: 1
+ocp4_workload_ftl_grader_user_prefix: "user"

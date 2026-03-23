@@ -1,0 +1,19 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_ftl_grader
+  author: Red Hat, Prakhar Srivastava (psrivast@redhat.com)
+  description: |
+    AgnosticD workload role that runs FTL (Finish The Labs) E2E checks
+    directly inside the AAP Execution Environment using the rhdp.ftl collection.
+    Supports E2E Readiness Check (environment validation) and E2E Full Lab Check
+    (automated solve + grade). Works for both sandbox (single-user) and classical
+    (multi-user, parallel async) catalogs.
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms: []
+  galaxy_tags:
+    - ocp
+    - openshift
+    - ftl
+    - grading
+dependencies: []

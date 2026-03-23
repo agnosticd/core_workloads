@@ -1,0 +1,5 @@
+---
+# FTL grader runs in-process and leaves no persistent resources — nothing to remove.
+- name: FTL grader workload removed
+  ansible.builtin.debug:
+    msg: "ocp4_workload_ftl_grader has no persistent resources to remove."

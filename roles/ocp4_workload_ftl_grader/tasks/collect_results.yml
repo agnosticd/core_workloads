@@ -1,0 +1,72 @@
+---
+# Aggregate results from multi-user runs and surface to RHDP
+# vars:
+#   ftl_result_type: e2e_readiness | full_lab
+#   ftl_result_users: list of usernames
+
+# ── E2E Readiness — one report file per user ─────────────────────────────────
+- name: Read E2E Readiness reports for all users
+  when: ftl_result_type == 'e2e_readiness'
+  ansible.builtin.slurp:
+    src: "{{ ocp4_workload_ftl_grader_report_dir }}/grading_report_{{ item }}_e2e_readiness.txt"
+  loop: "{{ ftl_result_users }}"
+  register: r_readiness_reports
+  failed_when: false
+
+- name: Build E2E Readiness per-user summary
+  when: ftl_result_type == 'e2e_readiness'
+  ansible.builtin.set_fact:
+    ftl_user_summaries: >-
+      {{ ftl_user_summaries | default([]) + [{
+        'user': item.item,
+        'pass': (item.content | default('') | b64decode | regex_findall('PASS:') | length),
+        'fail': (item.content | default('') | b64decode | regex_findall('FAIL:') | length)
+      }] }}
+  loop: "{{ r_readiness_reports.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+# ── E2E Full Lab — multiple module report files per user ──────────────────────
+- name: Find all module report files for E2E Full Lab
+  when: ftl_result_type == 'full_lab'
+  ansible.builtin.find:
+    paths: "{{ ocp4_workload_ftl_grader_report_dir }}"
+    patterns: "grading_report_*_module_*.txt"
+  register: r_module_report_files
+
+- name: Read all module reports
+  when: ftl_result_type == 'full_lab'
+  ansible.builtin.slurp:
+    src: "{{ item.path }}"
+  loop: "{{ r_module_report_files.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: r_module_reports
+  failed_when: false
+
+- name: Build E2E Full Lab per-user summary
+  when: ftl_result_type == 'full_lab'
+  ansible.builtin.set_fact:
+    ftl_user_summaries: >-
+      {{ ftl_user_summaries | default([]) + [{
+        'user': item,
+        'pass': (r_module_reports.results | default([]) |
+                 selectattr('item.path', 'search', 'grading_report_' + item + '_') |
+                 map(attribute='content') | map('b64decode') | join('') |
+                 regex_findall('PASS:') | length),
+        'fail': (r_module_reports.results | default([]) |
+                 selectattr('item.path', 'search', 'grading_report_' + item + '_') |
+                 map(attribute='content') | map('b64decode') | join('') |
+                 regex_findall('FAIL:') | length)
+      }] }}
+  loop: "{{ ftl_result_users }}"
+
+# ── Surface to RHDP ───────────────────────────────────────────────────────────
+- name: Surface aggregated results to RHDP platform
+  agnosticd_user_info:
+    msg: |
+      FTL {{ 'E2E Readiness Check' if ftl_result_type == 'e2e_readiness' else 'E2E Full Lab Check' }} — {{ ocp4_workload_ftl_grader_lab_id }}
+      Users: {{ ftl_result_users | length }}
+      {% for s in ftl_user_summaries | default([]) %}
+      {{ s.user }}: PASS={{ s.pass }} FAIL={{ s.fail }}{{ ' ⚠' if s.fail | int > 0 else '' }}
+      {% endfor %}

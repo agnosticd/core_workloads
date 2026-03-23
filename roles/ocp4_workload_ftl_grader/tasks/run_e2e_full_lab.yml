@@ -1,0 +1,75 @@
+---
+# Run FTL solve then grade all modules for a single user (ftl_target_user)
+
+- name: Set FTL lab path from collection root
+  ansible.builtin.set_fact:
+    ftl_lab_path: "{{ role_path | dirname | dirname }}/labs/{{ ocp4_workload_ftl_grader_lab_id }}"
+
+- name: "FTL — Discover solve modules for {{ ocp4_workload_ftl_grader_lab_id }}"
+  ansible.builtin.find:
+    paths: "{{ ftl_lab_path }}"
+    patterns: "solve_module_*.yml"
+  register: r_solve_modules
+
+- name: "FTL — Discover grade modules for {{ ocp4_workload_ftl_grader_lab_id }}"
+  ansible.builtin.find:
+    paths: "{{ ftl_lab_path }}"
+    patterns: "grade_module_*.yml"
+  register: r_grade_modules
+
+- name: "FTL Solve — {{ ftl_target_user }}"
+  ansible.builtin.command:
+    cmd: "ansible-playbook -i localhost, -c local {{ item.path }}"
+  environment:
+    ANSIBLE_ROLES_PATH: "{{ role_path | dirname }}"
+    LAB_USER: "{{ ftl_target_user }}"
+    OPENSHIFT_CLUSTER_INGRESS_DOMAIN: "{{ ocp4_workload_ftl_grader_ingress_domain }}"
+    GITEA_ADMIN_USER: "{{ ocp4_workload_ftl_grader_gitea_admin_user }}"
+    GITEA_ADMIN_PASSWORD: "{{ ocp4_workload_ftl_grader_gitea_admin_password }}"
+  loop: "{{ r_solve_modules.files | sort(attribute='path') }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: r_solve
+  failed_when: false
+
+- name: "FTL Grade — {{ ftl_target_user }}"
+  ansible.builtin.command:
+    cmd: "ansible-playbook -i localhost, -c local {{ item.path }}"
+  environment:
+    ANSIBLE_ROLES_PATH: "{{ role_path | dirname }}"
+    LAB_USER: "{{ ftl_target_user }}"
+    OPENSHIFT_CLUSTER_INGRESS_DOMAIN: "{{ ocp4_workload_ftl_grader_ingress_domain }}"
+    GITEA_ADMIN_USER: "{{ ocp4_workload_ftl_grader_gitea_admin_user }}"
+    GITEA_ADMIN_PASSWORD: "{{ ocp4_workload_ftl_grader_gitea_admin_password }}"
+  loop: "{{ r_grade_modules.files | sort(attribute='path') }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: r_grade
+  failed_when: false
+
+- name: Read all grading reports
+  ansible.builtin.slurp:
+    src: "{{ ocp4_workload_ftl_grader_report_dir }}/grading_report_{{ ftl_target_user }}_module_{{ '%02d' | format(idx + 1) }}.txt"
+  loop: "{{ r_grade_modules.files | sort(attribute='path') }}"
+  loop_control:
+    index_var: idx
+    label: "module_{{ '%02d' | format(idx + 1) }}"
+  register: r_reports
+  failed_when: false
+
+- name: Aggregate results across all modules
+  ansible.builtin.set_fact:
+    ftl_total_pass: "{{ r_reports.results | map(attribute='content') | map('b64decode') | join('') | regex_findall('PASS:') | length }}"
+    ftl_total_fail: "{{ r_reports.results | map(attribute='content') | map('b64decode') | join('') | regex_findall('FAIL:') | length }}"
+
+- name: Surface E2E Full Lab results to RHDP platform
+  agnosticd_user_info:
+    user: "{{ ftl_target_user }}"
+    msg: |
+      E2E Full Lab Check — {{ ocp4_workload_ftl_grader_lab_id }}
+      Modules graded: {{ r_grade_modules.files | length }}
+      PASS: {{ ftl_total_pass }} | FAIL: {{ ftl_total_fail }}
+    data:
+      ftl_modules_graded: "{{ r_grade_modules.files | length }}"
+      ftl_total_pass: "{{ ftl_total_pass }}"
+      ftl_total_fail: "{{ ftl_total_fail }}"

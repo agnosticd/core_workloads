@@ -1,0 +1,41 @@
+---
+# Run FTL E2E Readiness Check for a single user (ftl_target_user)
+
+- name: "FTL E2E Readiness Check — {{ ftl_target_user }}"
+  ansible.builtin.command:
+    cmd: >
+      ansible-playbook -i localhost, -c local
+      {{ role_path | dirname | dirname }}/labs/{{ ocp4_workload_ftl_grader_lab_id }}/grade_e2e_readiness.yml
+  environment:
+    ANSIBLE_ROLES_PATH: "{{ role_path | dirname }}"
+    LAB_USER: "{{ ftl_target_user }}"
+    OPENSHIFT_CLUSTER_INGRESS_DOMAIN: "{{ ocp4_workload_ftl_grader_ingress_domain }}"
+    GITEA_ADMIN_USER: "{{ ocp4_workload_ftl_grader_gitea_admin_user }}"
+    GITEA_ADMIN_PASSWORD: "{{ ocp4_workload_ftl_grader_gitea_admin_password }}"
+    K8S_AUTH_HOST: "{{ lookup('env', 'K8S_AUTH_HOST') }}"
+    K8S_AUTH_API_KEY: "{{ lookup('env', 'K8S_AUTH_API_KEY') }}"
+    K8S_AUTH_VERIFY_SSL: "false"
+  register: r_e2e_readiness
+  failed_when: false
+
+- name: Read E2E Readiness report
+  ansible.builtin.slurp:
+    src: "{{ ocp4_workload_ftl_grader_report_dir }}/grading_report_{{ ftl_target_user }}_e2e_readiness.txt"
+  register: r_report
+  failed_when: false
+
+- name: Parse PASS/FAIL counts from report
+  ansible.builtin.set_fact:
+    ftl_e2e_report_content: "{{ r_report.content | default('') | b64decode }}"
+    ftl_e2e_pass_count: "{{ r_report.content | default('') | b64decode | regex_findall('PASS:') | length }}"
+    ftl_e2e_fail_count: "{{ r_report.content | default('') | b64decode | regex_findall('FAIL:') | length }}"
+
+- name: Surface E2E Readiness results to RHDP platform
+  agnosticd_user_info:
+    msg: |
+      E2E Readiness Check — {{ ocp4_workload_ftl_grader_lab_id }} ({{ ftl_target_user }})
+      PASS: {{ ftl_e2e_pass_count }} | FAIL: {{ ftl_e2e_fail_count }}
+      STATUS: {{ 'Environment ready' if ftl_e2e_fail_count | int == 0 else 'Environment has issues' }}
+    data:
+      ftl_e2e_readiness_pass: "{{ ftl_e2e_pass_count }}"
+      ftl_e2e_readiness_fail: "{{ ftl_e2e_fail_count }}"

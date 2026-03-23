@@ -1,0 +1,103 @@
+= ocp4_workload_ftl_grader
+
+AgnosticD workload role that runs link:https://github.com/rhpds/ftl[FTL (Finish The Labs)] E2E checks directly inside the AAP Execution Environment.
+
+No Kubernetes Jobs, no separate namespace — the grader runs in-process using `ansible-playbook` subprocess calls against the `rhdp.ftl` collection.
+
+== Features
+
+* *E2E Readiness Check* — validates that all internal cluster resources (pods, routes, HTTP endpoints, Gitea repos) are healthy after provisioning
+* *E2E Full Lab Check* — automatically solves and grades all lab modules; intended for instructor/CI use
+* *Sandbox (single-user)* — runs checks for the Keycloak-provisioned user
+* *Classical (multi-user)* — fans out checks across all N users in parallel using Ansible async
+
+== Requirements
+
+The `rhdp.ftl` collection must be listed in `requirements_content` of the AgnosticV catalog:
+
+[source,yaml]
+----
+requirements_content:
+  collections:
+    - name: https://github.com/rhpds/ftl.git
+      type: git
+      version: main
+----
+
+The target lab must have a `grade_e2e_readiness.yml` playbook in `labs/<lab_id>/`.
+
+== Variables
+
+[cols="1,1,2",options="header"]
+|===
+| Variable | Default | Description
+
+| `ocp4_workload_ftl_grader_lab_id`
+| `""`
+| FTL lab directory name (e.g. `mcp-with-openshift`). *Required.*
+
+| `ocp4_workload_ftl_grader_ingress_domain`
+| `"{{ openshift_cluster_ingress_domain }}"`
+| OCP cluster ingress domain. *Required.*
+
+| `ftl_e2e_readiness_check`
+| `false`
+| Run E2E Readiness Check (environment health validation).
+
+| `ftl_e2e_full_lab_check`
+| `false`
+| Run E2E Full Lab Check (solve + grade all modules). Instructor use only.
+
+| `ocp4_workload_ftl_grader_user_count`
+| `1`
+| Number of users for multi-user (classical) catalogs. Set to 1 for sandbox.
+
+| `ocp4_workload_ftl_grader_user_prefix`
+| `"user"`
+| Username prefix for multi-user mode (e.g. `user` → `user1`, `user2`…).
+
+| `ocp4_workload_ftl_grader_report_dir`
+| `"/tmp/grading_dir"`
+| Directory where FTL writes grading report files.
+
+| `ocp4_workload_ftl_grader_gitea_admin_user`
+| `""`
+| Gitea admin username. Auto-discovered from Showroom ConfigMap if empty.
+
+| `ocp4_workload_ftl_grader_gitea_admin_password`
+| `""`
+| Gitea admin password. Auto-discovered from Showroom ConfigMap if empty.
+|===
+
+== AgnosticV Catalog Integration
+
+[source,yaml]
+----
+# Conditionally include the grader workload
+workloads: >-
+  {{
+    ['agnosticd.core_workloads.ocp4_workload_ftl_grader']
+    if (ftl_e2e_readiness_check | default(false) | bool) or
+       (ftl_e2e_full_lab_check | default(false) | bool)
+    else []
+  }}
+
+ocp4_workload_ftl_grader_lab_id: "mcp-with-openshift"
+ocp4_workload_ftl_grader_ingress_domain: "{{ openshift_cluster_ingress_domain }}"
+
+__meta__:
+  catalog:
+    parameters:
+    - name: ftl_e2e_readiness_check
+      description: "Run FTL E2E Readiness Check — verifies all internal cluster resources."
+      formLabel: "E2E Readiness Check"
+      openAPIV3Schema:
+        type: boolean
+        default: false
+    - name: ftl_e2e_full_lab_check
+      description: "Run FTL E2E Full Lab Check — solves and grades all modules. INSTRUCTOR USE ONLY."
+      formLabel: "E2E Full Lab Check"
+      openAPIV3Schema:
+        type: boolean
+        default: false
+----

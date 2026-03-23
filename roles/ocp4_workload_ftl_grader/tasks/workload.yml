@@ -1,0 +1,35 @@
+---
+- name: Validate required configuration
+  ansible.builtin.assert:
+    that:
+      - ocp4_workload_ftl_grader_lab_id | length > 0
+      - ocp4_workload_ftl_grader_ingress_domain | length > 0
+    fail_msg: "ocp4_workload_ftl_grader_lab_id and ocp4_workload_ftl_grader_ingress_domain are required."
+
+- name: Set target user (single-user / sandbox path)
+  ansible.builtin.set_fact:
+    ftl_target_user: "{{ ocp4_workload_tenant_keycloak_username | default(sandbox_openshift_user) | default(ocp4_workload_ftl_grader_user_prefix + '1') }}"
+
+- name: Ensure report directory exists
+  ansible.builtin.file:
+    path: "{{ ocp4_workload_ftl_grader_report_dir }}"
+    state: directory
+    mode: "0755"
+
+# ── Single-user path (sandbox catalog) ───────────────────────────────────────
+- name: Run E2E Readiness Check (single user)
+  when:
+    - ftl_e2e_readiness_check | default(false) | bool
+    - ocp4_workload_ftl_grader_user_count | int <= 1
+  ansible.builtin.include_tasks: run_e2e_readiness.yml
+
+- name: Run E2E Full Lab Check (single user)
+  when:
+    - ftl_e2e_full_lab_check | default(false) | bool
+    - ocp4_workload_ftl_grader_user_count | int <= 1
+  ansible.builtin.include_tasks: run_e2e_full_lab.yml
+
+# ── Multi-user path (classical catalog) ──────────────────────────────────────
+- name: Run multi-user E2E checks
+  when: ocp4_workload_ftl_grader_user_count | int > 1
+  ansible.builtin.include_tasks: multiuser.yml
