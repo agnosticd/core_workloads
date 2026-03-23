@@ -191,6 +191,7 @@
       msg: "Red Hat Quay is available at {{ r_quay_registry.resources[0].status.registryEndpoint }}"
       data:
         quay_console_url: "{{ r_quay_registry.resources[0].status.registryEndpoint }}"
+        quay_host: "{{ r_quay_registry.resources[0].status.registryEndpoint | urlsplit('hostname') }}"
 
   - name: Save user data for Quay admin user
     when: ocp4_workload_quay_operator_registry_configure_admin | bool
