@@ -91,5 +91,5 @@
   retries: 6
   delay: 10
   until:
-  - argocd_field_content.resources | length > 0
+    - argocd_field_content.resources | length > 0
   failed_when: argocd_field_content.resources | length == 0

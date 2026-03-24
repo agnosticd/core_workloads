@@ -1,0 +1,29 @@
+---
+extends: default
+
+ignore:
+- .tox/
+- .git/
+
+rules:
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+  comments:
+    require-starting-space: false
+    min-spaces-from-content: 1
+  comments-indentation: disable
+  document-start: false
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+  line-length:
+    max: 150
+    allow-non-breakable-inline-mappings: false
+  new-line-at-end-of-file: false
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true

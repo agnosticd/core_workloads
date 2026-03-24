@@ -95,8 +95,9 @@
   - openshift-oauth.yml.j2
 
 - name: Create OpenShift identity provider (rosa)
+  changed_when: true
   when: ocp4_workload_authentication_rhsso_config == 'rosa'
-  shell: |
+  ansible.builtin.shell: |
     rosa create idp --cluster rosa-{{ guid }} \
     --type openid \
     --name rhsso \
@@ -129,7 +130,7 @@
     state: present
     template: rhsso-user-openshift.yml.j2
   vars:
-    username: >-
+    username: >- # noqa: jinja[spacing]
       {%- if ocp4_workload_authentication_rhsso_user_count | int == 1 -%}
       {{ ocp4_workload_authentication_rhsso_user_name }}
       {%- else -%}
@@ -191,14 +192,14 @@
       is cluster admin.
 
 - name: Save admin information
-  when: ocp4_workload_authentication_rhsso_admin_create | bool 
+  when: ocp4_workload_authentication_rhsso_admin_create | bool
   agnosticd.core.agnosticd_user_info:
     data:
       openshift_cluster_admin_username: "{{ ocp4_workload_authentication_rhsso_admin_username }}"
       openshift_cluster_admin_password: "{{ _ocp4_workload_authentication_rhsso_admin_password }}"
 
 - name: Print user information
-  when: 
+  when:
   - ocp4_workload_authentication_rhsso_user_count | int > 0
   - ocp4_workload_authentication_rhsso_enable_user_info_messages | bool
   agnosticd.core.agnosticd_user_info:

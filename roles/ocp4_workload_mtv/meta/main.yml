@@ -1,9 +1,8 @@
 ---
 galaxy_info:
+  min_ansible_version: '2.16'
   role_name: ocp4_workload_mtv
-  author:
-  - Fabien Dupont <fdupont@redhat.com>
-  - Wolfgang Kulhanek <wkulhane@redhat.com>
+  author: Fabien Dupont <fdupont@redhat.com>, Wolfgang Kulhanek <wkulhane@redhat.com>
   description: |
     Deploys OpenShift Virtualization on a OCP4 cluster
   platforms: []

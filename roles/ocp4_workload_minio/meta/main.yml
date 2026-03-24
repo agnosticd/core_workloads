@@ -7,7 +7,9 @@ galaxy_info:
   license: MIT
   min_ansible_version: "2.9"
   platforms:
-  - linux
+  - name: EL
+    versions:
+    - all
   galaxy_tags:
   - ocp
   - openshift

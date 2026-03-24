@@ -127,7 +127,7 @@
       agnosticd.core.agnosticd_user_info:
         msg: >-
           A Gitea admin user has been created with the
-          username '{{ ocp4_workload_gitea_operator_admin_user }}' 
+          username '{{ ocp4_workload_gitea_operator_admin_user }}'
           and the password '{{ _ocp4_workload_gitea_operator_admin_password }}'.
         data:
           gitea_admin_username: "{{ ocp4_workload_gitea_operator_admin_user }}"

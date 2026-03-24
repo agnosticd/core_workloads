@@ -7,14 +7,16 @@
       cmd: >-
         oc annotate sc {{ ocp4_workload_openshift_data_foundation_new_default_storage_class_name }}
         storageclass.kubernetes.io/is-default-class-
-    ignore_errors: true
+    failed_when: false
+    changed_when: false
 
   - name: Set previous default storage class
     ansible.builtin.command:
       cmd: >-
         oc annotate sc {{ ocp4_workload_openshift_data_foundation_old_default_storage_class_name }}
         storageclass.kubernetes.io/is-default-class="true"
-    ignore_errors: true
+    failed_when: false
+    changed_when: false
 
 - name: Remove Ceph toolbox
   when: ocp4_workload_openshift_data_foundation_install_toolbox | bool

@@ -14,7 +14,9 @@
       {% endif %}
 
       {% for _account in _ocp4_workload_authentication_cluster_accounts -%}
-      User `{{ _account.name }}` created with password `{{ _ocp4_workload_authentication_cluster_account_passwords[_account.name] }}`{% if _account.cluster_role is defined %} and cluster role `{{ _account.cluster_role }}`{% endif %}.
+      User `{{ _account.name }}` created with
+      password `{{ _ocp4_workload_authentication_cluster_account_passwords[_account.name] }}`
+      {%- if _account.cluster_role is defined %} and cluster role `{{ _account.cluster_role }}`{% endif %}.
       {% endfor %}
 
       {% if ocp4_workload_authentication_num_users | int == 1 -%}
@@ -22,7 +24,7 @@
         (ocp4_workload_authentication_user_basename ~ '1')
         if ocp4_workload_authentication_multiuser | bool else
         ocp4_workload_authentication_user_name
-      }}` created with password 
+      }}` created with password
       `{{ _ocp4_workload_authentication_user_passwords[0] }}`
       {% elif ocp4_workload_authentication_num_users | int > 1 -%}
       Users `{{ ocp4_workload_authentication_user_basename }}1` ..
@@ -114,10 +116,10 @@
         --password {{ _password | quote }}
         {{ openshift_api_url }}
     _user_name: >-
-      {{ 
+      {{
         ocp4_workload_authentication_user_basename ~ _user_number
         if ocp4_workload_authentication_multiuser | bool else
-        ocp4_workload_authentication_user_name 
+        ocp4_workload_authentication_user_name
       }}
     _user_number: "{{ _n | int + 1 }}"
     # List of account names if there are multiple accounts.

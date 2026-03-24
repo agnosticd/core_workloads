@@ -61,7 +61,7 @@
       # custom_aws_coreos_ami_id: "{{ prepare_stream_json.architectures[machineset_group.aws_instance_ami_architecture].images.aws.regions[aws_region].image }}"
       custom_aws_coreos_ami_id: "{{ current_ami_id }}"
 
-- name: Define {{ machineset_group.name }} machinesets
+- name: Define machinesets for {{ machineset_group.name }}
   kubernetes.core.k8s:
     state: present
     template: machineset-aws.yaml.j2
@@ -102,7 +102,7 @@
         (machineset_group_total_replicas | int + loop_index) / aws_worker_availability_zones|count
       ) | int }}
 
-- name: Define {{ machineset_group.name }} machineautoscalers
+- name: Define machineautoscalers for {{ machineset_group.name }}
   when:
   - machineset_group.autoscale | default(false) | bool
   - machineset_group.total_replicas_max | int > 0
@@ -130,4 +130,3 @@
          (machineset_group.total_replicas_max | default(100) | int + loop_index) /
          aws_worker_availability_zones | count
       ) | int }}
-

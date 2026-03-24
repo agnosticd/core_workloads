@@ -10,7 +10,7 @@
   environment:
     K8S_AUTH_HOST: "{{ ocp4_workload_showroom_openshift_api_url | default(omit) }}"
     K8S_AUTH_API_KEY: "{{ ocp4_workload_showroom_openshift_api_token | default(omit) }}"
-    K8S_AUTH_VERIFY_SSL: false
+    K8S_AUTH_VERIFY_SSL: "false"
   kubernetes.core.helm_template:
     chart_repo_url: "{{ ocp4_workload_showroom_chart_package_url }}"
     chart_ref: "{{ ocp4_workload_showroom_deployer_chart_name }}"
@@ -37,8 +37,8 @@
         top: "{{ 'terminal' if ocp4_workload_showroom_terminal_type == 'showroom' else ocp4_workload_showroom_terminal_type }}"
         bottom: "{{ 'terminal' if ocp4_workload_showroom_terminal_type == 'showroom' else ocp4_workload_showroom_terminal_type }}"
       second_terminal_tab:
-        setup: "{{ (true if ( ocp4_workload_showroom_second_terminal_tab_enable
-                         and not ocp4_workload_showroom_stacked_terminals_enable )
+        setup: "{{ (true if (ocp4_workload_showroom_second_terminal_tab_enable
+                         and not ocp4_workload_showroom_stacked_terminals_enable)
                          else false) | bool | string | lower }}"
         display_name: "{{ ocp4_workload_showroom_second_terminal_tab_display_name }}"
       terminal:

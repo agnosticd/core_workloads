@@ -7,7 +7,7 @@
   register: r_get_machinesets
 
 - name: Set _ocp4_workload_machinesets_base_worker_machinesets
-  set_fact:
+  ansible.builtin.set_fact:
     _ocp4_workload_machinesets_current_machinesets: >-
       {{ r_get_machinesets.resources }}
     _ocp4_workload_machinesets_current_machineset_names: >-
@@ -24,10 +24,11 @@
       [?!contains(keys(metadata.labels), '{{ ocp4_machineset_config_group_label }}')]
 
 - name: Print current MachineSets
-  debug: var=_ocp4_workload_machinesets_current_machineset_names
+  ansible.builtin.debug:
+    var: _ocp4_workload_machinesets_current_machineset_names
 
 - name: Set cluster facts
-  set_fact:
+  ansible.builtin.set_fact:
     cluster_label: >-
       {{ reference_machineset.metadata.labels['machine.openshift.io/cluster-api-cluster'] }}
     cloud_provider_api_version: >-
@@ -44,7 +45,7 @@
       {{ reference_machineset.spec.template.spec.providerSpec.value }}
 
 - name: Debug cluster facts
-  debug:
+  ansible.builtin.debug:
     msg: "{{ item.label }}: {{ item.value }}"
   loop:
   - label: "Cluster Label"

@@ -1,16 +1,19 @@
 ---
-name: Static Checks Push
+name: Static Checks
 
-on:
+"on":
   push:
     branches:
     - main
     tags:
     - v*
+  pull_request:
+    branches:
+    - main
 
 jobs:
   static-checks:
-    name: Run static tests using tox
+    name: Run yamllint and ansible-lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -18,12 +21,11 @@ jobs:
         - '3.12'
 
     steps:
-    - name: Get Repository Code
-      id: get_repo_code
-      uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -31,10 +33,3 @@ jobs:
       run: |
         pip install tox
         tox -c tests/static
-
-  all_checks_complete:
-    needs: [static-checks]
-    runs-on: ubuntu-latest
-    steps:
-    - run: echo "All checks passed!"
-...
