@@ -11,9 +11,9 @@ FEATURE_USER_INITIALIZE: true
 DISTRIBUTED_STORAGE_CONFIG:
   s4storage:
     - RadosGWStorage
-    - hostname: s4.{{ ocp4_workload_quay_operator_s4_namespace }}.svc.cluster.local
-      port: 7480
-      is_secure: false
+    - hostname: s4-api-{{ ocp4_workload_quay_operator_s4_namespace }}.{{ openshift_cluster_ingress_domain }}
+      port: 443
+      is_secure: true
       bucket_name: {{ ocp4_workload_quay_operator_s4_bucket_name }}
       storage_path: /datastorage/registry
       access_key: {{ ocp4_workload_quay_operator_s4_access_key }}
