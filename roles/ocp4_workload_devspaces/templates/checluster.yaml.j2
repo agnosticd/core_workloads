@@ -6,7 +6,18 @@ metadata:
   namespace: {{ ocp4_workload_devspaces_namespace }}
 spec:
   components: {}
+{% if ocp4_workload_devspaces_oauth_access_token_max_age_seconds | default('') | string | length > 0 or ocp4_workload_devspaces_oauth_access_token_inactivity_timeout | default('') | string | length > 0 %}
+  networking:
+    auth:
+{% if ocp4_workload_devspaces_oauth_access_token_max_age_seconds | default('') | string | length > 0 %}
+      oAuthAccessTokenMaxAgeSeconds: {{ ocp4_workload_devspaces_oauth_access_token_max_age_seconds | int }}
+{% endif %}
+{% if ocp4_workload_devspaces_oauth_access_token_inactivity_timeout | default('') | string | length > 0 %}
+      oAuthAccessTokenInactivityTimeoutSeconds: {{ ocp4_workload_devspaces_oauth_access_token_inactivity_timeout | int }}
+{% endif %}
+{% else %}
   networking: {}
+{% endif %}
   devEnvironments:
     startTimeoutSeconds: 1200
     secondsOfInactivityBeforeIdling: -1

@@ -44,3 +44,22 @@ ocp4_workload_devspaces_devworkspace_components:
     image: registry.redhat.io/devspaces/udi-base-rhel10:latest
     # image: registry.redhat.io/devspaces/udi-rhel8:latest
     # image: registry.redhat.io/devspaces/udi-rhel9:latest
+
+# -------------------------------------------------------------------
+# OAuth Client Token Configuration
+# -------------------------------------------------------------------
+# Configure token lifetimes for the DevSpaces OAuth client
+# to prevent double-authentication issues on first login.
+# If not set or empty, these settings will be omitted from the OAuth client.
+#
+# Default OpenShift cluster-wide OAuth token settings are typically:
+#   accessTokenMaxAgeSeconds: 86400 (24 hours)
+#   accessTokenInactivityTimeout: 300 (5 minutes)
+#
+# Leave empty/undefined to use cluster defaults:
+ocp4_workload_devspaces_oauth_access_token_max_age_seconds: ""
+ocp4_workload_devspaces_oauth_access_token_inactivity_timeout: ""
+
+# Example recommended values to prevent double-auth:
+# ocp4_workload_devspaces_oauth_access_token_max_age_seconds: 86400
+# ocp4_workload_devspaces_oauth_access_token_inactivity_timeout: 3600
