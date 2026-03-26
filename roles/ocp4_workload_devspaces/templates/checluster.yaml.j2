@@ -9,13 +9,11 @@ spec:
 {% if ocp4_workload_devspaces_oauth_access_token_max_age_seconds | default('') | string | length > 0 or ocp4_workload_devspaces_oauth_access_token_inactivity_timeout | default('') | string | length > 0 %}
   networking:
     auth:
-      oAuthClientName: devspaces
-      oAuthSecret: devspaces-oauth-config
 {% if ocp4_workload_devspaces_oauth_access_token_max_age_seconds | default('') | string | length > 0 %}
-      accessTokenMaxAgeSeconds: {{ ocp4_workload_devspaces_oauth_access_token_max_age_seconds | int }}
+      oAuthAccessTokenMaxAgeSeconds: {{ ocp4_workload_devspaces_oauth_access_token_max_age_seconds | int }}
 {% endif %}
 {% if ocp4_workload_devspaces_oauth_access_token_inactivity_timeout | default('') | string | length > 0 %}
-      accessTokenInactivityTimeout: {{ ocp4_workload_devspaces_oauth_access_token_inactivity_timeout | int }}
+      oAuthAccessTokenInactivityTimeoutSeconds: {{ ocp4_workload_devspaces_oauth_access_token_inactivity_timeout | int }}
 {% endif %}
 {% else %}
   networking: {}
