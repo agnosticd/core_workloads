@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_cnv_extra_disks
+  author: Red Hat, Judd Maltin (jmaltin@redhat.com)
+  description: |
+    Add extra disks to existing KubeVirt VMs post-install.
+    Creates DataVolumes and hot-plugs them to running VMs
+    on the management (sandbox) cluster.
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms: []
+  galaxy_tags:
+  - ocp
+  - openshift
+  - cnv
+  - kubevirt
+  - disks
+dependencies: []

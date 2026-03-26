@@ -1,0 +1,22 @@
+---
+- name: Discover VMs matching label selector
+  kubernetes.core.k8s_info:
+    host: "{{ ocp4_workload_cnv_extra_disks_sandbox_api_url }}"
+    api_key: "{{ ocp4_workload_cnv_extra_disks_sandbox_api_key }}"
+    validate_certs: false
+    api_version: kubevirt.io/v1
+    kind: VirtualMachine
+    namespace: "{{ ocp4_workload_cnv_extra_disks_namespace }}"
+    label_selectors: "{{ ocp4_workload_cnv_extra_disks_vm_label_selector }}"
+  register: r_vms
+
+- name: Remove extra disks from each VM
+  ansible.builtin.include_tasks: remove_disk_from_vm.yml
+  loop: "{{ r_vms.resources | default([]) | product(ocp4_workload_cnv_extra_disks_disks) | list }}"
+  loop_control:
+    loop_var: _vm_disk
+    label: "{{ _vm_disk.0.metadata.name }} - {{ _vm_disk.1.name }}"
+  vars:
+    _vm_name: "{{ _vm_disk.0.metadata.name }}"
+    _disk_spec: "{{ _vm_disk.1 }}"
+  when: r_vms.resources | length > 0

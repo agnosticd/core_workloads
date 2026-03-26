@@ -1,0 +1,26 @@
+---
+# Namespace on the management/sandbox cluster where VMs live
+ocp4_workload_cnv_extra_disks_namespace: "{{ sandbox_openshift_namespace }}"
+
+# Management/sandbox cluster connection
+ocp4_workload_cnv_extra_disks_sandbox_api_url: "{{ sandbox_openshift_api_url }}"
+ocp4_workload_cnv_extra_disks_sandbox_api_key: "{{ sandbox_openshift_api_key }}"
+
+# Label selector to find target VMs (default: control plane nodes)
+ocp4_workload_cnv_extra_disks_vm_label_selector:
+- role=control-plane
+
+# List of extra disk specs to add to each matched VM.
+# Each entry creates a DataVolume and hot-plugs it.
+# Use INSTANCENAME as a placeholder for the VM name.
+#
+# Example:
+#   ocp4_workload_cnv_extra_disks_disks:
+#   - name: "extradisk-INSTANCENAME"
+#     size: "20Gi"
+#     storage_class: hostpath-csi
+#     access_modes:
+#     - ReadWriteMany
+#     volume_mode: Block
+#     bus: scsi
+ocp4_workload_cnv_extra_disks_disks: []

@@ -1,0 +1,35 @@
+---
+- name: Discover VMs matching label selector
+  kubernetes.core.k8s_info:
+    host: "{{ ocp4_workload_cnv_extra_disks_sandbox_api_url }}"
+    api_key: "{{ ocp4_workload_cnv_extra_disks_sandbox_api_key }}"
+    validate_certs: false
+    api_version: kubevirt.io/v1
+    kind: VirtualMachine
+    namespace: "{{ ocp4_workload_cnv_extra_disks_namespace }}"
+    label_selectors: "{{ ocp4_workload_cnv_extra_disks_vm_label_selector }}"
+  register: r_vms
+
+- name: Fail if no VMs found
+  ansible.builtin.fail:
+    msg: >-
+      No VMs found in namespace {{ ocp4_workload_cnv_extra_disks_namespace }}
+      with label selector {{ ocp4_workload_cnv_extra_disks_vm_label_selector }}
+  when: r_vms.resources | length == 0
+
+- name: Report discovered VMs
+  ansible.builtin.debug:
+    msg: "Found VM: {{ item.metadata.name }}"
+  loop: "{{ r_vms.resources }}"
+  loop_control:
+    label: "{{ item.metadata.name }}"
+
+- name: Add extra disks to each VM
+  ansible.builtin.include_tasks: add_disk_to_vm.yml
+  loop: "{{ r_vms.resources | product(ocp4_workload_cnv_extra_disks_disks) | list }}"
+  loop_control:
+    loop_var: _vm_disk
+    label: "{{ _vm_disk.0.metadata.name }} - {{ _vm_disk.1.name }}"
+  vars:
+    _vm_name: "{{ _vm_disk.0.metadata.name }}"
+    _disk_spec: "{{ _vm_disk.1 }}"

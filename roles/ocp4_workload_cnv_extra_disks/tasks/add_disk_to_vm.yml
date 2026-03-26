@@ -1,0 +1,71 @@
+---
+- name: Set disk name for {{ _vm_name }}
+  ansible.builtin.set_fact:
+    _dv_name: "{{ _disk_spec.name | replace('INSTANCENAME', _vm_name) }}"
+
+- name: Create DataVolume {{ _dv_name }}
+  kubernetes.core.k8s:
+    host: "{{ ocp4_workload_cnv_extra_disks_sandbox_api_url }}"
+    api_key: "{{ ocp4_workload_cnv_extra_disks_sandbox_api_key }}"
+    validate_certs: false
+    state: present
+    definition:
+      apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        name: "{{ _dv_name }}"
+        namespace: "{{ ocp4_workload_cnv_extra_disks_namespace }}"
+      spec:
+        source:
+          blank: {}
+        pvc:
+          accessModes: "{{ _disk_spec.access_modes | default(['ReadWriteOnce']) }}"
+          volumeMode: "{{ _disk_spec.volume_mode | default('Filesystem') }}"
+          storageClassName: "{{ _disk_spec.storage_class | default(omit) }}"
+          resources:
+            requests:
+              storage: "{{ _disk_spec.size }}"
+
+- name: Wait for DataVolume {{ _dv_name }} to be ready
+  kubernetes.core.k8s_info:
+    host: "{{ ocp4_workload_cnv_extra_disks_sandbox_api_url }}"
+    api_key: "{{ ocp4_workload_cnv_extra_disks_sandbox_api_key }}"
+    validate_certs: false
+    api_version: cdi.kubevirt.io/v1beta1
+    kind: DataVolume
+    name: "{{ _dv_name }}"
+    namespace: "{{ ocp4_workload_cnv_extra_disks_namespace }}"
+  register: r_dv
+  until: r_dv.resources[0].status.phase | default('') == 'Succeeded'
+  retries: 30
+  delay: 10
+
+- name: Hot-plug disk {{ _dv_name }} to VM {{ _vm_name }}
+  ansible.builtin.uri:
+    url: >-
+      {{ ocp4_workload_cnv_extra_disks_sandbox_api_url
+      }}/apis/subresources.kubevirt.io/v1/namespaces/{{
+      ocp4_workload_cnv_extra_disks_namespace
+      }}/virtualmachineinstances/{{ _vm_name }}/addvolume
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ ocp4_workload_cnv_extra_disks_sandbox_api_key }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ _dv_name }}"
+      disk:
+        name: "{{ _dv_name }}"
+        disk:
+          bus: "{{ _disk_spec.bus | default('scsi') }}"
+      volumeSource:
+        dataVolume:
+          name: "{{ _dv_name }}"
+          hotpluggable: true
+    validate_certs: false
+    status_code: [200, 201]
+  register: r_hotplug
+
+- name: Report hot-plug result for {{ _dv_name }}
+  ansible.builtin.debug:
+    msg: "Hot-plugged {{ _dv_name }} to {{ _vm_name }} (status {{ r_hotplug.status }})"
