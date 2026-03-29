@@ -1,0 +1,433 @@
+---
+#####################################################################
+# Setup and Validation
+#####################################################################
+
+- name: Validate root password length
+  ansible.builtin.assert:
+    that:
+    - ocp4_workload_gitlab_root_password | length >= 8
+    quiet: true
+    fail_msg: >-
+      GitLab root password must be at least 8 characters long.
+      Current length: {{ ocp4_workload_gitlab_root_password | length }}
+
+- name: Generate Keycloak client secret if not provided
+  when:
+  - ocp4_workload_gitlab_auth_mode == 'keycloak'
+  - ocp4_workload_gitlab_keycloak_client_secret | length == 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_gitlab_keycloak_client_secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+
+- name: Use provided Keycloak client secret
+  when:
+  - ocp4_workload_gitlab_auth_mode == 'keycloak'
+  - ocp4_workload_gitlab_keycloak_client_secret | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_gitlab_keycloak_client_secret: "{{ ocp4_workload_gitlab_keycloak_client_secret }}"
+
+#####################################################################
+# Create Namespace
+#####################################################################
+
+- name: Create GitLab namespace
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'namespace.yaml.j2') }}"
+
+#####################################################################
+# Setup Keycloak Integration (if needed)
+#####################################################################
+
+- name: Setup Keycloak integration
+  when: ocp4_workload_gitlab_auth_mode == 'keycloak'
+  block:
+  - name: Get Keycloak route
+    kubernetes.core.k8s_info:
+      api_version: route.openshift.io/v1
+      kind: Route
+      name: keycloak
+      namespace: "{{ ocp4_workload_gitlab_keycloak_namespace }}"
+    register: r_keycloak_route
+    retries: 10
+    delay: 30
+    until:
+    - r_keycloak_route.resources is defined
+    - r_keycloak_route.resources | length > 0
+
+  - name: Set Keycloak URL
+    ansible.builtin.set_fact:
+      _ocp4_workload_gitlab_keycloak_url: "https://{{ r_keycloak_route.resources[0].spec.host }}"
+
+  - name: Create Keycloak client for GitLab
+    kubernetes.core.k8s:
+      state: present
+      definition: "{{ lookup('template', 'keycloak-client-secret.yaml.j2') }}"
+
+#####################################################################
+# Get GitLab Route Hostname
+#####################################################################
+
+- name: Set GitLab hostname
+  when: ocp4_workload_gitlab_hostname | default("") | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_gitlab_hostname: "{{ ocp4_workload_gitlab_hostname }}.{{ openshift_cluster_ingress_domain }}"
+
+- name: Generate GitLab hostname if not provided
+  when: ocp4_workload_gitlab_hostname | default("") | length == 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_gitlab_route: "gitlab-{{ ocp4_workload_gitlab_namespace }}.{{ openshift_cluster_ingress_domain }}"
+
+- name: Use provided GitLab hostname
+  when: ocp4_workload_gitlab_hostname | default("") | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_gitlab_route: "{{ _ocp4_workload_gitlab_hostname }}"
+
+#####################################################################
+# Deploy GitLab
+#####################################################################
+
+- name: Deploy GitLab instance
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'gitlab-deployment.yaml.j2') }}"
+
+#####################################################################
+# Wait for GitLab to be Ready
+#####################################################################
+
+- name: Wait for GitLab route to be available
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: gitlab
+    namespace: "{{ ocp4_workload_gitlab_namespace }}"
+  register: r_gitlab_route
+  until:
+  - r_gitlab_route.resources is defined
+  - r_gitlab_route.resources | length > 0
+  - r_gitlab_route.resources[0].spec.host is defined
+  retries: 30
+  delay: 10
+
+- name: Update GitLab route fact
+  ansible.builtin.set_fact:
+    _ocp4_workload_gitlab_route: "{{ r_gitlab_route.resources[0].spec.host }}"
+
+- name: Wait for GitLab pod to be ready
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ ocp4_workload_gitlab_namespace }}"
+    label_selectors:
+    - app=gitlab
+  register: r_gitlab_pod
+  until:
+  - r_gitlab_pod.resources is defined
+  - r_gitlab_pod.resources | length > 0
+  - r_gitlab_pod.resources[0].status.phase is defined
+  - r_gitlab_pod.resources[0].status.phase == 'Running'
+  - r_gitlab_pod.resources[0].status.containerStatuses is defined
+  - r_gitlab_pod.resources[0].status.containerStatuses | length > 0
+  - r_gitlab_pod.resources[0].status.containerStatuses[0].ready | bool
+  retries: "{{ ocp4_workload_gitlab_wait_retries }}"
+  delay: "{{ ocp4_workload_gitlab_wait_delay }}"
+
+- name: Wait for GitLab to respond to HTTP requests
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_gitlab_route }}/-/liveness"
+    method: GET
+    validate_certs: false
+    status_code: 200
+  register: r_gitlab_http
+  until: r_gitlab_http.status == 200
+  retries: 60
+  delay: 10
+
+#####################################################################
+# Authenticate with GitLab API
+#####################################################################
+
+- name: Authenticate with GitLab and create access token
+  block:
+  - name: Authenticate as root user via GitLab session API
+    ansible.builtin.uri:
+      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/session"
+      method: POST
+      body_format: json
+      body:
+        login: "root"
+        password: "{{ ocp4_workload_gitlab_root_password }}"
+      validate_certs: false
+      status_code: 201
+    register: r_gitlab_session
+    retries: 30
+    delay: 10
+    until: r_gitlab_session.status == 201
+
+  - name: Set root token from session
+    ansible.builtin.set_fact:
+      _gitlab_root_token: "{{ r_gitlab_session.json.private_token }}"
+
+  - name: Get root user ID
+    ansible.builtin.set_fact:
+      _gitlab_root_user_id: "{{ r_gitlab_session.json.id }}"
+
+  - name: Create long-lived personal access token for automation
+    ansible.builtin.uri:
+      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/users/{{ _gitlab_root_user_id }}/personal_access_tokens"
+      method: POST
+      headers:
+        PRIVATE-TOKEN: "{{ _gitlab_root_token }}"
+        Content-Type: "application/json"
+        SUDO: "{{ _gitlab_root_user_id }}"
+      body_format: json
+      body:
+        name: "Automation Token"
+        scopes:
+        - api
+        - read_api
+        - read_user
+        - read_repository
+        - write_repository
+        - sudo
+        expires_at: "{{ '%Y-%m-%d' | strftime(ansible_date_time.epoch | int + 31536000) }}"
+      validate_certs: false
+      status_code: [201, 400]
+    register: r_create_pat
+
+  - name: Use long-lived PAT for all subsequent operations
+    when: r_create_pat.status == 201
+    ansible.builtin.set_fact:
+      _gitlab_automation_token: "{{ r_create_pat.json.token }}"
+
+  - name: Use session token if PAT creation failed
+    when: r_create_pat.status != 201
+    ansible.builtin.set_fact:
+      _gitlab_automation_token: "{{ _gitlab_root_token }}"
+
+  - name: Create secret with automation token in GitLab namespace
+    kubernetes.core.k8s:
+      state: present
+      definition: "{{ lookup('template', 'gitlab-root-token-secret.yaml.j2') }}"
+    # This secret contains a long-lived Personal Access Token (365 days)
+    # with full API access (api, read_api, read_user, read_repository,
+    # write_repository, sudo scopes). It is used by:
+    # - Keycloak group sync cronjob
+    # - Any other automation that needs to interact with GitLab API
+    # Secret name: gitlab-root-token (in GitLab namespace)
+    # Key: token
+
+#####################################################################
+# Configure Application Settings
+#####################################################################
+
+- name: Configure GitLab application settings
+  when: ocp4_workload_gitlab_application_settings | length > 0
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/application/settings"
+    method: PUT
+    headers:
+      PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body: "{{ ocp4_workload_gitlab_application_settings }}"
+    validate_certs: false
+    status_code: 200
+  register: r_app_settings
+  retries: 5
+  delay: 10
+
+#####################################################################
+# Create Users (Native Auth)
+#####################################################################
+
+- name: Create users in GitLab (native auth)
+  when:
+  - ocp4_workload_gitlab_auth_mode == 'native'
+  - ocp4_workload_gitlab_user_count | int > 0
+  block:
+  - name: Create users via GitLab API
+    ansible.builtin.uri:
+      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/users"
+      method: POST
+      headers:
+        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+        Content-Type: "application/json"
+      body_format: json
+      body:
+        email: "{{ ocp4_workload_gitlab_user_base }}{{ item }}@{{ ocp4_workload_gitlab_user_email_domain }}"
+        username: "{{ ocp4_workload_gitlab_user_base }}{{ item }}"
+        name: "{{ ocp4_workload_gitlab_user_base | title }} {{ item }}"
+        password: "{{ ocp4_workload_gitlab_user_password }}"
+        skip_confirmation: true
+      validate_certs: false
+      status_code: [201, 409]
+    loop: "{{ range(1, ocp4_workload_gitlab_user_count | int + 1) | list }}"
+    register: r_create_users
+
+#####################################################################
+# Import Root Repositories
+#####################################################################
+
+- name: Import repositories for root user
+  when: ocp4_workload_gitlab_root_repositories | length > 0
+  block:
+  - name: Import root repositories via API
+    ansible.builtin.uri:
+      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/projects"
+      method: POST
+      headers:
+        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+        Content-Type: "application/json"
+      body_format: json
+      body:
+        name: "{{ item.name }}"
+        import_url: "{{ item.url }}"
+        visibility: "{{ item.visibility }}"
+      validate_certs: false
+      status_code: [201, 400]
+    loop: "{{ ocp4_workload_gitlab_root_repositories }}"
+    register: r_import_root_repos
+
+  - name: Wait for root repository imports to complete
+    ansible.builtin.uri:
+      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/projects/{{ item.json.id }}/import"
+      method: GET
+      headers:
+        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+      validate_certs: false
+      status_code: 200
+    loop: "{{ r_import_root_repos.results }}"
+    when:
+    - item.status == 201
+    - item.json is defined
+    - item.json.id is defined
+    register: r_import_status
+    until:
+    - r_import_status.json is defined
+    - r_import_status.json.import_status is defined
+    - r_import_status.json.import_status == 'finished'
+    retries: 60
+    delay: 10
+
+#####################################################################
+# Import User Repositories (Native Auth)
+#####################################################################
+
+- name: Import repositories for users
+  when:
+  - ocp4_workload_gitlab_auth_mode == 'native'
+  - ocp4_workload_gitlab_user_count | int > 0
+  - ocp4_workload_gitlab_user_repositories | length > 0
+  block:
+  - name: Get user IDs from GitLab
+    ansible.builtin.uri:
+      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/users?username={{ ocp4_workload_gitlab_user_base }}{{ item }}"
+      method: GET
+      headers:
+        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+      validate_certs: false
+      status_code: 200
+    loop: "{{ range(1, ocp4_workload_gitlab_user_count | int + 1) | list }}"
+    register: r_user_ids
+
+  - name: Import repositories for each user
+    ansible.builtin.uri:
+      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/projects"
+      method: POST
+      headers:
+        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+        Content-Type: "application/json"
+      body_format: json
+      body:
+        name: "{{ item.1.name }}"
+        import_url: "{{ item.1.url }}"
+        visibility: "{{ item.1.visibility }}"
+        namespace_id: "{{ item.0.json[0].id }}"
+      validate_certs: false
+      status_code: [201, 400]
+    loop: "{{ r_user_ids.results | product(ocp4_workload_gitlab_user_repositories) | list }}"
+    when:
+    - item.0.json is defined
+    - item.0.json | length > 0
+    register: r_import_user_repos
+
+#####################################################################
+# Setup Keycloak Group Sync
+#####################################################################
+
+- name: Setup Keycloak group sync cronjob
+  when: ocp4_workload_gitlab_auth_mode == 'keycloak'
+  block:
+  - name: Get Keycloak admin credentials
+    kubernetes.core.k8s_info:
+      api_version: v1
+      kind: Secret
+      name: keycloak-admin
+      namespace: "{{ ocp4_workload_gitlab_keycloak_namespace }}"
+    register: r_keycloak_admin
+    ignore_errors: true
+
+  - name: Create Keycloak admin credentials secret in GitLab namespace
+    when:
+    - r_keycloak_admin.resources is defined
+    - r_keycloak_admin.resources | length > 0
+    kubernetes.core.k8s:
+      state: present
+      definition: "{{ lookup('template', 'keycloak-admin-credentials-secret.yaml.j2') }}"
+
+  - name: Deploy Keycloak sync cronjob
+    kubernetes.core.k8s:
+      state: present
+      definition: "{{ lookup('template', 'keycloak-sync-cronjob.yaml.j2') }}"
+
+#####################################################################
+# Report Information
+#####################################################################
+
+- name: Report GitLab access information
+  agnosticd.core.agnosticd_user_info:
+    msg: "GitLab is available at https://{{ _ocp4_workload_gitlab_route }}"
+    data:
+      gitlab_url: "https://{{ _ocp4_workload_gitlab_route }}"
+      gitlab_root_username: "root"
+      gitlab_root_password: "{{ ocp4_workload_gitlab_root_password }}"
+
+- name: Report user credentials (native auth)
+  when:
+  - ocp4_workload_gitlab_auth_mode == 'native'
+  - ocp4_workload_gitlab_user_count | int > 0
+  block:
+  - name: Report multiple users
+    when: ocp4_workload_gitlab_user_count | int > 1
+    agnosticd.core.agnosticd_user_info:
+      msg: >-
+        GitLab users {{ ocp4_workload_gitlab_user_base }}1 through
+        {{ ocp4_workload_gitlab_user_base }}{{ ocp4_workload_gitlab_user_count }}
+        have been created with password: {{ ocp4_workload_gitlab_user_password }}
+
+  - name: Report single user
+    when: ocp4_workload_gitlab_user_count | int == 1
+    agnosticd.core.agnosticd_user_info:
+      msg: >-
+        GitLab user {{ ocp4_workload_gitlab_user_base }}1 has been created
+        with password: {{ ocp4_workload_gitlab_user_password }}
+      data:
+        gitlab_username: "{{ ocp4_workload_gitlab_user_base }}1"
+        gitlab_password: "{{ ocp4_workload_gitlab_user_password }}"
+
+  - name: Save user details per created user
+    when: ocp4_workload_gitlab_user_count | int > 1
+    agnosticd.core.agnosticd_user_info:
+      user: "{{ ocp4_workload_gitlab_user_base }}{{ item }}"
+      data:
+        gitlab_username: "{{ ocp4_workload_gitlab_user_base }}{{ item }}"
+        gitlab_password: "{{ ocp4_workload_gitlab_user_password }}"
+        gitlab_url: "https://{{ _ocp4_workload_gitlab_route }}"
+    loop: "{{ range(1, ocp4_workload_gitlab_user_count | int + 1) | list }}"
+
+- name: Report Keycloak integration
+  when: ocp4_workload_gitlab_auth_mode == 'keycloak'
+  agnosticd.core.agnosticd_user_info:
+    msg: "GitLab is integrated with Keycloak. Users can log in using their Keycloak credentials."

@@ -1,0 +1,64 @@
+---
+#####################################################################
+# Remove Keycloak Group Sync CronJob
+#####################################################################
+
+- name: Remove Keycloak sync cronjob
+  when: ocp4_workload_gitlab_auth_mode == 'keycloak'
+  kubernetes.core.k8s:
+    state: absent
+    api_version: batch/v1
+    kind: CronJob
+    name: gitlab-keycloak-sync
+    namespace: "{{ ocp4_workload_gitlab_namespace }}"
+
+- name: Remove Keycloak sync script ConfigMap
+  when: ocp4_workload_gitlab_auth_mode == 'keycloak'
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: ConfigMap
+    name: gitlab-keycloak-sync-script
+    namespace: "{{ ocp4_workload_gitlab_namespace }}"
+
+#####################################################################
+# Remove GitLab Namespace
+#####################################################################
+
+- name: Remove GitLab namespace
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: Namespace
+    name: "{{ ocp4_workload_gitlab_namespace }}"
+  register: r_k8s
+  until: r_k8s is successful
+  retries: 30
+  delay: 10
+
+#####################################################################
+# Clean up SCC bindings
+#####################################################################
+
+- name: Remove SCC role binding
+  kubernetes.core.k8s:
+    state: absent
+    api_version: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    name: gitlab-ce-anyuid
+    namespace: "{{ ocp4_workload_gitlab_namespace }}"
+  ignore_errors: true
+
+#####################################################################
+# Clean up Keycloak client
+#####################################################################
+
+- name: Remove Keycloak client secret
+  when: ocp4_workload_gitlab_auth_mode == 'keycloak'
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: Secret
+    name: gitlab-keycloak-client
+    namespace: "{{ ocp4_workload_gitlab_keycloak_namespace }}"
+  ignore_errors: true

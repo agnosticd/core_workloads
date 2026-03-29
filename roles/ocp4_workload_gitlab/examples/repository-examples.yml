@@ -1,0 +1,273 @@
+---
+# Repository Import Examples for GitLab Workload
+# Quick reference for configuring root and user repositories
+
+# ============================================================================
+# ROOT REPOSITORIES
+# Repositories imported for the root user only
+# ============================================================================
+
+# Minimal root repository example
+ocp4_workload_gitlab_root_repositories:
+- name: "my-repo"                           # Name in GitLab
+  url: "https://github.com/user/repo.git"   # Source Git URL
+  visibility: "public"                      # public, internal, or private
+
+# ============================================================================
+# Multiple root repositories with different visibility levels
+ocp4_workload_gitlab_root_repositories:
+
+# PUBLIC repository - anyone can see it
+- name: "public-docs"
+  url: "https://github.com/company/documentation.git"
+  visibility: "public"                      # Visible to everyone (even anonymous)
+
+# INTERNAL repository - authenticated users can see it
+- name: "internal-tools"
+  url: "https://github.com/company/internal-tools.git"
+  visibility: "internal"                    # Visible to any logged-in user
+
+# PRIVATE repository - only root can see it
+- name: "secrets-config"
+  url: "https://github.com/company/secrets.git"
+  visibility: "private"                     # Only root user can access
+
+# ============================================================================
+# Real-world root repository examples
+ocp4_workload_gitlab_root_repositories:
+
+# Infrastructure as Code
+- name: "terraform-modules"
+  url: "https://github.com/company/terraform-modules.git"
+  visibility: "internal"
+
+# Ansible playbooks
+- name: "ansible-playbooks"
+  url: "https://github.com/ansible/playbooks.git"
+  visibility: "private"
+
+# Shared libraries
+- name: "common-libraries"
+  url: "https://github.com/company/libraries.git"
+  visibility: "internal"
+
+# Container images source
+- name: "container-images"
+  url: "https://github.com/containers/buildah.git"
+  visibility: "public"
+
+# ============================================================================
+# USER REPOSITORIES
+# Repositories imported for EACH user
+# Each user gets their own copy of these repositories
+# ============================================================================
+
+# Minimal user repository example
+ocp4_workload_gitlab_user_repositories:
+- name: "lab-exercises"                     # Name in GitLab
+  url: "https://github.com/workshop/lab.git" # Source Git URL
+  visibility: "private"                     # public, internal, or private
+  access_level: "developer"                 # guest, reporter, developer, maintainer, owner
+
+# ============================================================================
+# User repositories with different access levels
+ocp4_workload_gitlab_user_repositories:
+
+# GUEST access (10) - can only view
+- name: "readonly-reference"
+  url: "https://github.com/company/reference.git"
+  visibility: "public"
+  access_level: "guest"                     # Can view issues and repository
+
+# REPORTER access (20) - can view and create issues
+- name: "bug-tracking"
+  url: "https://github.com/company/bug-tracker.git"
+  visibility: "internal"
+  access_level: "reporter"                  # Can create issues, cannot push code
+
+# DEVELOPER access (30) - can push to non-protected branches
+- name: "feature-development"
+  url: "https://github.com/company/app.git"
+  visibility: "private"
+  access_level: "developer"                 # Can push code to non-protected branches
+
+# MAINTAINER access (40) - can manage repository
+- name: "student-project"
+  url: "https://github.com/workshop/project.git"
+  visibility: "private"
+  access_level: "maintainer"                # Can manage branches, protect branches
+
+# OWNER access (50) - full admin rights
+- name: "personal-workspace"
+  url: "https://github.com/template/workspace.git"
+  visibility: "private"
+  access_level: "owner"                     # Full repository admin access
+
+# ============================================================================
+# Workshop scenario: Multiple repos per user
+ocp4_workload_gitlab_user_repositories:
+
+# Main lab - students can push their work
+- name: "lab-01-basics"
+  url: "https://github.com/workshop/lab01.git"
+  visibility: "private"
+  access_level: "developer"
+
+# Advanced lab - students have full control
+- name: "lab-02-advanced"
+  url: "https://github.com/workshop/lab02.git"
+  visibility: "private"
+  access_level: "maintainer"
+
+# Final project - complete ownership
+- name: "final-project"
+  url: "https://github.com/workshop/final-project-template.git"
+  visibility: "private"
+  access_level: "owner"
+
+# Reference documentation - read only
+- name: "references"
+  url: "https://github.com/workshop/references.git"
+  visibility: "public"
+  access_level: "reporter"
+
+# ============================================================================
+# DevOps Pipeline Workshop
+ocp4_workload_gitlab_user_repositories:
+
+# Application source code
+- name: "nodejs-app"
+  url: "https://github.com/openshift/nodejs-ex.git"
+  visibility: "private"
+  access_level: "developer"
+
+# Pipeline definitions
+- name: "ci-cd-pipelines"
+  url: "https://github.com/workshop/tekton-pipelines.git"
+  visibility: "private"
+  access_level: "maintainer"
+
+# Kubernetes manifests
+- name: "k8s-manifests"
+  url: "https://github.com/workshop/manifests.git"
+  visibility: "private"
+  access_level: "developer"
+
+# Helm charts
+- name: "helm-charts"
+  url: "https://github.com/workshop/charts.git"
+  visibility: "internal"
+  access_level: "developer"
+
+# ============================================================================
+# Security Workshop
+ocp4_workload_gitlab_user_repositories:
+
+# Intentionally vulnerable app for scanning
+- name: "vulnerable-java-app"
+  url: "https://github.com/security/vulnerable-app.git"
+  visibility: "private"
+  access_level: "developer"
+
+# Security scanning configs
+- name: "security-configs"
+  url: "https://github.com/security/scan-configs.git"
+  visibility: "private"
+  access_level: "maintainer"
+
+# Compliance policies (read-only)
+- name: "compliance-policies"
+  url: "https://github.com/company/compliance.git"
+  visibility: "internal"
+  access_level: "reporter"
+
+# ============================================================================
+# GitOps Workshop
+ocp4_workload_gitlab_user_repositories:
+
+# Application repo
+- name: "app-source"
+  url: "https://github.com/gitops/sample-app.git"
+  visibility: "private"
+  access_level: "developer"
+
+# GitOps config repo
+- name: "app-config"
+  url: "https://github.com/gitops/config.git"
+  visibility: "private"
+  access_level: "maintainer"
+
+# ArgoCD applications
+- name: "argocd-apps"
+  url: "https://github.com/gitops/argocd-apps.git"
+  visibility: "private"
+  access_level: "maintainer"
+
+# ============================================================================
+# COMBINED: Root + User Repositories
+# Complete workshop configuration example
+# ============================================================================
+
+# Root repositories (instructor/admin only)
+ocp4_workload_gitlab_root_repositories:
+- name: "solutions"                         # Private solutions
+  url: "https://github.com/instructor/solutions.git"
+  visibility: "private"
+
+- name: "workshop-guide"                    # Public guide
+  url: "https://github.com/workshop/guide.git"
+  visibility: "public"
+
+- name: "grading-scripts"                   # Internal grading
+  url: "https://github.com/workshop/grader.git"
+  visibility: "internal"
+
+# User repositories (each student gets their own copy)
+ocp4_workload_gitlab_user_repositories:
+- name: "my-lab"                            # Student workspace
+  url: "https://github.com/workshop/lab.git"
+  visibility: "private"
+  access_level: "developer"
+
+- name: "practice-app"                      # Practice application
+  url: "https://github.com/workshop/app.git"
+  visibility: "private"
+  access_level: "maintainer"
+
+- name: "shared-docs"                       # Shared documentation
+  url: "https://github.com/workshop/docs.git"
+  visibility: "public"
+  access_level: "reporter"
+
+# ============================================================================
+# TIPS AND BEST PRACTICES
+# ============================================================================
+
+# 1. Visibility Levels:
+#    - public: Use for open documentation, public examples
+#    - internal: Use for shared team resources, common libraries
+#    - private: Use for sensitive code, solutions, personal work
+
+# 2. Access Levels (for user repos):
+#    - guest (10): Read-only, good for reference materials
+#    - reporter (20): Can comment/create issues, good for documentation
+#    - developer (30): Can push code, good for lab exercises
+#    - maintainer (40): Can manage repo, good for project ownership
+#    - owner (50): Full control, good for personal workspaces
+
+# 3. Repository Import:
+#    - Imports happen during role execution
+#    - Large repos may take time to import
+#    - Failed imports don't fail the entire deployment
+#    - GitLab will queue and process imports asynchronously
+
+# 4. Performance Considerations:
+#    - Each user repo is imported separately (user1/repo, user2/repo, ...)
+#    - 10 users × 3 repos = 30 repository imports
+#    - Consider workshop timing and network bandwidth
+#    - Monitor GitLab import queue during deployment
+
+# 5. Empty Arrays:
+#    - If arrays are empty [], no imports happen
+#    - This is the default behavior
+#    - Only populate arrays when you actually need imports

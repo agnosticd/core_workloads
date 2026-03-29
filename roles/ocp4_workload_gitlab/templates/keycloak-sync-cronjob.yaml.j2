@@ -1,0 +1,194 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-keycloak-sync-script
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+data:
+  sync-groups.sh: |
+    #!/bin/bash
+    set -e
+
+    GITLAB_URL="http://gitlab:8080"
+    GITLAB_TOKEN="${GITLAB_ROOT_TOKEN}"
+    KEYCLOAK_URL="{{ _ocp4_workload_gitlab_keycloak_url }}"
+    KEYCLOAK_REALM="{{ ocp4_workload_gitlab_keycloak_realm }}"
+    KEYCLOAK_CLIENT_ID="${KEYCLOAK_CLIENT_ID}"
+    KEYCLOAK_CLIENT_SECRET="${KEYCLOAK_CLIENT_SECRET}"
+
+    echo "Starting Keycloak to GitLab group sync..."
+
+    # Get Keycloak admin token
+    KEYCLOAK_TOKEN=$(curl -s -X POST \
+      "${KEYCLOAK_URL}/realms/master/protocol/openid-connect/token" \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      -d "username=${KEYCLOAK_ADMIN_USER}" \
+      -d "password=${KEYCLOAK_ADMIN_PASSWORD}" \
+      -d "grant_type=password" \
+      -d "client_id=admin-cli" | jq -r '.access_token')
+
+    if [ -z "$KEYCLOAK_TOKEN" ] || [ "$KEYCLOAK_TOKEN" == "null" ]; then
+      echo "Failed to get Keycloak token"
+      exit 1
+    fi
+
+    # Get all groups from Keycloak
+    KEYCLOAK_GROUPS=$(curl -s -X GET \
+      "${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/groups" \
+      -H "Authorization: Bearer ${KEYCLOAK_TOKEN}" \
+      -H "Content-Type: application/json")
+
+    echo "Found groups in Keycloak: $(echo $KEYCLOAK_GROUPS | jq -r '.[].name' | tr '\n' ',' | sed 's/,$//')"
+
+    # Process each configured GitLab group
+    {% for group in ocp4_workload_gitlab_keycloak_groups %}
+    GROUP_NAME="{{ group.name }}"
+    ACCESS_LEVEL="{{ group.access_level }}"
+
+    # Map access level to GitLab access level value
+    case "$ACCESS_LEVEL" in
+      guest) GITLAB_ACCESS_LEVEL=10 ;;
+      reporter) GITLAB_ACCESS_LEVEL=20 ;;
+      developer) GITLAB_ACCESS_LEVEL=30 ;;
+      maintainer) GITLAB_ACCESS_LEVEL=40 ;;
+      owner) GITLAB_ACCESS_LEVEL=50 ;;
+      *) GITLAB_ACCESS_LEVEL=30 ;;
+    esac
+
+    echo "Processing group: $GROUP_NAME with access level: $ACCESS_LEVEL ($GITLAB_ACCESS_LEVEL)"
+
+    # Create group in Keycloak if it doesn't exist
+    GROUP_ID=$(echo $KEYCLOAK_GROUPS | jq -r ".[] | select(.name==\"$GROUP_NAME\") | .id")
+
+    if [ -z "$GROUP_ID" ] || [ "$GROUP_ID" == "null" ]; then
+      echo "Creating group $GROUP_NAME in Keycloak..."
+      curl -s -X POST \
+        "${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/groups" \
+        -H "Authorization: Bearer ${KEYCLOAK_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "{\"name\": \"$GROUP_NAME\"}"
+
+      # Refresh groups list
+      KEYCLOAK_GROUPS=$(curl -s -X GET \
+        "${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/groups" \
+        -H "Authorization: Bearer ${KEYCLOAK_TOKEN}" \
+        -H "Content-Type: application/json")
+
+      GROUP_ID=$(echo $KEYCLOAK_GROUPS | jq -r ".[] | select(.name==\"$GROUP_NAME\") | .id")
+    fi
+
+    # Create group in GitLab if it doesn't exist
+    GITLAB_GROUP_ID=$(curl -s -X GET \
+      "${GITLAB_URL}/api/v4/groups/${GROUP_NAME}" \
+      -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" | jq -r '.id')
+
+    if [ -z "$GITLAB_GROUP_ID" ] || [ "$GITLAB_GROUP_ID" == "null" ]; then
+      echo "Creating group $GROUP_NAME in GitLab..."
+      GITLAB_GROUP_ID=$(curl -s -X POST \
+        "${GITLAB_URL}/api/v4/groups" \
+        -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "{\"path\": \"$GROUP_NAME\", \"name\": \"$GROUP_NAME\", \"visibility\": \"private\"}" | jq -r '.id')
+    fi
+
+    echo "GitLab group ID for $GROUP_NAME: $GITLAB_GROUP_ID"
+
+    # Get members of the Keycloak group
+    KEYCLOAK_MEMBERS=$(curl -s -X GET \
+      "${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/groups/${GROUP_ID}/members" \
+      -H "Authorization: Bearer ${KEYCLOAK_TOKEN}" \
+      -H "Content-Type: application/json")
+
+    echo "Members in Keycloak group $GROUP_NAME: $(echo $KEYCLOAK_MEMBERS | jq -r '.[].username' | tr '\n' ',' | sed 's/,$//')"
+
+    # Sync members to GitLab group
+    for member in $(echo $KEYCLOAK_MEMBERS | jq -r '.[].username'); do
+      echo "Processing user: $member"
+
+      # Get user ID in GitLab
+      GITLAB_USER_ID=$(curl -s -X GET \
+        "${GITLAB_URL}/api/v4/users?username=${member}" \
+        -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" | jq -r '.[0].id')
+
+      if [ -z "$GITLAB_USER_ID" ] || [ "$GITLAB_USER_ID" == "null" ]; then
+        echo "User $member not found in GitLab, skipping..."
+        continue
+      fi
+
+      # Check if user is already a member
+      EXISTING_MEMBER=$(curl -s -X GET \
+        "${GITLAB_URL}/api/v4/groups/${GITLAB_GROUP_ID}/members/${GITLAB_USER_ID}" \
+        -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}")
+
+      if echo "$EXISTING_MEMBER" | jq -e '.id' > /dev/null 2>&1; then
+        echo "User $member already in group, updating access level..."
+        curl -s -X PUT \
+          "${GITLAB_URL}/api/v4/groups/${GITLAB_GROUP_ID}/members/${GITLAB_USER_ID}" \
+          -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d "{\"access_level\": ${GITLAB_ACCESS_LEVEL}}"
+      else
+        echo "Adding user $member to GitLab group..."
+        curl -s -X POST \
+          "${GITLAB_URL}/api/v4/groups/${GITLAB_GROUP_ID}/members" \
+          -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d "{\"user_id\": ${GITLAB_USER_ID}, \"access_level\": ${GITLAB_ACCESS_LEVEL}}"
+      fi
+    done
+
+    {% endfor %}
+
+    echo "Sync completed successfully!"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gitlab-keycloak-sync
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+spec:
+  schedule: "{{ ocp4_workload_gitlab_keycloak_sync_schedule }}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: sync
+            image: quay.io/openshift/origin-cli:latest
+            command:
+            - /bin/bash
+            - /scripts/sync-groups.sh
+            env:
+            - name: GITLAB_ROOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: gitlab-root-token
+                  key: token
+            - name: KEYCLOAK_CLIENT_ID
+              value: "{{ ocp4_workload_gitlab_keycloak_client_id }}"
+            - name: KEYCLOAK_CLIENT_SECRET
+              value: "{{ _ocp4_workload_gitlab_keycloak_client_secret }}"
+            - name: KEYCLOAK_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-credentials
+                  key: username
+                  optional: true
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-credentials
+                  key: password
+                  optional: true
+            volumeMounts:
+            - name: script
+              mountPath: /scripts
+          volumes:
+          - name: script
+            configMap:
+              name: gitlab-keycloak-sync-script
+              defaultMode: 0755
