@@ -14,6 +14,7 @@ spec:
     loginWithEmailAllowed: true
     duplicateEmailsAllowed: false
     clients:
+      # OpenShift OAuth client (always created)
       - clientId: {{ ocp4_workload_authentication_keycloak_openshift_client_id }}
         enabled: true
         clientAuthenticatorType: client-secret
@@ -26,6 +27,32 @@ spec:
         serviceAccountsEnabled: true
         frontchannelLogout: false
         protocol: openid-connect
+{% if ocp4_workload_authentication_keycloak_clients | length > 0 %}
+      # Additional clients
+{% for client in ocp4_workload_authentication_keycloak_clients %}
+      - clientId: {{ client.clientId }}
+        enabled: true
+        clientAuthenticatorType: client-secret
+        secret: {{ client.secret }}
+        publicClient: {{ client.publicClient | default(false) }}
+        redirectUris:
+{% if client.redirectUris is defined %}
+{% for uri in client.redirectUris %}
+        - {{ uri }}
+{% endfor %}
+{% else %}
+        - "*"
+{% endif %}
+        standardFlowEnabled: {{ client.standardFlowEnabled | default(true) }}
+        directAccessGrantsEnabled: {{ client.directAccessGrantsEnabled | default(true) }}
+        serviceAccountsEnabled: {{ client.serviceAccountsEnabled | default(true) }}
+        frontchannelLogout: false
+        protocol: openid-connect
+{% if client.description is defined %}
+        description: {{ client.description }}
+{% endif %}
+{% endfor %}
+{% endif %}
     roles:
       realm:
         - name: user
@@ -45,7 +72,12 @@ spec:
           - type: password
             value: {{ _ocp4_workload_authentication_cluster_account_passwords[_account.name] | to_json }}
             temporary: false
-        realmRoles: {{ _account.keycloak_realm_roles | default(['user']) | to_json }}
+        realmRoles: {{ _account.keycloak_realm_roles | default(['admin']) | to_json }}
+        groups:
+          - /admins
+{% for group in ocp4_workload_authentication_keycloak_admin_groups %}
+          - /{{ group.name }}
+{% endfor %}
 {% endfor %}
 {% for _account in _ocp4_workload_authentication_user_accounts %}
       - username: {{ _account.name }}
@@ -60,8 +92,64 @@ spec:
             temporary: false
         realmRoles:
           - user
+        groups:
+          - /users
+{% for group in ocp4_workload_authentication_keycloak_user_groups %}
+          - /{{ group.name }}
+{% endfor %}
 {% endfor %}
 {% else %}
     users: []
 {% endif %}
-    groups: {{ ocp4_workload_authentication_keycloak_default_groups | to_json }}
+    groups:
+      # Default groups (always created)
+      - name: admins
+      - name: users
+{% if ocp4_workload_authentication_keycloak_admin_groups | length > 0 %}
+      # Admin groups
+{% for group in ocp4_workload_authentication_keycloak_admin_groups %}
+      - name: {{ group.name }}
+{% if group.path is defined %}
+        path: {{ group.path }}
+{% endif %}
+{% if group.realmRoles is defined %}
+        realmRoles:
+{% for role in group.realmRoles %}
+        - {{ role }}
+{% endfor %}
+{% endif %}
+{% if group.attributes is defined %}
+        attributes:
+{% for key, value in group.attributes.items() %}
+          {{ key }}:
+{% for v in value %}
+          - {{ v }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if ocp4_workload_authentication_keycloak_user_groups | length > 0 %}
+      # User groups
+{% for group in ocp4_workload_authentication_keycloak_user_groups %}
+      - name: {{ group.name }}
+{% if group.path is defined %}
+        path: {{ group.path }}
+{% endif %}
+{% if group.realmRoles is defined %}
+        realmRoles:
+{% for role in group.realmRoles %}
+        - {{ role }}
+{% endfor %}
+{% endif %}
+{% if group.attributes is defined %}
+        attributes:
+{% for key, value in group.attributes.items() %}
+          {{ key }}:
+{% for v in value %}
+          - {{ v }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}

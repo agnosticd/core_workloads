@@ -116,12 +116,95 @@ ocp4_workload_authentication_keycloak_catalogsource_tag: v4.20_2026_02_11
 
 ocp4_workload_authentication_keycloak_default_realm: sso
 
-ocp4_workload_authentication_keycloak_default_groups:
-- name: admins
-- name: users
-
 ocp4_workload_authentication_keycloak_openshift_client_secret: ""
 
 ocp4_workload_authentication_keycloak_openshift_client_id: idp-4-ocp
+
+# --------------------------------
+# Keycloak Additional Clients
+# --------------------------------
+
+# List of additional OAuth clients to create in the realm
+# The OpenShift client is always created automatically
+# Each client entry should have:
+#   - clientId: Client ID (required)
+#   - secret: Client secret (required)
+#   - redirectUris: List of redirect URIs (optional, defaults to ["*"])
+#   - description: Client description (optional)
+#   - publicClient: true/false (optional, defaults to false)
+#   - standardFlowEnabled: true/false (optional, defaults to true)
+#   - directAccessGrantsEnabled: true/false (optional, defaults to true)
+#   - serviceAccountsEnabled: true/false (optional, defaults to true)
+
+ocp4_workload_authentication_keycloak_clients: []
+
+# Example: GitLab OAuth Client
+# ocp4_workload_authentication_keycloak_clients:
+# - clientId: gitlab
+#   secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+#   redirectUris:
+#   - "https://gitlab-gitlab.{{ openshift_cluster_ingress_domain }}/*"
+#   description: "GitLab OAuth Client"
+
+# Example: Multiple Clients
+# ocp4_workload_authentication_keycloak_clients:
+# - clientId: gitlab
+#   secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+#   redirectUris:
+#   - "https://gitlab-gitlab.{{ openshift_cluster_ingress_domain }}/*"
+#   description: "GitLab OAuth Client"
+# - clientId: grafana
+#   secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+#   redirectUris:
+#   - "https://grafana.{{ openshift_cluster_ingress_domain }}/login/generic_oauth"
+#   description: "Grafana OAuth Client"
+
+# --------------------------------
+# Keycloak Groups
+# --------------------------------
+
+# Groups for admin/cluster accounts
+# Admin and cluster accounts will be assigned to these groups
+# Default "admins" group is always created and assigned
+# Each group entry should have:
+#   - name: Group name (required)
+#   - path: Group path (optional, defaults to /name)
+#   - realmRoles: List of realm roles to assign (optional)
+#   - attributes: Dict of group attributes (optional)
+
+ocp4_workload_authentication_keycloak_admin_groups: []
+
+# Example: Admin Groups
+# ocp4_workload_authentication_keycloak_admin_groups:
+# - name: cluster-admins
+#   realmRoles:
+#   - admin
+# - name: operations
+#   realmRoles:
+#   - admin
+#   attributes:
+#     team: ["platform"]
+
+# Groups for regular user accounts
+# All regular user accounts will be assigned to these groups
+# Default "users" group is always created and assigned
+# Each group entry should have:
+#   - name: Group name (required)
+#   - path: Group path (optional, defaults to /name)
+#   - realmRoles: List of realm roles to assign (optional)
+#   - attributes: Dict of group attributes (optional)
+
+ocp4_workload_authentication_keycloak_user_groups: []
+
+# Example: User Groups
+# ocp4_workload_authentication_keycloak_user_groups:
+# - name: developers
+#   realmRoles:
+#   - user
+# - name: team-leads
+#   realmRoles:
+#   - user
+#   attributes:
+#     level: ["senior"]
 
 ocp4_workload_authentication_keycloak_enable_user_info_messages: true

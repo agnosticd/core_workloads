@@ -153,3 +153,66 @@ openshift_cluster_account_passwords:
 openshift_cluster_admin_password: 5AJcm2OfMf
 openshift_cluster_admin_username: admin
 ----
+
+== Keycloak Additional Features
+
+When using Keycloak as the authentication provider, additional features are available:
+
+=== Additional OAuth Clients
+
+You can configure additional OAuth clients for applications like GitLab, Grafana, etc.
+
+.example vars
+----
+ocp4_workload_authentication_provider: keycloak
+ocp4_workload_authentication_keycloak_clients:
+- clientId: gitlab
+  secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+  redirectUris:
+  - "https://gitlab-gitlab.apps.example.com/*"
+  description: "GitLab OAuth Client"
+- clientId: grafana
+  secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+  redirectUris:
+  - "https://grafana.apps.example.com/login/generic_oauth"
+  description: "Grafana OAuth Client"
+----
+
+=== Custom Groups
+
+You can create custom groups for admin/cluster accounts and regular user accounts.
+Users are automatically assigned to groups based on their account type.
+
+.example vars
+----
+ocp4_workload_authentication_provider: keycloak
+num_users: 10
+
+# Admin groups - assigned to admin and cluster accounts
+ocp4_workload_authentication_keycloak_admin_groups:
+- name: cluster-admins
+  realmRoles:
+  - admin
+- name: operations
+  realmRoles:
+  - admin
+  attributes:
+    team: ["platform"]
+
+# User groups - assigned to regular user accounts
+ocp4_workload_authentication_keycloak_user_groups:
+- name: developers
+  realmRoles:
+  - user
+- name: team-leads
+  realmRoles:
+  - user
+  attributes:
+    level: ["senior"]
+----
+
+In this example:
+
+* Admin and cluster accounts will be assigned to: `/admins`, `/cluster-admins`, `/operations`
+* Regular user accounts will be assigned to: `/users`, `/developers`, `/team-leads`
+* Applications can use group membership and attributes for access control
