@@ -6,4 +6,4 @@ metadata:
   namespace: {{ ocp4_workload_gitlab_namespace }}
 type: Opaque
 stringData:
-  token: "{{ r_runner_token.json.token }}"
+  token: "{{ _gitlab_runner_registration_token }}"
