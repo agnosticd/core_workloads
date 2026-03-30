@@ -75,9 +75,6 @@ spec:
           - user
         groups:
           - /users
-{% for group in ocp4_workload_authentication_keycloak_user_groups %}
-          - /{{ group.name }}
-{% endfor %}
 {% endfor %}
 {% if ocp4_workload_authentication_keycloak_admin_create %}
       - username: {{ ocp4_workload_authentication_keycloak_admin_username }}
@@ -94,9 +91,6 @@ spec:
           - admin
         groups:
           - /admins
-{% for group in ocp4_workload_authentication_keycloak_admin_groups %}
-          - /{{ group.name }}
-{% endfor %}
 {% endif %}
 {% else %}
     users: []
@@ -105,52 +99,3 @@ spec:
       # Default groups (always created)
       - name: admins
       - name: users
-{% if ocp4_workload_authentication_keycloak_admin_groups | length > 0 %}
-      # Admin groups
-{% for group in ocp4_workload_authentication_keycloak_admin_groups %}
-      - name: {{ group.name }}
-{% if group.path is defined %}
-        path: {{ group.path }}
-{% endif %}
-{% if group.realmRoles is defined %}
-        realmRoles:
-{% for role in group.realmRoles %}
-        - {{ role }}
-{% endfor %}
-{% endif %}
-{% if group.attributes is defined %}
-        attributes:
-{% for key, value in group.attributes.items() %}
-          {{ key }}:
-{% for v in value %}
-          - {{ v }}
-{% endfor %}
-{% endfor %}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if ocp4_workload_authentication_keycloak_user_groups | length > 0 %}
-      # User groups
-{% for group in ocp4_workload_authentication_keycloak_user_groups %}
-      - name: {{ group.name }}
-{% if group.path is defined %}
-        path: {{ group.path }}
-{% endif %}
-{% if group.realmRoles is defined %}
-        realmRoles:
-{% for role in group.realmRoles %}
-        - {{ role }}
-{% endfor %}
-{% endif %}
-{% if group.attributes is defined %}
-        attributes:
-{% for key, value in group.attributes.items() %}
-          {{ key }}:
-{% for v in value %}
-          - {{ v }}
-{% endfor %}
-{% endfor %}
-{% endif %}
-{% endfor %}
-{% endif %}
-

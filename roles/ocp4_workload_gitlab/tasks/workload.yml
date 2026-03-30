@@ -284,27 +284,37 @@
       label: "{{ item.username }}"
     register: r_create_keycloak_users
 
-  - name: Get Keycloak groups for each user
+  - name: Get GitLab user IDs for Keycloak users
+    when:
+    - ocp4_workload_gitlab_user_default_access_levels | length > 0
+    - ocp4_workload_gitlab_user_repositories | length > 0
     ansible.builtin.uri:
-      url: "{{ _ocp4_workload_gitlab_keycloak_url }}/admin/realms/{{ ocp4_workload_gitlab_keycloak_realm }}/users/{{ item.id }}/groups"
+      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/users?username={{ item.username }}"
       method: GET
       headers:
-        Authorization: "Bearer {{ r_keycloak_token.json.access_token }}"
+        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
       validate_certs: false
       status_code: 200
     loop: "{{ r_keycloak_users.json }}"
     loop_control:
       label: "{{ item.username }}"
-    register: r_keycloak_user_groups
+    register: r_keycloak_user_ids
 
-  - name: Add users to GitLab groups based on Keycloak group membership
-    ansible.builtin.include_tasks: add_keycloak_user_to_gitlab_groups.yml
+  - name: Add Keycloak users to groups based on default access levels
+    when:
+    - ocp4_workload_gitlab_user_default_access_levels | length > 0
+    - ocp4_workload_gitlab_user_repositories | length > 0
+    - r_keycloak_user_ids.results | rejectattr('skipped', 'defined') | selectattr('json', 'defined') | list | length > 0
+    ansible.builtin.include_tasks: add_user_to_group.yml
     vars:
-      _keycloak_user: "{{ item.item }}"
-      _keycloak_groups: "{{ item.json }}"
-    loop: "{{ r_keycloak_user_groups.results }}"
+      _user_data: "{{ item.0.json[0] }}"
+      _group_config: "{{ item.1 }}"
+    loop: "{{ r_keycloak_user_ids.results | rejectattr('skipped', 'defined') | selectattr('json', 'defined') | product(ocp4_workload_gitlab_user_repositories | selectattr('access_level', 'in', ocp4_workload_gitlab_user_default_access_levels) | list) | list }}"
+    when:
+    - item.0.json is defined
+    - item.0.json | length > 0
     loop_control:
-      label: "{{ item.item.username }}"
+      label: "{{ item.0.json[0].username }} -> {{ item.1.path }}"
 
 #####################################################################
 # Create Root Groups and Import Repositories

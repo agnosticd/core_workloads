@@ -114,76 +114,10 @@ ocp4_workload_authentication_keycloak_clients: []
 #   serviceAccountsEnabled: true
 
 # --------------------------------
-# Groups Configuration
+# Example Configuration
 # --------------------------------
 
-# Groups for admin user
-# Admin user will be assigned to these groups
-# Default "admins" group is always created and assigned
-# Each group entry should have:
-#   - name: Group name (required)
-#   - path: Group path (optional, defaults to /name)
-#   - realmRoles: List of realm roles to assign (optional)
-#   - attributes: Dict of group attributes (optional)
-
-ocp4_workload_authentication_keycloak_admin_groups: []
-
-# Example: Admin Groups with Roles
-# ocp4_workload_authentication_keycloak_admin_groups:
-# - name: cluster-admins
-#   realmRoles:
-#   - admin
-# - name: operations
-#   realmRoles:
-#   - admin
-#   attributes:
-#     team: ["platform"]
-
-# Example: Admin Groups with Access Levels
-# ocp4_workload_authentication_keycloak_admin_groups:
-# - name: cluster-admins
-#   realmRoles:
-#   - admin
-#   attributes:
-#     access_level: ["50"]
-# - name: operations
-#   realmRoles:
-#   - admin
-
-# Groups for regular users
-# All regular users will be assigned to these groups
-# Default "users" group is always created and assigned
-# Each group entry should have:
-#   - name: Group name (required)
-#   - path: Group path (optional, defaults to /name)
-#   - realmRoles: List of realm roles to assign (optional)
-#   - attributes: Dict of group attributes (optional)
-
-ocp4_workload_authentication_keycloak_user_groups: []
-
-# Example: User Groups for GitLab Sync
-# ocp4_workload_authentication_keycloak_user_groups:
-# - name: developers
-#   realmRoles:
-#   - user
-# - name: maintainers
-#   realmRoles:
-#   - user
-
-# Example: User Groups with Attributes
-# ocp4_workload_authentication_keycloak_user_groups:
-# - name: developers
-#   realmRoles:
-#   - user
-#   attributes:
-#     access_level: ["30"]
-# - name: maintainers
-#   realmRoles:
-#   - user
-#   attributes:
-#     access_level: ["40"]
-
-# Example: Complete Workshop Setup
+# Example: Complete Workshop Setup with GitLab Integration
 # ocp4_workload_authentication_keycloak_num_users: 10
 # ocp4_workload_authentication_keycloak_user_username_base: student
 # ocp4_workload_authentication_keycloak_clients:
@@ -192,10 +126,3 @@ ocp4_workload_authentication_keycloak_user_groups: []
 #   redirectUris:
 #   - "https://gitlab-gitlab.{{ openshift_cluster_ingress_domain }}/*"
 #   description: "GitLab OAuth Client"
-# ocp4_workload_authentication_keycloak_user_groups:
-# - name: developers
-#   realmRoles:
-#   - user
-# - name: maintainers
-#   realmRoles:
-#   - user
