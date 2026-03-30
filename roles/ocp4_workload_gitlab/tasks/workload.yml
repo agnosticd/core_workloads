@@ -293,6 +293,41 @@
       template: keycloak-sync-cronjob.yaml.j2
 
 #####################################################################
+# Setup GitLab Runner
+#####################################################################
+
+- name: Setup GitLab Runner
+  when: ocp4_workload_gitlab_runner_enabled | bool
+  block:
+  - name: Get runner registration token from GitLab
+    ansible.builtin.uri:
+      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/runners/reset_registration_token"
+      method: POST
+      headers:
+        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+      validate_certs: false
+      status_code: [200, 201]
+    register: r_runner_token
+
+  - name: Create runner registration token secret
+    kubernetes.core.k8s:
+      state: present
+      definition:
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: gitlab-runner-token
+          namespace: "{{ ocp4_workload_gitlab_namespace }}"
+        type: Opaque
+        stringData:
+          token: "{{ r_runner_token.json.token }}"
+
+  - name: Deploy GitLab Runner
+    kubernetes.core.k8s:
+      state: present
+      template: gitlab-runner.yaml.j2
+
+#####################################################################
 # Report Information
 #####################################################################
 

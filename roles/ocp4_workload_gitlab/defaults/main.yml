@@ -12,7 +12,7 @@ ocp4_workload_gitlab_namespace: gitlab
 
 # GitLab image and version
 ocp4_workload_gitlab_image: gitlab/gitlab-ce
-ocp4_workload_gitlab_image_tag: "16.11.1-ce.0"
+ocp4_workload_gitlab_image_tag: "17.8.1-ce.0"
 
 # Use HTTPS route for GitLab
 ocp4_workload_gitlab_ssl_route: true
@@ -295,6 +295,32 @@ ocp4_workload_gitlab_memory_request: 4Gi
 ocp4_workload_gitlab_memory_limit: 8Gi
 ocp4_workload_gitlab_cpu_request: 2
 ocp4_workload_gitlab_cpu_limit: 4
+
+# --------------------------------
+# GitLab Runner Settings
+# --------------------------------
+
+# Enable GitLab Runner deployment
+ocp4_workload_gitlab_runner_enabled: false
+
+# GitLab Runner image
+ocp4_workload_gitlab_runner_image: gitlab/gitlab-runner
+ocp4_workload_gitlab_runner_image_tag: latest
+
+# GitLab Runner executor (kubernetes, docker, shell)
+ocp4_workload_gitlab_runner_executor: kubernetes
+
+# GitLab Runner tags
+ocp4_workload_gitlab_runner_tags: "openshift,kubernetes"
+
+# GitLab Runner replicas
+ocp4_workload_gitlab_runner_replicas: 1
+
+# GitLab Runner resource limits
+ocp4_workload_gitlab_runner_memory_request: 256Mi
+ocp4_workload_gitlab_runner_memory_limit: 512Mi
+ocp4_workload_gitlab_runner_cpu_request: "100m"
+ocp4_workload_gitlab_runner_cpu_limit: "500m"
 
 # --------------------------------
 # Timeout Settings

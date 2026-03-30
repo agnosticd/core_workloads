@@ -1,0 +1,129 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gitlab-runner
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gitlab-runner
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list", "get", "watch", "create", "delete"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["pods/attach"]
+  verbs: ["list", "get", "create", "delete", "update"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["list", "get", "create", "update", "delete"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["list", "get", "create", "update", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gitlab-runner
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: gitlab-runner
+subjects:
+- kind: ServiceAccount
+  name: gitlab-runner
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-runner
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+data:
+  config.toml: |
+    concurrent = {{ ocp4_workload_gitlab_runner_replicas }}
+    check_interval = 10
+    log_level = "info"
+
+    [session_server]
+      session_timeout = 1800
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-runner
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+spec:
+  replicas: {{ ocp4_workload_gitlab_runner_replicas }}
+  selector:
+    matchLabels:
+      app: gitlab-runner
+  template:
+    metadata:
+      labels:
+        app: gitlab-runner
+    spec:
+      serviceAccountName: gitlab-runner
+      containers:
+      - name: gitlab-runner
+        image: {{ ocp4_workload_gitlab_runner_image }}:{{ ocp4_workload_gitlab_runner_image_tag }}
+        imagePullPolicy: Always
+        command:
+        - /bin/bash
+        - -c
+        - |
+          # Register runner if not already registered
+          if [ ! -f /etc/gitlab-runner/.runner_registered ]; then
+            gitlab-runner register \
+              --non-interactive \
+              --url "http://gitlab:8080" \
+              --registration-token "${REGISTRATION_TOKEN}" \
+              --executor "{{ ocp4_workload_gitlab_runner_executor }}" \
+              --description "OpenShift Runner" \
+              --tag-list "{{ ocp4_workload_gitlab_runner_tags }}" \
+              --run-untagged="true" \
+              --locked="false" \
+              --access-level="not_protected" \
+              {% if ocp4_workload_gitlab_runner_executor == 'kubernetes' %}
+              --kubernetes-namespace="{{ ocp4_workload_gitlab_namespace }}" \
+              --kubernetes-service-account="gitlab-runner" \
+              --kubernetes-pull-policy="if-not-present"
+              {% endif %}
+
+            if [ $? -eq 0 ]; then
+              touch /etc/gitlab-runner/.runner_registered
+            fi
+          fi
+
+          # Start runner
+          gitlab-runner run --user=gitlab-runner --working-directory=/home/gitlab-runner
+        env:
+        - name: REGISTRATION_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-runner-token
+              key: token
+        volumeMounts:
+        - name: config
+          mountPath: /etc/gitlab-runner
+        resources:
+          requests:
+            memory: {{ ocp4_workload_gitlab_runner_memory_request }}
+            cpu: {{ ocp4_workload_gitlab_runner_cpu_request }}
+          limits:
+            memory: {{ ocp4_workload_gitlab_runner_memory_limit }}
+            cpu: {{ ocp4_workload_gitlab_runner_cpu_limit }}
+      volumes:
+      - name: config
+        configMap:
+          name: gitlab-runner
