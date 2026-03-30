@@ -87,35 +87,17 @@
 # Deploy GitLab
 #####################################################################
 
-- name: Deploy RBAC resources
+- name: Deploy GitLab resources
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'rbac.yaml.j2') }}"
-
-- name: Deploy secrets
-  kubernetes.core.k8s:
-    state: present
-    definition: "{{ lookup('template', 'secrets.yaml.j2') }}"
-
-- name: Deploy storage resources
-  kubernetes.core.k8s:
-    state: present
-    definition: "{{ lookup('template', 'storage.yaml.j2') }}"
-
-- name: Deploy PostgreSQL
-  kubernetes.core.k8s:
-    state: present
-    definition: "{{ lookup('template', 'postgresql.yaml.j2') }}"
-
-- name: Deploy Redis
-  kubernetes.core.k8s:
-    state: present
-    definition: "{{ lookup('template', 'redis.yaml.j2') }}"
-
-- name: Deploy GitLab
-  kubernetes.core.k8s:
-    state: present
-    definition: "{{ lookup('template', 'gitlab.yaml.j2') }}"
+    definition: "{{ lookup('template', item) }}"
+  loop:
+  - rbac.yaml.j2
+  - secrets.yaml.j2
+  - storage.yaml.j2
+  - postgresql.yaml.j2
+  - redis.yaml.j2
+  - gitlab.yaml.j2
 
 #####################################################################
 # Wait for GitLab to be Ready
