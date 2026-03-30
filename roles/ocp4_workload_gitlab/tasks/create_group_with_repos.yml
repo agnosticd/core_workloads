@@ -57,8 +57,8 @@
         loop_var: _repo
         label: "{{ _group_config.path }}/{{ _repo.name }}"
       register: r_import_repos
-      retries: 3
-      delay: 5
+      retries: 60
+      delay: 10
       until: r_import_repos.status in [201, 400]
 
     - name: Wait for repository imports to complete
