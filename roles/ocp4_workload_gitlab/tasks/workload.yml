@@ -90,7 +90,7 @@
 - name: Deploy GitLab resources
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', item) }}"
+    template: "{{ item }}"
   loop:
   - rbac.yaml.j2
   - secrets.yaml.j2
