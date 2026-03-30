@@ -87,7 +87,7 @@ ocp4_workload_gitlab_user_email_domain: example.com
 # List of groups and repositories to import for root user
 # Groups are owned by root. Only root has access to these groups and their repositories.
 # Each entry should have:
-#   - name: Group name (required)
+#   - group: Group name (required)
 #   - path: Group path/URL slug (required, lowercase, no spaces)
 #   - visibility: Group visibility (required)
 #       * public: Visible to everyone
@@ -100,7 +100,7 @@ ocp4_workload_gitlab_user_email_domain: example.com
 #
 # Example:
 # ocp4_workload_gitlab_root_repositories:
-# - name: "Admin Infrastructure"
+# - group: "Admin Infrastructure"
 #   path: "admin-infra"
 #   visibility: "private"
 #   repositories:
@@ -119,18 +119,18 @@ ocp4_workload_gitlab_root_repositories: []
 
 # List of groups and repositories that users can access
 # Each entry should have:
-#   - name: Group name (required)
+#   - group: Group name (required)
 #   - path: Group path/URL slug (required, lowercase, no spaces)
 #   - visibility: Group visibility (required)
 #       * public: Visible to everyone
 #       * internal: Visible to authenticated users
 #       * private: Visible only to group members
 #   - access_level: Access level for users in this group (required)
-#       * 10 (Guest): Can view but cannot push
-#       * 20 (Reporter): Can view and create issues
-#       * 30 (Developer): Can push to non-protected branches
-#       * 40 (Maintainer): Can push to protected branches, manage group
-#       * 50 (Owner): Full admin access to the group
+#       * guest: Can view but cannot push
+#       * reporter: Can view and create issues
+#       * developer: Can push to non-protected branches
+#       * maintainer: Can push to protected branches, manage group
+#       * owner: Full admin access to the group
 #   - repositories: List of repositories to import into this group (optional)
 #       * name: Repository name in GitLab (required)
 #       * url: Git URL to import from (required)
@@ -147,10 +147,10 @@ ocp4_workload_gitlab_root_repositories: []
 #
 # Example:
 # ocp4_workload_gitlab_user_repositories:
-# - name: "developers"
+# - group: "developers"
 #   path: "developers"
 #   visibility: "public"
-#   access_level: 30                    # Users join with Developer access
+#   access_level: "developer"           # Users join with Developer access
 #   repositories:
 #     - name: "sample-app"
 #       url: "https://github.com/example/sample-app.git"
@@ -159,10 +159,10 @@ ocp4_workload_gitlab_root_repositories: []
 #       url: "https://github.com/example/exercises.git"
 #       visibility: "internal"
 #
-# - name: "maintainers"
+# - group: "maintainers"
 #   path: "maintainers"
 #   visibility: "private"
-#   access_level: 40                    # Users join with Maintainer access
+#   access_level: "maintainer"          # Users join with Maintainer access
 #   repositories:
 #     - name: "infrastructure"
 #       url: "https://github.com/example/infra.git"

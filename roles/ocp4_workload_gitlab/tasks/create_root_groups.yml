@@ -8,4 +8,4 @@
     _group_owner: root
   loop: "{{ ocp4_workload_gitlab_root_repositories }}"
   loop_control:
-    label: "{{ item.name }}"
+    label: "{{ item.group }}"

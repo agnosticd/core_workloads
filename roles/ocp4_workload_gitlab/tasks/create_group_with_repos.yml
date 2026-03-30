@@ -1,12 +1,12 @@
 ---
 # Create a single group and import its repositories
 # Expects _group_config variable with structure:
-#   name: Group name
+#   group: Group name
 #   path: Group path
 #   visibility: Group visibility
 #   repositories: List of repositories to import
 
-- name: Create group {{ _group_config.name }}
+- name: Create group {{ _group_config.group }}
   ansible.builtin.uri:
     url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/groups"
     method: POST
@@ -15,14 +15,14 @@
       Content-Type: "application/json"
     body_format: json
     body:
-      name: "{{ _group_config.name }}"
+      name: "{{ _group_config.group }}"
       path: "{{ _group_config.path }}"
       visibility: "{{ _group_config.visibility }}"
     validate_certs: false
     status_code: [201, 400]
   register: r_create_group
 
-- name: Get group ID for {{ _group_config.name }}
+- name: Get group ID for {{ _group_config.group }}
   ansible.builtin.uri:
     url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/groups/{{ _group_config.path }}"
     method: GET
@@ -32,7 +32,7 @@
     status_code: 200
   register: r_group_info
 
-- name: Import repositories into {{ _group_config.name }}
+- name: Import repositories into {{ _group_config.group }}
   ansible.builtin.uri:
     url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/projects"
     method: POST

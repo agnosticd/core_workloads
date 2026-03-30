@@ -42,11 +42,21 @@ data:
 
     # Process each configured user group
     {% for group in ocp4_workload_gitlab_user_repositories %}
-    GROUP_NAME="{{ group.name }}"
+    GROUP_NAME="{{ group.group }}"
     GROUP_PATH="{{ group.path }}"
-    GITLAB_ACCESS_LEVEL={{ group.access_level }}
+    ACCESS_LEVEL="{{ group.access_level }}"
 
-    echo "Processing group: $GROUP_NAME (path: $GROUP_PATH) with access level: $GITLAB_ACCESS_LEVEL"
+    # Map access level to GitLab access level value
+    case "$ACCESS_LEVEL" in
+      guest) GITLAB_ACCESS_LEVEL=10 ;;
+      reporter) GITLAB_ACCESS_LEVEL=20 ;;
+      developer) GITLAB_ACCESS_LEVEL=30 ;;
+      maintainer) GITLAB_ACCESS_LEVEL=40 ;;
+      owner) GITLAB_ACCESS_LEVEL=50 ;;
+      *) GITLAB_ACCESS_LEVEL=30 ;;
+    esac
+
+    echo "Processing group: $GROUP_NAME (path: $GROUP_PATH) with access level: $ACCESS_LEVEL ($GITLAB_ACCESS_LEVEL)"
 
     # Create group in Keycloak if it doesn't exist
     GROUP_ID=$(echo $KEYCLOAK_GROUPS | jq -r ".[] | select(.name==\"$GROUP_NAME\") | .id")

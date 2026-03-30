@@ -7,4 +7,4 @@
     _group_config: "{{ item }}"
   loop: "{{ ocp4_workload_gitlab_user_repositories }}"
   loop_control:
-    label: "{{ item.name }}"
+    label: "{{ item.group }}"
