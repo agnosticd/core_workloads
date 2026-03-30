@@ -181,3 +181,15 @@
   loop: "{{ range(0, ocp4_workload_authentication_keycloak_num_users | int) | list }}"
   loop_control:
     loop_var: n
+
+- name: Report Keycloak user groups
+  when: ocp4_workload_authentication_keycloak_user_groups | length > 0
+  agnosticd.core.agnosticd_user_info:
+    msg: >-
+      Keycloak user groups: {{ ocp4_workload_authentication_keycloak_user_groups | map(attribute='name') | join(', ') }}
+
+- name: Report Keycloak admin groups
+  when: ocp4_workload_authentication_keycloak_admin_groups | length > 0
+  agnosticd.core.agnosticd_user_info:
+    msg: >-
+      Keycloak admin groups: {{ ocp4_workload_authentication_keycloak_admin_groups | map(attribute='name') | join(', ') }}
