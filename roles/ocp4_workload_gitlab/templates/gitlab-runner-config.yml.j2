@@ -2,36 +2,14 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: gitlab-runner-config-template
+  name: gitlab-runner-config
   namespace: {{ ocp4_workload_gitlab_namespace }}
 data:
-  config.toml: |
-    concurrent = {{ ocp4_workload_gitlab_runner_replicas }}
-    check_interval = 10
-    log_level = "info"
-
-    [session_server]
-      session_timeout = 1800
-
-  config-template.toml: |
-    concurrent = {{ ocp4_workload_gitlab_runner_replicas }}
-    check_interval = 10
-    log_level = "info"
-
-    [session_server]
-      session_timeout = 1800
-
+  register-template.toml: |
     [[runners]]
-      name = "OpenShift Runner"
-      url = "http://gitlab:8080"
-      token = "__GITLAB_RUNNER_TOKEN__"
-      executor = "{{ ocp4_workload_gitlab_runner_executor }}"
       environment = ["STORAGE_DRIVER=vfs", "BUILDAH_FORMAT=docker", "BUILDAH_ISOLATION=chroot", "KUBERNETES_SERVICE_ACCOUNT_OVERWRITE=gitlab-runner"]
       {% if ocp4_workload_gitlab_runner_executor == 'kubernetes' %}
       [runners.kubernetes]
-        namespace = "{{ ocp4_workload_gitlab_namespace }}"
-        service_account = "gitlab-runner"
-        pull_policy = ["if-not-present"]
         [runners.kubernetes.pod_security_context]
           run_as_non_root = false
           run_as_user = 0

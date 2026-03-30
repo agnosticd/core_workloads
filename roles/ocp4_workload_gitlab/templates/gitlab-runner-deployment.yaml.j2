@@ -18,39 +18,31 @@ spec:
       initContainers:
       - name: configure-runner
         image: {{ ocp4_workload_gitlab_runner_image }}:{{ ocp4_workload_gitlab_runner_image_tag }}
-        command: ["/bin/sh"]
+        command: ["/bin/sh", "-c"]
         args:
-        - -c
         - |
-          set -e
-          # Register to get auth token
-          RUNNER_TOKEN=$(gitlab-runner register \
+          set -ex
+
+          # Register runner with template config (merges advanced settings)
+          gitlab-runner register \
+            --template-config /configmap/register-template.toml \
             --non-interactive \
             --url "http://gitlab:8080" \
             --registration-token "${REGISTRATION_TOKEN}" \
             --executor "{{ ocp4_workload_gitlab_runner_executor }}" \
-            --output-limit 0 \
-            2>&1 | grep -oP 'token=\K[a-zA-Z0-9_-]+' || echo "")
+            --description "OpenShift Runner" \
+            --tag-list "{{ ocp4_workload_gitlab_runner_tags }}" \
+            --run-untagged="true" \
+            --locked="false" \
+            --access-level="not_protected" \
+            {% if ocp4_workload_gitlab_runner_executor == 'kubernetes' %}
+            --kubernetes-namespace="{{ ocp4_workload_gitlab_namespace }}" \
+            --kubernetes-service-account="gitlab-runner" \
+            --kubernetes-pull-policy="if-not-present"
+            {% endif %}
 
-          if [ -z "$RUNNER_TOKEN" ]; then
-            echo "Failed to extract runner token, trying alternative method..."
-            # Try registering normally and extract from config
-            gitlab-runner register \
-              --non-interactive \
-              --url "http://gitlab:8080" \
-              --registration-token "${REGISTRATION_TOKEN}" \
-              --executor "{{ ocp4_workload_gitlab_runner_executor }}" \
-              --config /tmp/temp-config.toml
-            RUNNER_TOKEN=$(grep 'token =' /tmp/temp-config.toml | cut -d'"' -f2)
-          fi
 
-          echo "Got runner token: ${RUNNER_TOKEN:0:10}..."
-
-          # Create final config from template
-          sed "s/__GITLAB_RUNNER_TOKEN__/${RUNNER_TOKEN}/" /templates/config-template.toml > /etc/gitlab-runner/config.toml
-          chmod 600 /etc/gitlab-runner/config.toml
-
-          echo "Configuration created successfully"
+          echo "=== Final configuration ==="
           cat /etc/gitlab-runner/config.toml
         env:
         - name: REGISTRATION_TOKEN
@@ -62,7 +54,7 @@ spec:
         - name: config
           mountPath: /etc/gitlab-runner
         - name: config-template
-          mountPath: /templates
+          mountPath: /configmap
       containers:
       - name: gitlab-runner
         image: {{ ocp4_workload_gitlab_runner_image }}:{{ ocp4_workload_gitlab_runner_image_tag }}
@@ -87,4 +79,4 @@ spec:
         emptyDir: {}
       - name: config-template
         configMap:
-          name: gitlab-runner-config-template
+          name: gitlab-runner-config
