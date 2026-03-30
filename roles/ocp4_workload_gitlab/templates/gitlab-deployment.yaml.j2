@@ -315,14 +315,14 @@ spec:
           httpGet:
             path: /-/liveness
             port: 8080
-          initialDelaySeconds: 300
+          initialDelaySeconds: 900
           periodSeconds: 30
           timeoutSeconds: 10
         readinessProbe:
           httpGet:
             path: /-/readiness
             port: 8080
-          initialDelaySeconds: 120
+          initialDelaySeconds: 600
           periodSeconds: 10
           timeoutSeconds: 5
       volumes:
