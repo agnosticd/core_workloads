@@ -86,7 +86,7 @@
       mode: ug=rwx,o=rx
     retries: 10
     delay: 5
-    ignore_errors: true
+    failed_when: false
 
 # yamllint disable rule:line-length
 - name: Save AgnosticD User data

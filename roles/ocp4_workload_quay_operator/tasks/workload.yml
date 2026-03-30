@@ -16,7 +16,9 @@
     ansible.builtin.assert:
       that:
       - r_s4_service.resources | length == 1
-      fail_msg: "S4 storage service not found in namespace {{ ocp4_workload_quay_operator_s4_namespace }}. Deploy S4 first using ocp4_workload_s4 role."
+      fail_msg: >-
+        S4 storage service not found in namespace {{ ocp4_workload_quay_operator_s4_namespace }}.
+        Deploy S4 first using ocp4_workload_s4 role.
 
   - name: Check Noobaa BucketClass exists
     when: not (ocp4_workload_quay_operator_s4_storage_enabled | bool)
@@ -80,7 +82,7 @@
   - name: Create Quay Registry Resources
     kubernetes.core.k8s:
       state: present
-      definition: "{{ lookup('template', item ) | from_yaml }}"
+      definition: "{{ lookup('template', item) | from_yaml }}"
     loop:
     - quay_namespace.yaml.j2
     - config_bundle_secret.yaml.j2
@@ -93,7 +95,7 @@
       kind: Deployment
       namespace: "{{ ocp4_workload_quay_operator_registry_namespace }}"
       label_selectors:
-        - quay-component=quay
+      - quay-component=quay
     register: r_quay_app_deployment
     until: r_quay_app_deployment.resources | length > 0
     retries: 30
@@ -101,8 +103,8 @@
 
   - name: Increase Quay startup probe threshold
     when:
-      - ocp4_workload_quay_operator_registry_startup_probe_update | default(false) | bool
-      - r_quay_app_deployment.resources | default([]) | length > 0
+    - ocp4_workload_quay_operator_registry_startup_probe_update | default(false) | bool
+    - r_quay_app_deployment.resources | default([]) | length > 0
     kubernetes.core.k8s:
       api_version: apps/v1
       kind: Deployment
@@ -114,10 +116,10 @@
           template:
             spec:
               containers:
-                - name: quay-app
-                  startupProbe:
-                    failureThreshold: "{{ ocp4_workload_quay_operator_registry_startup_probe_failure_threshold }}"
-    ignore_errors: true
+              - name: quay-app
+                startupProbe:
+                  failureThreshold: "{{ ocp4_workload_quay_operator_registry_startup_probe_failure_threshold }}"
+    failed_when: false
 
   - name: Wait for Quay Registry to be available
     kubernetes.core.k8s_info:

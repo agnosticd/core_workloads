@@ -42,19 +42,19 @@
 
 - name: Install Kuadrant with retry on timeout
   block:
-  - name: Wait until Kuadrant is installed
-    kubernetes.core.k8s_info:
-      api_version: kuadrant.io/v1beta1
-      kind: Kuadrant
-      name: kuadrant-instance
-      namespace: openshift-operators
-      wait: true
-      wait_condition:
-        reason: Ready
-        status: 'True'
-        type: Ready
-      wait_sleep: 10
-      wait_timeout: 600
+    - name: Wait until Kuadrant is installed
+      kubernetes.core.k8s_info:
+        api_version: kuadrant.io/v1beta1
+        kind: Kuadrant
+        name: kuadrant-instance
+        namespace: openshift-operators
+        wait: true
+        wait_condition:
+          reason: Ready
+          status: 'True'
+          type: Ready
+        wait_sleep: 10
+        wait_timeout: 600
 
   rescue:
     - name: Kuadrant installation timed out, attempting reinstall

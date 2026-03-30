@@ -52,7 +52,10 @@
 - name: Create Ansible Automation Platform
   kubernetes.core.k8s:
     state: present
-    resource_definition: "{{ lookup('template', 'aap.yaml.j2') | from_yaml | ansible.builtin.combine(ocp4_workload_ansible_automation_platform_aap_manifest_overrides | default({}), recursive=true) }}"
+    resource_definition: >-
+      {{ lookup('template', 'aap.yaml.j2') | from_yaml
+      | ansible.builtin.combine(ocp4_workload_ansible_automation_platform_aap_manifest_overrides
+      | default({}), recursive=true) }}
     apply: true
 
 - name: Wait until the Ansible Automation Platform is fully deployed
@@ -83,6 +86,7 @@
       dest: /tmp/aap-manifest.zip
       username: "{{ ocp4_workload_ansible_automation_platform_manifest.username | default(omit) }}"
       password: "{{ ocp4_workload_ansible_automation_platform_manifest.password | default(omit) }}"
+      mode: "0644"
 
   - name: Inject AAP2 Controller manifest
     ansible.controller.license:

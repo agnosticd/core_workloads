@@ -1,0 +1,14 @@
+---
+profile: production
+
+exclude_paths:
+- tests/
+
+skip_list:
+- var-naming[no-role-prefix]
+- galaxy[no-changelog]
+- ignore-errors
+- jinja[spacing]
+
+mock_modules:
+- agnosticd.core.agnosticd_user_info

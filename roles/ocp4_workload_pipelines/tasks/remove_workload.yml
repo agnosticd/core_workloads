@@ -5,7 +5,7 @@
     api_version: operator.tekton.dev/v1alpha1
     kind: TektonConfig
     name: config
-  ignore_errors: true
+  failed_when: false
 
 - name: Wait until all OpenShift pipelines pods have been removed
   kubernetes.core.k8s_info:
@@ -16,7 +16,7 @@
   retries: 20
   delay: 5
   until: r_pipelines_pods.resources | length == 0
-  ignore_errors: true
+  failed_when: false
 
 - name: Remove Pipelines operator
   ansible.builtin.include_role:

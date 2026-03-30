@@ -5,7 +5,7 @@ galaxy_info:
   description: |
     Configure ODF after being installed
   license: MIT
-  min_ansible_version: 2.9
+  min_ansible_version: '2.9'
   platforms: []
   galaxy_tags:
     - ocp

@@ -165,7 +165,10 @@
 #   delay: 10
 #   until:
 #     - cm_provision_data.resources | length > 0
-#     - cm_provision_data.resources | map(attribute='data') | map(attribute='provision_data', default='') | select('ne', '') | list | length == cm_provision_data.resources | length
+#     - >-
+#       cm_provision_data.resources | map(attribute='data')
+#       | map(attribute='provision_data', default='')
+#       | select('ne', '') | list | length == cm_provision_data.resources | length
 #   failed_when: false
 
 # - name: Process ConfigMap provision data, if any

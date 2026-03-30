@@ -19,7 +19,8 @@ ocp4_workload_builds_starting_csv: ""
 
 # Attempt to install the CLI tools on the Bastion.
 ocp4_workload_builds_install_cli_tools: false
-ocp4_workload_builds_install_cli_tools_url: https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/openshift-builds/1.3.0-258/shp-linux-amd64.tar.gz
+ocp4_workload_builds_install_cli_tools_url: >-
+  https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/openshift-builds/1.3.0-258/shp-linux-amd64.tar.gz
 
 # --------------------------------
 # Operator Catalog Snapshot Settings
