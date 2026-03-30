@@ -73,12 +73,8 @@ spec:
             value: {{ _ocp4_workload_authentication_cluster_account_passwords[_account.name] | to_json }}
             temporary: false
         realmRoles: {{ _account.keycloak_realm_roles | default(['admin']) | to_json }}
-{% if ocp4_workload_authentication_keycloak_admin_groups | length > 0 %}
         groups:
-{% for group in ocp4_workload_authentication_keycloak_admin_groups %}
-          - /{{ group.name }}
-{% endfor %}
-{% endif %}
+          - /admins
 {% endfor %}
 {% for _account in _ocp4_workload_authentication_user_accounts %}
       - username: {{ _account.name }}
@@ -93,62 +89,13 @@ spec:
             temporary: false
         realmRoles:
           - user
-{% if ocp4_workload_authentication_keycloak_user_groups | length > 0 %}
         groups:
-{% for group in ocp4_workload_authentication_keycloak_user_groups %}
-          - /{{ group.name }}
-{% endfor %}
-{% endif %}
+          - /users
 {% endfor %}
 {% else %}
     users: []
 {% endif %}
     groups:
-{% if ocp4_workload_authentication_keycloak_admin_groups | length > 0 %}
-      # Admin groups
-{% for group in ocp4_workload_authentication_keycloak_admin_groups %}
-      - name: {{ group.name }}
-{% if group.path is defined %}
-        path: {{ group.path }}
-{% endif %}
-{% if group.realmRoles is defined %}
-        realmRoles:
-{% for role in group.realmRoles %}
-        - {{ role }}
-{% endfor %}
-{% endif %}
-{% if group.attributes is defined %}
-        attributes:
-{% for key, value in group.attributes.items() %}
-          {{ key }}:
-{% for v in value %}
-          - {{ v }}
-{% endfor %}
-{% endfor %}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if ocp4_workload_authentication_keycloak_user_groups | length > 0 %}
-      # User groups
-{% for group in ocp4_workload_authentication_keycloak_user_groups %}
-      - name: {{ group.name }}
-{% if group.path is defined %}
-        path: {{ group.path }}
-{% endif %}
-{% if group.realmRoles is defined %}
-        realmRoles:
-{% for role in group.realmRoles %}
-        - {{ role }}
-{% endfor %}
-{% endif %}
-{% if group.attributes is defined %}
-        attributes:
-{% for key, value in group.attributes.items() %}
-          {{ key }}:
-{% for v in value %}
-          - {{ v }}
-{% endfor %}
-{% endfor %}
-{% endif %}
-{% endfor %}
-{% endif %}
+      # Default groups (always created)
+      - name: admins
+      - name: users

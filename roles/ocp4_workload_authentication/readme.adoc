@@ -178,41 +178,9 @@ ocp4_workload_authentication_keycloak_clients:
   description: "Grafana OAuth Client"
 ----
 
-=== Custom Groups
+=== Default Groups
 
-You can create custom groups for admin/cluster accounts and regular user accounts.
-Users are automatically assigned to groups based on their account type.
+The role automatically creates and assigns users to default groups:
 
-.example vars
-----
-ocp4_workload_authentication_provider: keycloak
-num_users: 10
-
-# Admin groups - assigned to admin and cluster accounts
-ocp4_workload_authentication_keycloak_admin_groups:
-- name: cluster-admins
-  realmRoles:
-  - admin
-- name: operations
-  realmRoles:
-  - admin
-  attributes:
-    team: ["platform"]
-
-# User groups - assigned to regular user accounts
-ocp4_workload_authentication_keycloak_user_groups:
-- name: developers
-  realmRoles:
-  - user
-- name: team-leads
-  realmRoles:
-  - user
-  attributes:
-    level: ["senior"]
-----
-
-In this example:
-
-* Admin and cluster accounts will be assigned to: `/admins`, `/cluster-admins`, `/operations`
-* Regular user accounts will be assigned to: `/users`, `/developers`, `/team-leads`
-* Applications can use group membership and attributes for access control
+* Admin and cluster accounts are assigned to: `/admins`
+* Regular user accounts are assigned to: `/users`
