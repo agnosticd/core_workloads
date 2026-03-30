@@ -26,7 +26,7 @@
             requests:
               storage: "{{ _disk_spec.size }}"
 
-- name: Wait for DataVolume {{ _dv_name }} to be ready
+- name: Wait for DataVolume to be ready - {{ _dv_name }}
   kubernetes.core.k8s_info:
     host: "{{ ocp4_workload_cnv_extra_disks_sandbox_api_url }}"
     api_key: "{{ ocp4_workload_cnv_extra_disks_sandbox_api_key }}"
@@ -40,7 +40,7 @@
   retries: 30
   delay: 10
 
-- name: Hot-plug disk {{ _dv_name }} to VM {{ _vm_name }}
+- name: Hot-plug disk to VM - {{ _dv_name ~ ' / ' ~ _vm_name }}
   ansible.builtin.uri:
     url: >-
       {{ ocp4_workload_cnv_extra_disks_sandbox_api_url

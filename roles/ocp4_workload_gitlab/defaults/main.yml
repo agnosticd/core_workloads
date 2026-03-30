@@ -209,9 +209,9 @@ ocp4_workload_gitlab_user_default_access_levels:
 
 ocp4_workload_gitlab_application_settings:
   import_sources:
-  - git
-  - github
-  - gitea
+    - git
+    - github
+    - gitea
   version_check_enabled: false
   allow_local_requests_from_web_hooks_and_services: true
   auto_devops_enabled: false
