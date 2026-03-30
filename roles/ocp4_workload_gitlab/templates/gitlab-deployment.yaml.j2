@@ -19,6 +19,28 @@ subjects:
   name: gitlab-ce
   namespace: {{ ocp4_workload_gitlab_namespace }}
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gitlab-prometheus-k8s-read
+rules:
+- apiGroups: [""]
+  resources: ["nodes", "pods"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gitlab-ce-prometheus-k8s-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gitlab-prometheus-k8s-read
+subjects:
+- kind: ServiceAccount
+  name: gitlab-ce
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+---
 apiVersion: v1
 kind: Secret
 metadata:
@@ -320,17 +342,21 @@ spec:
             memory: {{ ocp4_workload_gitlab_memory_limit }}
             cpu: {{ ocp4_workload_gitlab_cpu_limit }}
         livenessProbe:
-          httpGet:
-            path: /-/liveness
-            port: 8080
-          initialDelaySeconds: 900
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - curl -f http://localhost:8080/-/liveness
+          initialDelaySeconds: 300
           periodSeconds: 30
           timeoutSeconds: 10
         readinessProbe:
-          httpGet:
-            path: /-/readiness
-            port: 8080
-          initialDelaySeconds: 600
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - curl -f http://localhost:8080/-/readiness
+          initialDelaySeconds: 180
           periodSeconds: 10
           timeoutSeconds: 5
       volumes:
