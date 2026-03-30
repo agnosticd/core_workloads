@@ -73,11 +73,12 @@ spec:
             value: {{ _ocp4_workload_authentication_cluster_account_passwords[_account.name] | to_json }}
             temporary: false
         realmRoles: {{ _account.keycloak_realm_roles | default(['admin']) | to_json }}
+{% if ocp4_workload_authentication_keycloak_admin_groups | length > 0 %}
         groups:
-          - /admins
 {% for group in ocp4_workload_authentication_keycloak_admin_groups %}
           - /{{ group.name }}
 {% endfor %}
+{% endif %}
 {% endfor %}
 {% for _account in _ocp4_workload_authentication_user_accounts %}
       - username: {{ _account.name }}
@@ -92,19 +93,17 @@ spec:
             temporary: false
         realmRoles:
           - user
+{% if ocp4_workload_authentication_keycloak_user_groups | length > 0 %}
         groups:
-          - /users
 {% for group in ocp4_workload_authentication_keycloak_user_groups %}
           - /{{ group.name }}
 {% endfor %}
+{% endif %}
 {% endfor %}
 {% else %}
     users: []
 {% endif %}
     groups:
-      # Default groups (always created)
-      - name: admins
-      - name: users
 {% if ocp4_workload_authentication_keycloak_admin_groups | length > 0 %}
       # Admin groups
 {% for group in ocp4_workload_authentication_keycloak_admin_groups %}
