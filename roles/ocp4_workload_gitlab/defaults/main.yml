@@ -12,7 +12,7 @@ ocp4_workload_gitlab_namespace: gitlab
 
 # GitLab image and version
 ocp4_workload_gitlab_image: gitlab/gitlab-ce
-ocp4_workload_gitlab_image_tag: "17.8.1-ce.0"
+ocp4_workload_gitlab_image_tag: 18.10.1-ce.0
 
 # Use HTTPS route for GitLab
 ocp4_workload_gitlab_ssl_route: true
