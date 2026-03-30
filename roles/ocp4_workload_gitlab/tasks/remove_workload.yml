@@ -1,25 +1,23 @@
 ---
 #####################################################################
-# Remove Keycloak Group Sync CronJob
+# Remove Keycloak Group Sync Resources
 #####################################################################
 
-- name: Remove Keycloak sync cronjob
+- name: Remove Keycloak sync resources
   when: ocp4_workload_gitlab_auth_mode == 'keycloak'
   kubernetes.core.k8s:
     state: absent
-    api_version: batch/v1
+    api_version: "{{ item.api_version }}"
+    kind: "{{ item.kind }}"
+    name: "{{ item.name }}"
+    namespace: "{{ ocp4_workload_gitlab_namespace }}"
+  loop:
+  - api_version: batch/v1
     kind: CronJob
     name: gitlab-keycloak-sync
-    namespace: "{{ ocp4_workload_gitlab_namespace }}"
-
-- name: Remove Keycloak sync script ConfigMap
-  when: ocp4_workload_gitlab_auth_mode == 'keycloak'
-  kubernetes.core.k8s:
-    state: absent
-    api_version: v1
+  - api_version: v1
     kind: ConfigMap
     name: gitlab-keycloak-sync-script
-    namespace: "{{ ocp4_workload_gitlab_namespace }}"
 
 #####################################################################
 # Remove GitLab Namespace
