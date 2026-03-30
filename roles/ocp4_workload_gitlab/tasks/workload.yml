@@ -110,12 +110,12 @@
     state: present
     template: "{{ item }}"
   loop:
-  - rbac.yaml.j2
-  - secrets.yaml.j2
-  - storage.yaml.j2
+  - gitlab-serviceaccount-rbac.yaml.j2
+  - gitlab-config-secrets.yaml.j2
+  - gitlab-postgresql-pvcs.yaml.j2
   - postgresql.yaml.j2
   - redis.yaml.j2
-  - gitlab.yaml.j2
+  - gitlab-deployment.yaml.j2
 
 #####################################################################
 # Wait for GitLab to be Ready
