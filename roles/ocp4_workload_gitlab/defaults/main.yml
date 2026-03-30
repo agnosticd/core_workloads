@@ -84,27 +84,32 @@ ocp4_workload_gitlab_user_email_domain: example.com
 # Repository Import Settings (Root)
 # --------------------------------
 
-# List of repositories to import for root user
-# If list is not empty, repositories will be imported
+# List of groups and repositories to import for root user
+# Groups are owned by root. Only root has access to these groups and their repositories.
 # Each entry should have:
-#   - name: Repository name in GitLab (required)
-#   - url: Git URL to import from (required)
-#   - visibility: Repository visibility (required)
+#   - name: Group name (required)
+#   - path: Group path/URL slug (required, lowercase, no spaces)
+#   - visibility: Group visibility (required)
 #       * public: Visible to everyone
 #       * internal: Visible to authenticated users
-#       * private: Visible only to project members
+#       * private: Visible only to group members
+#   - repositories: List of repositories to import into this group (optional)
+#       * name: Repository name in GitLab (required)
+#       * url: Git URL to import from (required)
+#       * visibility: Repository visibility (required)
 #
 # Example:
 # ocp4_workload_gitlab_root_repositories:
-# - name: "agnosticd-v2"                              # Name of the repository in GitLab
-#   url: "https://github.com/agnosticd/agnosticd-v2.git"  # Source Git URL to import from
-#   visibility: "public"                              # Make it visible to everyone
-# - name: "core-workloads"
-#   url: "https://github.com/agnosticd/core_workloads.git"
-#   visibility: "internal"                            # Only authenticated users can see it
-# - name: "private-config"
-#   url: "https://github.com/example/private-config.git"
-#   visibility: "private"                             # Only root user can see it
+# - name: "Admin Infrastructure"
+#   path: "admin-infra"
+#   visibility: "private"
+#   repositories:
+#     - name: "cluster-config"
+#       url: "https://github.com/example/cluster-config.git"
+#       visibility: "private"
+#     - name: "ansible-playbooks"
+#       url: "https://github.com/example/playbooks.git"
+#       visibility: "private"
 
 ocp4_workload_gitlab_root_repositories: []
 
@@ -112,42 +117,64 @@ ocp4_workload_gitlab_root_repositories: []
 # Repository Import Settings (Users)
 # --------------------------------
 
-# List of repositories to import for each user
-# ONLY applies when auth_mode is 'native' AND user_count > 0
-# If list is not empty, repositories will be imported for all created users
+# List of groups and repositories that users can access
 # Each entry should have:
-#   - name: Repository name in GitLab (required)
-#   - url: Git URL to import from (required)
-#   - visibility: Repository visibility (required)
+#   - name: Group name (required)
+#   - path: Group path/URL slug (required, lowercase, no spaces)
+#   - visibility: Group visibility (required)
 #       * public: Visible to everyone
 #       * internal: Visible to authenticated users
-#       * private: Visible only to user and project members
-#   - access_level: User's access level (optional, defaults to "developer")
-#       * guest (10): Can view but cannot push
-#       * reporter (20): Can view and create issues
-#       * developer (30): Can push to non-protected branches
-#       * maintainer (40): Can push to protected branches
-#       * owner (50): Full admin access to the repository
+#       * private: Visible only to group members
+#   - access_level: Access level for users in this group (required)
+#       * 10 (Guest): Can view but cannot push
+#       * 20 (Reporter): Can view and create issues
+#       * 30 (Developer): Can push to non-protected branches
+#       * 40 (Maintainer): Can push to protected branches, manage group
+#       * 50 (Owner): Full admin access to the group
+#   - repositories: List of repositories to import into this group (optional)
+#       * name: Repository name in GitLab (required)
+#       * url: Git URL to import from (required)
+#       * visibility: Repository visibility (required)
+#
+# NATIVE AUTH MODE:
+#   Created users are added to groups listed in ocp4_workload_gitlab_user_default_groups
+#   with the access_level specified for each group.
+#
+# KEYCLOAK AUTH MODE:
+#   The sync cronjob checks if user has matching Keycloak group membership.
+#   If user is in Keycloak group "developers", they are added to GitLab group "developers"
+#   with the access_level specified in the group definition.
 #
 # Example:
 # ocp4_workload_gitlab_user_repositories:
-# - name: "sample-app"                                # Repository created for each user
-#   url: "https://github.com/example/sample-app.git"  # Source Git URL to import from
-#   visibility: "private"                             # Each user's repo is private to them
-#   access_level: "developer"                         # Users get developer access (can push)
-# - name: "workshop-exercises"
-#   url: "https://github.com/workshop/exercises.git"
-#   visibility: "internal"                            # Visible to all authenticated users
-#   access_level: "maintainer"                        # Users get maintainer access (can manage)
-# - name: "readonly-docs"
-#   url: "https://github.com/docs/reference.git"
-#   visibility: "public"                              # Visible to everyone
-#   access_level: "reporter"                          # Users can only read and comment
+# - name: "developers"
+#   path: "developers"
+#   visibility: "public"
+#   access_level: 30                    # Users join with Developer access
+#   repositories:
+#     - name: "sample-app"
+#       url: "https://github.com/example/sample-app.git"
+#       visibility: "public"
+#     - name: "workshop-exercises"
+#       url: "https://github.com/example/exercises.git"
+#       visibility: "internal"
+#
+# - name: "maintainers"
+#   path: "maintainers"
+#   visibility: "private"
+#   access_level: 40                    # Users join with Maintainer access
+#   repositories:
+#     - name: "infrastructure"
+#       url: "https://github.com/example/infra.git"
+#       visibility: "private"
 
 ocp4_workload_gitlab_user_repositories: []
 
-# Default access level for users (native mode)
-ocp4_workload_gitlab_user_default_access_level: developer
+# Default groups for created users (native mode only)
+# List of group paths that all created users should join
+# Users will be added to these groups with the access_level defined in each group
+# Example: ["developers", "maintainers"]
+ocp4_workload_gitlab_user_default_groups: []
 
 # --------------------------------
 # Application Settings
@@ -210,13 +237,19 @@ ocp4_workload_gitlab_keycloak_client_secret: ""
 # Keycloak group sync cronjob schedule (every minute by default)
 ocp4_workload_gitlab_keycloak_sync_schedule: "*/1 * * * *"
 
-# Keycloak group to GitLab group mapping
-# Groups in Keycloak will be created to match GitLab groups
-ocp4_workload_gitlab_keycloak_groups:
-- name: "developers"
-  access_level: "developer"
-- name: "maintainers"
-  access_level: "maintainer"
+# NOTE: Keycloak group sync uses the ocp4_workload_gitlab_user_repositories structure
+# The sync cronjob will:
+# 1. Get all users from GitLab
+# 2. For each user, get their Keycloak group memberships
+# 3. For each Keycloak group, find matching group in ocp4_workload_gitlab_user_repositories
+# 4. Add user to GitLab group with the access_level defined in the group structure
+#
+# Example: If user is in Keycloak group "developers" and you have:
+#   ocp4_workload_gitlab_user_repositories:
+#   - name: "developers"
+#     access_level: 30
+#
+# The user will be added to GitLab group "developers" with Developer (30) access.
 
 # --------------------------------
 # PostgreSQL Settings

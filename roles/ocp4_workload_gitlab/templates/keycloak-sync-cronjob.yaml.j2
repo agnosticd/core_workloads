@@ -40,22 +40,13 @@ data:
 
     echo "Found groups in Keycloak: $(echo $KEYCLOAK_GROUPS | jq -r '.[].name' | tr '\n' ',' | sed 's/,$//')"
 
-    # Process each configured GitLab group
-    {% for group in ocp4_workload_gitlab_keycloak_groups %}
+    # Process each configured user group
+    {% for group in ocp4_workload_gitlab_user_repositories %}
     GROUP_NAME="{{ group.name }}"
-    ACCESS_LEVEL="{{ group.access_level }}"
+    GROUP_PATH="{{ group.path }}"
+    GITLAB_ACCESS_LEVEL={{ group.access_level }}
 
-    # Map access level to GitLab access level value
-    case "$ACCESS_LEVEL" in
-      guest) GITLAB_ACCESS_LEVEL=10 ;;
-      reporter) GITLAB_ACCESS_LEVEL=20 ;;
-      developer) GITLAB_ACCESS_LEVEL=30 ;;
-      maintainer) GITLAB_ACCESS_LEVEL=40 ;;
-      owner) GITLAB_ACCESS_LEVEL=50 ;;
-      *) GITLAB_ACCESS_LEVEL=30 ;;
-    esac
-
-    echo "Processing group: $GROUP_NAME with access level: $ACCESS_LEVEL ($GITLAB_ACCESS_LEVEL)"
+    echo "Processing group: $GROUP_NAME (path: $GROUP_PATH) with access level: $GITLAB_ACCESS_LEVEL"
 
     # Create group in Keycloak if it doesn't exist
     GROUP_ID=$(echo $KEYCLOAK_GROUPS | jq -r ".[] | select(.name==\"$GROUP_NAME\") | .id")
@@ -77,18 +68,14 @@ data:
       GROUP_ID=$(echo $KEYCLOAK_GROUPS | jq -r ".[] | select(.name==\"$GROUP_NAME\") | .id")
     fi
 
-    # Create group in GitLab if it doesn't exist
+    # Get GitLab group (should already exist from group creation tasks)
     GITLAB_GROUP_ID=$(curl -s -X GET \
-      "${GITLAB_URL}/api/v4/groups/${GROUP_NAME}" \
+      "${GITLAB_URL}/api/v4/groups/${GROUP_PATH}" \
       -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" | jq -r '.id')
 
     if [ -z "$GITLAB_GROUP_ID" ] || [ "$GITLAB_GROUP_ID" == "null" ]; then
-      echo "Creating group $GROUP_NAME in GitLab..."
-      GITLAB_GROUP_ID=$(curl -s -X POST \
-        "${GITLAB_URL}/api/v4/groups" \
-        -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
-        -H "Content-Type: application/json" \
-        -d "{\"path\": \"$GROUP_NAME\", \"name\": \"$GROUP_NAME\", \"visibility\": \"private\"}" | jq -r '.id')
+      echo "WARNING: Group $GROUP_NAME not found in GitLab, skipping sync for this group"
+      continue
     fi
 
     echo "GitLab group ID for $GROUP_NAME: $GITLAB_GROUP_ID"

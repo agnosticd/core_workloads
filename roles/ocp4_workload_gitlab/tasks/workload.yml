@@ -214,59 +214,30 @@
     register: r_create_users
 
 #####################################################################
-# Import Root Repositories
+# Create Root Groups and Import Repositories
 #####################################################################
 
-- name: Import repositories for root user
+- name: Create root groups and import repositories
   when: ocp4_workload_gitlab_root_repositories | length > 0
-  block:
-  - name: Import root repositories via API
-    ansible.builtin.uri:
-      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/projects"
-      method: POST
-      headers:
-        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
-        Content-Type: "application/json"
-      body_format: json
-      body:
-        name: "{{ item.name }}"
-        import_url: "{{ item.url }}"
-        visibility: "{{ item.visibility }}"
-      validate_certs: false
-      status_code: [201, 400]
-    loop: "{{ ocp4_workload_gitlab_root_repositories }}"
-    register: r_import_root_repos
-
-  - name: Wait for root repository imports to complete
-    ansible.builtin.uri:
-      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/projects/{{ item.json.id }}/import"
-      method: GET
-      headers:
-        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
-      validate_certs: false
-      status_code: 200
-    loop: "{{ r_import_root_repos.results }}"
-    when:
-    - item.status == 201
-    - item.json is defined
-    - item.json.id is defined
-    register: r_import_status
-    until:
-    - r_import_status.json is defined
-    - r_import_status.json.import_status is defined
-    - r_import_status.json.import_status == 'finished'
-    retries: 60
-    delay: 10
+  ansible.builtin.include_tasks: create_root_groups.yml
 
 #####################################################################
-# Import User Repositories (Native Auth)
+# Create User Groups and Import Repositories
 #####################################################################
 
-- name: Import repositories for users
+- name: Create user groups and import repositories
+  when: ocp4_workload_gitlab_user_repositories | length > 0
+  ansible.builtin.include_tasks: create_user_groups.yml
+
+#####################################################################
+# Add Users to Groups (Native Auth)
+#####################################################################
+
+- name: Add users to groups (native auth)
   when:
   - ocp4_workload_gitlab_auth_mode == 'native'
   - ocp4_workload_gitlab_user_count | int > 0
-  - ocp4_workload_gitlab_user_repositories | length > 0
+  - ocp4_workload_gitlab_user_default_groups | length > 0
   block:
   - name: Get user IDs from GitLab
     ansible.builtin.uri:
@@ -279,26 +250,17 @@
     loop: "{{ range(1, ocp4_workload_gitlab_user_count | int + 1) | list }}"
     register: r_user_ids
 
-  - name: Import repositories for each user
-    ansible.builtin.uri:
-      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/projects"
-      method: POST
-      headers:
-        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
-        Content-Type: "application/json"
-      body_format: json
-      body:
-        name: "{{ item.1.name }}"
-        import_url: "{{ item.1.url }}"
-        visibility: "{{ item.1.visibility }}"
-        namespace_id: "{{ item.0.json[0].id }}"
-      validate_certs: false
-      status_code: [201, 400]
-    loop: "{{ r_user_ids.results | product(ocp4_workload_gitlab_user_repositories) | list }}"
+  - name: Add users to default groups
+    ansible.builtin.include_tasks: add_user_to_group.yml
+    vars:
+      _user_data: "{{ item.0.json[0] }}"
+      _group_path: "{{ item.1 }}"
+    loop: "{{ r_user_ids.results | product(ocp4_workload_gitlab_user_default_groups) | list }}"
     when:
     - item.0.json is defined
     - item.0.json | length > 0
-    register: r_import_user_repos
+    loop_control:
+      label: "{{ item.0.json[0].username }} -> {{ item.1 }}"
 
 #####################################################################
 # Setup Keycloak Group Sync
