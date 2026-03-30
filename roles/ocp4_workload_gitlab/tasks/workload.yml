@@ -270,6 +270,7 @@
         name: "{{ item.firstName | default('') }} {{ item.lastName | default('') }}"
         extern_uid: "{{ item.id }}"
         provider: "openid_connect"
+        force_random_password: true
         skip_confirmation: true
       validate_certs: false
       status_code: [201, 409]
