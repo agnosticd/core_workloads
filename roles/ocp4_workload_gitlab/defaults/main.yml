@@ -217,6 +217,10 @@ ocp4_workload_gitlab_application_settings:
   allow_local_requests_from_web_hooks_and_services: true
   auto_devops_enabled: false
   # Disable rate limiting for repository and group imports
+  throttle_unauthenticated_enabled: false
+  throttle_authenticated_api_enabled: false
+  throttle_authenticated_web_enabled: false
+  throttle_protected_paths_enabled: false
   project_import_limit: 0
   group_import_limit: 0
 
