@@ -305,7 +305,7 @@ ocp4_workload_gitlab_runner_enabled: false
 
 # GitLab Runner image
 ocp4_workload_gitlab_runner_image: gitlab/gitlab-runner
-ocp4_workload_gitlab_runner_image_tag: latest
+ocp4_workload_gitlab_runner_image_tag: ubi-fips-227cc6a9
 
 # GitLab Runner executor (kubernetes, docker, shell)
 ocp4_workload_gitlab_runner_executor: kubernetes
