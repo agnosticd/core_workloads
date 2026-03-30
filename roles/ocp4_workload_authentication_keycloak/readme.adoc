@@ -8,8 +8,8 @@ This role deploys Red Hat build of Keycloak (RHBK) operator and configures it fo
 * PostgreSQL database for Keycloak
 * Realm creation with OpenShift OAuth integration
 * User and admin account creation
-* Support for additional OAuth clients (e.g., GitLab, other apps)
-* Configurable groups for user organization
+* Support for additional OAuth clients (e.g., GitLab, Grafana, ArgoCD)
+* Default group creation (`admins` and `users`)
 
 == Requirements
 
@@ -18,7 +18,7 @@ This role deploys Red Hat build of Keycloak (RHBK) operator and configures it fo
 
 == Role Variables
 
-=== Basic Settings
+=== Keycloak Deployment Settings
 
 [cols="1,1,1,3"]
 |===
@@ -43,16 +43,6 @@ This role deploys Red Hat build of Keycloak (RHBK) operator and configures it fo
 |false
 |Boolean
 |Use custom catalog source
-
-|ocp4_workload_authentication_keycloak_catalogsource_image
-|quay.io/rhpds/olm_snapshot_redhat_catalog
-|String
-|Catalog source image
-
-|ocp4_workload_authentication_keycloak_catalogsource_tag
-|v4.20_2025_10_23
-|String
-|Catalog source image tag
 |===
 
 === User and Admin Settings
@@ -62,61 +52,37 @@ This role deploys Red Hat build of Keycloak (RHBK) operator and configures it fo
 |Variable |Default |Type |Description
 
 |ocp4_workload_authentication_keycloak_num_users
-|1
+|0
 |Integer
-|Number of users to create
+|Number of regular users to create
 
 |ocp4_workload_authentication_keycloak_user_username_base
 |user
 |String
-|Base username for created users (e.g., user1, user2)
+|Base username for regular users (user1, user2, etc.)
 
 |ocp4_workload_authentication_keycloak_user_password
-|""
+|Generated
 |String
-|Password for all users (auto-generated if empty)
+|Password for all regular users
 
 |ocp4_workload_authentication_keycloak_admin_create
 |true
 |Boolean
-|Create an admin user
+|Create admin user
 
 |ocp4_workload_authentication_keycloak_admin_username
-|admin
+|admin-user
 |String
-|Admin username
+|Username for admin user
 
 |ocp4_workload_authentication_keycloak_admin_password
-|""
+|Generated
 |String
-|Admin password (auto-generated if empty)
+|Password for admin user
 |===
 
-=== OpenShift OAuth Integration
-
-[cols="1,1,1,3"]
-|===
-|Variable |Default |Type |Description
-
-|ocp4_workload_authentication_keycloak_openshift_client_id
-|idp-4-ocp
-|String
-|OpenShift OAuth client ID
-
-|ocp4_workload_authentication_keycloak_openshift_client_secret
-|""
-|String
-|OpenShift OAuth client secret (auto-generated if empty)
-
-|ocp4_workload_authentication_keycloak_remove_kubeadmin
-|false
-|Boolean
-|Remove kubeadmin user after configuration
-|===
-
-=== Additional Clients Configuration
-
-The role supports creating additional OAuth clients for applications like GitLab, Grafana, etc.
+=== OAuth Client Settings
 
 [cols="1,1,1,3"]
 |===
@@ -125,345 +91,98 @@ The role supports creating additional OAuth clients for applications like GitLab
 |ocp4_workload_authentication_keycloak_clients
 |[]
 |List
-|Additional OAuth clients to create in the realm
+|Additional OAuth clients to create (beyond the default OpenShift client)
 |===
 
 Each client entry should have:
 
 * `clientId`: Client ID (required)
 * `secret`: Client secret (required)
-* `redirectUris`: List of redirect URIs (optional, defaults to `["*"]`)
+* `redirectUris`: List of redirect URIs (optional, defaults to ["*"])
 * `description`: Client description (optional)
 * `publicClient`: true/false (optional, defaults to false)
 * `standardFlowEnabled`: true/false (optional, defaults to true)
 * `directAccessGrantsEnabled`: true/false (optional, defaults to true)
 * `serviceAccountsEnabled`: true/false (optional, defaults to true)
 
-**Example:**
-
-[source,yaml]
-----
-ocp4_workload_authentication_keycloak_clients:
-- clientId: gitlab
-  secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
-  redirectUris:
-  - "https://gitlab-{{ guid }}.{{ openshift_cluster_ingress_domain }}/*"
-  description: "GitLab OAuth Client"
-- clientId: grafana
-  secret: "grafana-secret-123"
-  redirectUris:
-  - "https://grafana.apps.example.com/login/generic_oauth"
-  description: "Grafana OAuth Client"
-----
-
-=== Groups Configuration
-
-The role creates default `admins` and `users` groups, plus any additional groups specified.
-
-[cols="1,1,1,3"]
-|===
-|Variable |Default |Type |Description
-
-|ocp4_workload_authentication_keycloak_admin_groups
-|[]
-|List
-|Groups to create and assign to admin user
-
-|ocp4_workload_authentication_keycloak_user_groups
-|[]
-|List
-|Groups to create and assign to all regular users
-|===
-
-Each group entry should have:
-
-* `name`: Group name (required)
-* `path`: Group path (optional, defaults to /name)
-* `realmRoles`: List of realm roles to assign (optional)
-* `attributes`: Dict of group attributes (optional)
-
-**Example:**
-
-[source,yaml]
-----
-# Groups for admin user
-ocp4_workload_authentication_keycloak_admin_groups:
-- name: cluster-admins
-  realmRoles:
-  - admin
-- name: operations
-  realmRoles:
-  - admin
-  attributes:
-    team: ["platform"]
-
-# Groups for regular users
-ocp4_workload_authentication_keycloak_user_groups:
-- name: developers
-  realmRoles:
-  - user
-- name: team-leads
-  realmRoles:
-  - user
-  attributes:
-    department: ["engineering"]
-----
-
 == Usage Examples
 
-=== Example 1: Basic Keycloak with Default Configuration
+=== Example 1: Basic Keycloak Deployment
 
 [source,yaml]
 ----
 - name: Deploy Keycloak
   hosts: localhost
   tasks:
-  - name: Include Keycloak role
-    include_role:
+  - include_role:
       name: ocp4_workload_authentication_keycloak
     vars:
       ocp4_workload_authentication_keycloak_num_users: 5
 ----
 
-=== Example 2: Keycloak with GitLab Client
+=== Example 2: Keycloak with GitLab OAuth Client
 
 [source,yaml]
 ----
 - name: Deploy Keycloak with GitLab client
   hosts: localhost
   tasks:
-  - name: Include Keycloak role
-    include_role:
+  - include_role:
       name: ocp4_workload_authentication_keycloak
     vars:
       ocp4_workload_authentication_keycloak_num_users: 10
       ocp4_workload_authentication_keycloak_user_username_base: student
-
-      # Create GitLab OAuth client
+      
       ocp4_workload_authentication_keycloak_clients:
       - clientId: gitlab
         secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
         redirectUris:
         - "https://gitlab-gitlab.{{ openshift_cluster_ingress_domain }}/*"
         description: "GitLab SSO Integration"
-
-      # Create user groups that GitLab will sync
-      ocp4_workload_authentication_keycloak_user_groups:
-      - name: developers
-        realmRoles:
-        - user
-      - name: maintainers
-        realmRoles:
-        - user
 ----
 
-=== Example 3: Keycloak with Separate Admin and User Groups
+=== Example 3: Multiple OAuth Clients
 
 [source,yaml]
 ----
-- name: Deploy Keycloak with custom groups
+- name: Deploy Keycloak with multiple clients
   hosts: localhost
   tasks:
-  - name: Include Keycloak role
-    include_role:
+  - include_role:
       name: ocp4_workload_authentication_keycloak
     vars:
-      ocp4_workload_authentication_keycloak_num_users: 20
-
-      # Admin groups - assigned to admin user only
-      ocp4_workload_authentication_keycloak_admin_groups:
-      - name: cluster-admins
-        realmRoles:
-        - admin
-      - name: operations
-        realmRoles:
-        - admin
-        attributes:
-          team: ["platform"]
-
-      # User groups - assigned to all regular users
-      ocp4_workload_authentication_keycloak_user_groups:
-      - name: developers
-        realmRoles:
-        - user
-      - name: team-leads
-        realmRoles:
-        - user
-        attributes:
-          level: ["senior"]
-
-      # Result:
-      # - Regular users will be in: /users, /developers, /team-leads
-      # - Admin will be in: /admins, /cluster-admins, /operations
-----
-
-=== Example 4: Complete Workshop Setup with Multiple Clients
-
-[source,yaml]
-----
-- name: Deploy Keycloak for workshop
-  hosts: localhost
-  tasks:
-  - name: Include Keycloak role
-    include_role:
-      name: ocp4_workload_authentication_keycloak
-    vars:
-      ocp4_workload_authentication_keycloak_namespace: keycloak
-      ocp4_workload_authentication_keycloak_default_realm: workshop
       ocp4_workload_authentication_keycloak_num_users: 15
       ocp4_workload_authentication_keycloak_user_username_base: participant
-
-      # Create multiple OAuth clients for different services
+      
       ocp4_workload_authentication_keycloak_clients:
       - clientId: gitlab
         secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
         redirectUris:
         - "https://gitlab-gitlab.{{ openshift_cluster_ingress_domain }}/*"
         description: "GitLab OAuth Client"
-
+      
       - clientId: grafana
         secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
         redirectUris:
         - "https://grafana-grafana.{{ openshift_cluster_ingress_domain }}/login/generic_oauth"
         description: "Grafana OAuth Client"
-
+      
       - clientId: argocd
         secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
         redirectUris:
         - "https://argocd-server-argocd.{{ openshift_cluster_ingress_domain }}/auth/callback"
         description: "ArgoCD OAuth Client"
-
-      # Create groups for different user roles
-      ocp4_workload_authentication_keycloak_user_groups:
-      - name: developers
-        realmRoles:
-        - user
-      - name: maintainers
-        realmRoles:
-        - user
-        attributes:
-          access_level: ["30"]
 ----
 
-== Architecture
+== Default Groups
 
-The role deploys:
+The role creates two default groups:
 
-1. **Keycloak Operator** - Manages Keycloak instances
-2. **PostgreSQL** - Database backend for Keycloak
-3. **Keycloak Instance** - Main Keycloak server
-4. **Realm Import** - Configured realm with:
-   - OpenShift OAuth client (automatic)
-   - Additional OAuth clients (optional)
-   - Users and admin accounts
-   - Groups (default + custom)
-   - Realm roles
+* `admins` - Admin user is assigned to this group
+* `users` - All regular users are assigned to this group
 
-== OAuth Client Integration
-
-When integrating applications with Keycloak:
-
-1. **Add the client to the configuration** using `ocp4_workload_authentication_keycloak_clients`
-2. **Configure the application** to use Keycloak OAuth
-3. **Set redirect URIs** to match your application's callback URLs
-
-**Common OAuth endpoints:**
-
-* Authorization: `https://keycloak-{namespace}.{cluster-domain}/realms/{realm}/protocol/openid-connect/auth`
-* Token: `https://keycloak-{namespace}.{cluster-domain}/realms/{realm}/protocol/openid-connect/token`
-* UserInfo: `https://keycloak-{namespace}.{cluster-domain}/realms/{realm}/protocol/openid-connect/userinfo`
-
-== Group Management
-
-Groups can be used to:
-
-* Organize users by role or team
-* Assign permissions via realm roles
-* Store custom attributes for applications
-* Control access to specific resources
-
-Applications like GitLab can sync these groups and use them for access control.
-
-=== User to Group Assignment
-
-**Automatic Group Assignment:**
-
-Users are automatically assigned to groups based on their role:
-
-* **Regular users** → `/users` group + all groups in `ocp4_workload_authentication_keycloak_user_groups`
-* **Admin user** → `/admins` group + all groups in `ocp4_workload_authentication_keycloak_admin_groups`
-
-**Example:**
-
-[source,yaml]
-----
-# Admin groups - assigned to admin user
-ocp4_workload_authentication_keycloak_admin_groups:
-- name: cluster-admins
-  realmRoles:
-  - admin
-- name: operations
-  realmRoles:
-  - admin
-
-# User groups - assigned to all regular users
-ocp4_workload_authentication_keycloak_user_groups:
-- name: developers
-  realmRoles:
-  - user
-- name: team-leads
-  realmRoles:
-  - user
-
-# Result:
-# - Regular users will be in: /users, /developers, /team-leads
-# - Admin will be in: /admins, /cluster-admins, /operations
-----
-
-**Important Notes:**
-
-* Groups defined in the arrays are both **created** and **assigned** to users
-* Group paths are automatically prefixed with `/` (e.g., `developers` becomes `/developers`)
-* Users inherit realm roles from their groups
-* Group membership is set at user creation time in the realm import
-* This is ideal for applications like GitLab that sync Keycloak groups for access control
-
-== Troubleshooting
-
-=== Keycloak pod fails to start
-
-**Solution**: Check PostgreSQL is running and accessible.
-
-[source,bash]
-----
-oc get pods -n keycloak
-oc logs -n keycloak deployment/postgresql
-----
-
-=== OAuth client not working
-
-**Solution**: Verify redirect URIs match exactly, including trailing slashes.
-
-[source,bash]
-----
-# Get the realm configuration
-oc get keycloakrealmimport sso -n keycloak -o yaml
-----
-
-=== Users not appearing in realm
-
-**Solution**: Check the KeycloakRealmImport status.
-
-[source,bash]
-----
-oc get keycloakrealmimport -n keycloak
-oc describe keycloakrealmimport sso -n keycloak
-----
+These groups are created automatically and cannot be customized.
 
 == License
 
-GPL-3.0-only
-
-== Author Information
-
-AgnosticD Team
+MIT
