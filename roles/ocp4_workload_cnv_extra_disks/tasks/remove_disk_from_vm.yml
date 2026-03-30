@@ -3,7 +3,7 @@
   ansible.builtin.set_fact:
     _dv_name: "{{ _disk_spec.name | replace('INSTANCENAME', _vm_name) }}"
 
-- name: Remove volume {{ _dv_name }} from VM {{ _vm_name }}
+- name: Remove volume from VM - {{ _dv_name ~ ' / ' ~ _vm_name }}
   ansible.builtin.uri:
     url: >-
       {{ ocp4_workload_cnv_extra_disks_sandbox_api_url
