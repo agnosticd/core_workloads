@@ -6,16 +6,9 @@ metadata:
   namespace: {{ ocp4_workload_gitlab_namespace }}
 data:
   config.toml: |-
-    [[runners]]
-        environment = ["STORAGE_DRIVER=vfs","BUILDAH_FORMAT=docker", "BUILDAH_ISOLATION=chroot", "KUBERNETES_SERVICE_ACCOUNT_OVERWRITE=gitlab-runner"]
-        [runners.kubernetes]
-            service_account = "gitlab-runner"
-            allowed_pull_policies = ["always", "if-not-present", "never"]
-            pull_policy = ["if-not-present"]
-            [runners.kubernetes.pod_security_context]
-                run_as_non_root = false
-                run_as_user = 0
-            [runners.kubernetes.build_container_security_context]
-                run_as_user = 0
-                [runners.kubernetes.build_container_security_context.capabilities]
-                    add = ["SETFCAP", "MKNOD"]
+    concurrent = {{ ocp4_workload_gitlab_runner_replicas }}
+    check_interval = 10
+    log_level = "info"
+
+    [session_server]
+      session_timeout = 1800

@@ -15,45 +15,69 @@ spec:
         app: gitlab-runner
     spec:
       serviceAccountName: gitlab-runner
-      containers:
-      - name: gitlab-runner
+      initContainers:
+      - name: configure-runner
         image: {{ ocp4_workload_gitlab_runner_image }}:{{ ocp4_workload_gitlab_runner_image_tag }}
-        imagePullPolicy: Always
         command:
-        - /bin/bash
+        - sh
         - -c
         - |
-          # Register runner if not already registered
-          if [ ! -f /etc/gitlab-runner/.runner_registered ]; then
-            gitlab-runner register \
-              --non-interactive \
-              --url "http://gitlab:8080" \
-              --registration-token "${REGISTRATION_TOKEN}" \
-              --executor "{{ ocp4_workload_gitlab_runner_executor }}" \
-              --description "OpenShift Runner" \
-              --tag-list "{{ ocp4_workload_gitlab_runner_tags }}" \
-              --run-untagged="true" \
-              --locked="false" \
-              --access-level="not_protected" \
-              {% if ocp4_workload_gitlab_runner_executor == 'kubernetes' %}
-              --kubernetes-namespace="{{ ocp4_workload_gitlab_namespace }}" \
-              --kubernetes-service-account="gitlab-runner" \
-              --kubernetes-pull-policy="if-not-present"
-              {% endif %}
+          # Copy initial config template to writable volume
+          cp /configmap/config.toml /etc/gitlab-runner/config.toml
+          chmod 600 /etc/gitlab-runner/config.toml
 
-            if [ $? -eq 0 ]; then
-              touch /etc/gitlab-runner/.runner_registered
-            fi
-          fi
+          # Register runner (using legacy registration token method)
+          gitlab-runner register \
+            --non-interactive \
+            --url "http://gitlab:8080" \
+            --registration-token "${REGISTRATION_TOKEN}" \
+            --executor "{{ ocp4_workload_gitlab_runner_executor }}" \
+            --description "OpenShift Runner" \
+            --tag-list "{{ ocp4_workload_gitlab_runner_tags }}" \
+            --run-untagged="true" \
+            --locked="false" \
+            --access-level="not_protected" \
+            {% if ocp4_workload_gitlab_runner_executor == 'kubernetes' %}
+            --kubernetes-namespace="{{ ocp4_workload_gitlab_namespace }}" \
+            --kubernetes-service-account="gitlab-runner" \
+            --kubernetes-pull-policy="if-not-present"
+            {% endif %}
 
-          # Start runner
-          gitlab-runner run --user=gitlab-runner --working-directory=/home/gitlab-runner
+
+          {% if ocp4_workload_gitlab_runner_executor == 'kubernetes' %}
+          # Add advanced Kubernetes runner configuration
+          cat >> /etc/gitlab-runner/config.toml << 'RUNNER_CONFIG'
+              environment = ["STORAGE_DRIVER=vfs", "BUILDAH_FORMAT=docker", "BUILDAH_ISOLATION=chroot", "KUBERNETES_SERVICE_ACCOUNT_OVERWRITE=gitlab-runner"]
+              [runners.kubernetes.pod_security_context]
+                run_as_non_root = false
+                run_as_user = 0
+              [runners.kubernetes.build_container_security_context]
+                run_as_user = 0
+                [runners.kubernetes.build_container_security_context.capabilities]
+                  add = ["SETFCAP", "MKNOD"]
+          RUNNER_CONFIG
+          {% endif %}
+
         env:
         - name: REGISTRATION_TOKEN
           valueFrom:
             secretKeyRef:
               name: gitlab-runner-token
               key: token
+        volumeMounts:
+        - name: config
+          mountPath: /etc/gitlab-runner
+        - name: config-template
+          mountPath: /configmap
+      containers:
+      - name: gitlab-runner
+        image: {{ ocp4_workload_gitlab_runner_image }}:{{ ocp4_workload_gitlab_runner_image_tag }}
+        imagePullPolicy: Always
+        command:
+        - gitlab-runner
+        - run
+        - --user=gitlab-runner
+        - --working-directory=/home/gitlab-runner
         volumeMounts:
         - name: config
           mountPath: /etc/gitlab-runner
@@ -66,5 +90,7 @@ spec:
             cpu: {{ ocp4_workload_gitlab_runner_cpu_limit }}
       volumes:
       - name: config
+        emptyDir: {}
+      - name: config-template
         configMap:
           name: gitlab-runner-config
