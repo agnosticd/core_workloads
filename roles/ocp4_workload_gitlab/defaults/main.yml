@@ -240,22 +240,16 @@ ocp4_workload_gitlab_keycloak_client_id: gitlab
 # Keycloak client secret (will be generated if empty)
 ocp4_workload_gitlab_keycloak_client_secret: ""
 
-# Keycloak group sync cronjob schedule (every minute by default)
-ocp4_workload_gitlab_keycloak_sync_schedule: "*/1 * * * *"
-
-# NOTE: Keycloak group sync uses the ocp4_workload_gitlab_user_repositories structure
-# The sync cronjob will:
-# 1. Get all users from GitLab
-# 2. For each user, get their Keycloak group memberships
-# 3. For each Keycloak group, find matching group in ocp4_workload_gitlab_user_repositories
-# 4. Add user to GitLab group with the access_level defined in the group structure
+# NOTE: When auth_mode is 'keycloak', users are pre-created during deployment
+# with their group memberships synced from Keycloak. User group assignments are
+# based on ocp4_workload_gitlab_user_repositories structure:
 #
-# Example: If user is in Keycloak group "developers" and you have:
+# Example: If user is in Keycloak group "developer" and you have:
 #   ocp4_workload_gitlab_user_repositories:
-#   - name: "developers"
-#     access_level: 30
+#   - path: "developers"
+#     access_level: "developer"
 #
-# The user will be added to GitLab group "developers" with Developer (30) access.
+# The user will be added to GitLab group "developers" with Developer access.
 
 # --------------------------------
 # PostgreSQL Settings

@@ -64,6 +64,24 @@
       state: present
       template: keycloak-client-secret.yaml.j2
 
+  - name: Get Keycloak admin credentials
+    kubernetes.core.k8s_info:
+      api_version: v1
+      kind: Secret
+      name: keycloak-initial-admin
+      namespace: "{{ ocp4_workload_gitlab_keycloak_namespace }}"
+    register: r_keycloak_admin
+    retries: 10
+    delay: 30
+    until:
+    - r_keycloak_admin.resources is defined
+    - r_keycloak_admin.resources | length > 0
+
+  - name: Set Keycloak admin credentials
+    ansible.builtin.set_fact:
+      _ocp4_workload_gitlab_keycloak_admin_user: "{{ r_keycloak_admin.resources[0].data.username | b64decode }}"
+      _ocp4_workload_gitlab_keycloak_admin_password: "{{ r_keycloak_admin.resources[0].data.password | b64decode }}"
+
 #####################################################################
 # Get GitLab Route Hostname
 #####################################################################
@@ -214,6 +232,81 @@
     register: r_create_users
 
 #####################################################################
+# Pre-create Users and Assign Groups (Keycloak Auth)
+#####################################################################
+
+- name: Pre-create Keycloak users in GitLab and assign groups
+  when: ocp4_workload_gitlab_auth_mode == 'keycloak'
+  block:
+  - name: Get Keycloak admin access token
+    ansible.builtin.uri:
+      url: "{{ _ocp4_workload_gitlab_keycloak_url }}/realms/master/protocol/openid-connect/token"
+      method: POST
+      body_format: form-urlencoded
+      body:
+        grant_type: password
+        client_id: admin-cli
+        username: "{{ _ocp4_workload_gitlab_keycloak_admin_user }}"
+        password: "{{ _ocp4_workload_gitlab_keycloak_admin_password }}"
+      validate_certs: false
+      status_code: 200
+    register: r_keycloak_token
+
+  - name: Get all users from Keycloak realm
+    ansible.builtin.uri:
+      url: "{{ _ocp4_workload_gitlab_keycloak_url }}/admin/realms/{{ ocp4_workload_gitlab_keycloak_realm }}/users"
+      method: GET
+      headers:
+        Authorization: "Bearer {{ r_keycloak_token.json.access_token }}"
+      validate_certs: false
+      status_code: 200
+    register: r_keycloak_users
+
+  - name: Create users in GitLab with OIDC provider linkage
+    ansible.builtin.uri:
+      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/users"
+      method: POST
+      headers:
+        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+        Content-Type: "application/json"
+      body_format: json
+      body:
+        email: "{{ item.email }}"
+        username: "{{ item.username }}"
+        name: "{{ item.firstName | default('') }} {{ item.lastName | default('') }}"
+        extern_uid: "{{ item.id }}"
+        provider: "openid_connect"
+        skip_confirmation: true
+      validate_certs: false
+      status_code: [201, 409]
+    loop: "{{ r_keycloak_users.json }}"
+    loop_control:
+      label: "{{ item.username }}"
+    register: r_create_keycloak_users
+
+  - name: Get Keycloak groups for each user
+    ansible.builtin.uri:
+      url: "{{ _ocp4_workload_gitlab_keycloak_url }}/admin/realms/{{ ocp4_workload_gitlab_keycloak_realm }}/users/{{ item.id }}/groups"
+      method: GET
+      headers:
+        Authorization: "Bearer {{ r_keycloak_token.json.access_token }}"
+      validate_certs: false
+      status_code: 200
+    loop: "{{ r_keycloak_users.json }}"
+    loop_control:
+      label: "{{ item.username }}"
+    register: r_keycloak_user_groups
+
+  - name: Add users to GitLab groups based on Keycloak group membership
+    ansible.builtin.include_tasks: add_keycloak_user_to_gitlab_groups.yml
+    vars:
+      _keycloak_user: "{{ item.item }}"
+      _keycloak_groups: "{{ item.json }}"
+    loop: "{{ r_keycloak_user_groups.results }}"
+    loop_control:
+      label: "{{ item.item.username }}"
+
+#####################################################################
 # Create Root Groups and Import Repositories
 #####################################################################
 
@@ -262,35 +355,6 @@
     - item.0.json | length > 0
     loop_control:
       label: "{{ item.0.json[0].username }} -> {{ item.1.path }}"
-
-#####################################################################
-# Setup Keycloak Group Sync
-#####################################################################
-
-- name: Setup Keycloak group sync cronjob
-  when: ocp4_workload_gitlab_auth_mode == 'keycloak'
-  block:
-  - name: Get Keycloak admin credentials
-    kubernetes.core.k8s_info:
-      api_version: v1
-      kind: Secret
-      name: keycloak-initial-admin
-      namespace: "{{ ocp4_workload_gitlab_keycloak_namespace }}"
-    register: r_keycloak_admin
-    ignore_errors: true
-
-  - name: Set Keycloak admin credentials
-    when:
-    - r_keycloak_admin.resources is defined
-    - r_keycloak_admin.resources | length > 0
-    ansible.builtin.set_fact:
-      _ocp4_workload_gitlab_keycloak_admin_user: "{{ r_keycloak_admin.resources[0].data.username | b64decode }}"
-      _ocp4_workload_gitlab_keycloak_admin_password: "{{ r_keycloak_admin.resources[0].data.password | b64decode }}"
-
-  - name: Deploy Keycloak sync cronjob
-    kubernetes.core.k8s:
-      state: present
-      template: keycloak-sync-cronjob.yaml.j2
 
 #####################################################################
 # Setup GitLab Runner

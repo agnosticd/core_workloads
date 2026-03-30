@@ -1,0 +1,38 @@
+---
+# Add Keycloak user to GitLab groups based on Keycloak group membership
+#
+# Expected variables:
+#   _keycloak_user: Keycloak user object with id, username, email
+#   _keycloak_groups: List of Keycloak groups the user belongs to
+
+- name: Get GitLab user ID for {{ _keycloak_user.username }}
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/users?username={{ _keycloak_user.username }}"
+    method: GET
+    headers:
+      PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+    validate_certs: false
+    status_code: 200
+  register: r_gitlab_user
+
+- name: Add user to GitLab groups matching Keycloak groups
+  when:
+  - r_gitlab_user.json | length > 0
+  - ocp4_workload_gitlab_user_repositories | length > 0
+  - _matching_gitlab_groups | length > 0
+  ansible.builtin.include_tasks: add_user_to_group.yml
+  vars:
+    _user_data: "{{ r_gitlab_user.json[0] }}"
+    _group_config: "{{ item }}"
+    # Extract Keycloak group names (lowercase for comparison)
+    _keycloak_group_names: "{{ _keycloak_groups | map(attribute='name') | map('lower') | list }}"
+    # Find GitLab groups where the access_level matches a Keycloak group name
+    _matching_gitlab_groups: >-
+      {{
+        ocp4_workload_gitlab_user_repositories
+        | selectattr('access_level', 'in', _keycloak_group_names)
+        | list
+      }}
+  loop: "{{ _matching_gitlab_groups }}"
+  loop_control:
+    label: "{{ _keycloak_user.username }} -> {{ item.path }} ({{ item.access_level }})"
