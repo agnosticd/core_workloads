@@ -280,6 +280,22 @@
     register: r_create_users
 
 #####################################################################
+# Create Root Groups and Import Repositories
+#####################################################################
+
+- name: Create root groups and import repositories
+  when: ocp4_workload_gitlab_root_repositories | length > 0
+  ansible.builtin.include_tasks: create_root_groups.yml
+
+#####################################################################
+# Create User Groups and Import Repositories
+#####################################################################
+
+- name: Create user groups and import repositories
+  when: ocp4_workload_gitlab_user_repositories | length > 0
+  ansible.builtin.include_tasks: create_user_groups.yml
+
+#####################################################################
 # Add Users to Groups
 #####################################################################
 
@@ -318,22 +334,6 @@
     - item.0.json | length > 0
     loop_control:
       label: "{{ item.0.json[0].username }} -> {{ item.1.path }}"
-
-#####################################################################
-# Create Root Groups and Import Repositories
-#####################################################################
-
-- name: Create root groups and import repositories
-  when: ocp4_workload_gitlab_root_repositories | length > 0
-  ansible.builtin.include_tasks: create_root_groups.yml
-
-#####################################################################
-# Create User Groups and Import Repositories
-#####################################################################
-
-- name: Create user groups and import repositories
-  when: ocp4_workload_gitlab_user_repositories | length > 0
-  ansible.builtin.include_tasks: create_user_groups.yml
 
 #####################################################################
 # Setup GitLab Runner
