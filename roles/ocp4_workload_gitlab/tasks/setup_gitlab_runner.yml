@@ -1,0 +1,36 @@
+---
+#####################################################################
+# Create GitLab Runner Registration Token
+#####################################################################
+
+- name: Create GitLab runner Registration Token
+  ansible.builtin.uri:
+    url: https://{{ _ocp4_workload_gitlab_route }}/api/v4/runners/reset_registration_token
+    method: POST
+    return_content: true
+    body_format: json
+    headers:
+      PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+    validate_certs: false
+    status_code: [201]
+  register: r_gitlab_runner_token
+
+- name: Set registration token
+  ansible.builtin.set_fact:
+    _gitlab_runner_registration_token: "{{ r_gitlab_runner_token.json.token }}"
+
+#####################################################################
+# Deploy GitLab Runner Resources
+#####################################################################
+
+- name: Deploy GitLab Runner resources
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', item) | from_yaml }}"
+  loop:
+  - gitlab-runner-sa.yml.j2
+  - gitlab-runner-sa-scc.yml.j2
+  - gitlab-runner-rbac.yaml.j2
+  - gitlab-runner-config.yml.j2
+  - gitlab-runner-token.yaml.j2
+  - gitlab-runner-deployment.yaml.j2

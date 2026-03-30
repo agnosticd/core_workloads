@@ -336,28 +336,7 @@
 
 - name: Setup GitLab Runner
   when: ocp4_workload_gitlab_runner_enabled | bool
-  block:
-  - name: Get runner registration token from GitLab
-    ansible.builtin.uri:
-      url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/runners/reset_registration_token"
-      method: POST
-      headers:
-        PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
-      validate_certs: false
-      status_code: [200, 201]
-    register: r_runner_token
-
-  - name: Set runner registration token
-    ansible.builtin.set_fact:
-      _gitlab_runner_registration_token: "{{ r_runner_token.json.token }}"
-
-  - name: Deploy GitLab Runner resources
-    kubernetes.core.k8s:
-      state: present
-      template: "{{ item }}"
-    loop:
-    - gitlab-runner-token.yaml.j2
-    - gitlab-runner.yaml.j2
+  ansible.builtin.include_tasks: setup_gitlab_runner.yml
 
 #####################################################################
 # Report Information
