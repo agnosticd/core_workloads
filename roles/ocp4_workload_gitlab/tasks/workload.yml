@@ -142,7 +142,7 @@
 
 - name: Wait for GitLab to respond to HTTP requests
   ansible.builtin.uri:
-    url: "https://{{ _ocp4_workload_gitlab_route }}/-/liveness"
+    url: "https://{{ _ocp4_workload_gitlab_route }}/users/sign_in"
     method: GET
     validate_certs: false
     status_code: 200
