@@ -63,10 +63,7 @@
     _username: "{{ ocp4_workload_openshift_gitops_user_base }}{{ _user_num }}"
 
 - name: Attempt to install the ArgoCD CLI to the bastion
-  when:
-  - ocp4_workload_openshift_gitops_install_cli_tools | bool
-  - "'bastions' in groups"
-  - groups['bastions'] | length > 0
+  when: ocp4_workload_openshift_gitops_install_cli_tools | bool
   block:
   - name: Get the OpenShift Gitops ArgoCD server route
     kubernetes.core.k8s_info:
@@ -89,7 +86,7 @@
       mode: ug=rwx,o=rx
     retries: 10
     delay: 5
-    failed_when: false
+    ignore_errors: true
 
 # yamllint disable rule:line-length
 - name: Save AgnosticD User data
