@@ -100,12 +100,16 @@
 # Deploy GitLab
 #####################################################################
 
-- name: Deploy GitLab resources
+- name: Deploy GitLab RBAC resources (multi-document template)
   kubernetes.core.k8s:
     state: present
-    template: "{{ item }}"
+    definition: "{{ lookup('template', 'gitlab-serviceaccount-rbac.yaml.j2') }}"
+
+- name: Deploy GitLab resources (multi-document templates)
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', item) }}"
   loop:
-  - gitlab-serviceaccount-rbac.yaml.j2
   - gitlab-config-secrets.yaml.j2
   - gitlab-postgresql-pvcs.yaml.j2
   - postgresql.yaml.j2
