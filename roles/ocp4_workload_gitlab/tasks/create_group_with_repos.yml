@@ -46,15 +46,16 @@
           Content-Type: "application/json"
         body_format: json
         body:
-          name: "{{ item.name }}"
-          import_url: "{{ item.url }}"
-          visibility: "{{ item.visibility }}"
+          name: "{{ _repo.name }}"
+          import_url: "{{ _repo.url }}"
+          visibility: "{{ _repo.visibility }}"
           namespace_id: "{{ r_group_info.json.id }}"
         validate_certs: false
         status_code: [201, 400]
       loop: "{{ _group_config.repositories }}"
       loop_control:
-        label: "{{ _group_config.path }}/{{ item.name }}"
+        loop_var: _repo
+        label: "{{ _group_config.path }}/{{ _repo.name }}"
       register: r_import_repos
       retries: 3
       delay: 5
@@ -62,7 +63,7 @@
 
     - name: Wait for repository imports to complete
       ansible.builtin.uri:
-        url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/projects/{{ item.json.id }}/import"
+        url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/projects/{{ _result.json.id }}/import"
         method: GET
         headers:
           PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
@@ -70,11 +71,12 @@
         status_code: 200
       loop: "{{ r_import_repos.results }}"
       when:
-        - item.status == 201
-        - item.json is defined
-        - item.json.id is defined
+        - _result.status == 201
+        - _result.json is defined
+        - _result.json.id is defined
       loop_control:
-        label: "{{ item.json.path_with_namespace | default('unknown') }}"
+        loop_var: _result
+        label: "{{ _result.json.path_with_namespace | default('unknown') }}"
       register: r_import_status
       until:
         - r_import_status.json is defined
