@@ -1,0 +1,149 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+  labels:
+    app: gitlab
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: gitlab
+  template:
+    metadata:
+      labels:
+        app: gitlab
+    spec:
+      serviceAccountName: gitlab-ce
+      containers:
+      - name: gitlab
+        image: {{ ocp4_workload_gitlab_image }}:{{ ocp4_workload_gitlab_image_tag }}
+        env:
+        - name: GITLAB_OMNIBUS_CONFIG
+          value: "from_file '/etc/gitlab-omnibus/gitlab.rb'"
+        - name: GITLAB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: GITLAB_ROOT_PASSWORD
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: POSTGRES_DB
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: REDIS_PASSWORD
+{% if ocp4_workload_gitlab_auth_mode == 'keycloak' %}
+        - name: KEYCLOAK_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: KEYCLOAK_CLIENT_SECRET
+{% endif %}
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 2222
+          name: ssh
+        volumeMounts:
+        - name: gitlab-omnibus-config
+          mountPath: /etc/gitlab-omnibus
+          readOnly: true
+        - name: gitlab-data
+          mountPath: /etc/gitlab
+          subPath: config
+        - name: gitlab-data
+          mountPath: /var/log/gitlab
+          subPath: logs
+        - name: gitlab-data
+          mountPath: /var/opt/gitlab
+          subPath: data
+        resources:
+          requests:
+            memory: {{ ocp4_workload_gitlab_memory_request }}
+            cpu: {{ ocp4_workload_gitlab_cpu_request }}
+          limits:
+            memory: {{ ocp4_workload_gitlab_memory_limit }}
+            cpu: {{ ocp4_workload_gitlab_cpu_limit }}
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - curl -f http://localhost:8080/-/liveness
+          initialDelaySeconds: 300
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - curl -f http://localhost:8080/-/readiness
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 5
+      volumes:
+      - name: gitlab-omnibus-config
+        secret:
+          secretName: gitlab-omnibus-config
+      - name: gitlab-data
+        persistentVolumeClaim:
+          claimName: gitlab-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+  labels:
+    app: gitlab
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  - port: 2222
+    targetPort: 2222
+    name: ssh
+  selector:
+    app: gitlab
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: gitlab
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+  labels:
+    app: gitlab
+spec:
+{% if _ocp4_workload_gitlab_hostname | default("") | length > 0 %}
+  host: {{ _ocp4_workload_gitlab_hostname }}
+{% endif %}
+  to:
+    kind: Service
+    name: gitlab
+  port:
+    targetPort: http
+{% if ocp4_workload_gitlab_ssl_route | bool %}
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+{% endif %}

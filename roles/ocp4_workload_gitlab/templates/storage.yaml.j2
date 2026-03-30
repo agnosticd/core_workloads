@@ -1,0 +1,30 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitlab-data
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ ocp4_workload_gitlab_volume_size }}
+{% if ocp4_workload_gitlab_volume_storage_class | length > 0 %}
+  storageClassName: {{ ocp4_workload_gitlab_volume_storage_class }}
+{% endif %}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-data
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ ocp4_workload_gitlab_postgresql_volume_size }}
+{% if ocp4_workload_gitlab_postgresql_volume_storage_class | length > 0 %}
+  storageClassName: {{ ocp4_workload_gitlab_postgresql_volume_storage_class }}
+{% endif %}
