@@ -87,7 +87,7 @@ spec:
             command:
             - /bin/sh
             - -c
-            - curl -f http://localhost:8080/-/liveness
+            - curl -f http://localhost:8080/users/sign_in > /dev/null
           initialDelaySeconds: 300
           periodSeconds: 30
           timeoutSeconds: 10
@@ -96,7 +96,7 @@ spec:
             command:
             - /bin/sh
             - -c
-            - curl -f http://localhost:8080/-/readiness
+            - curl -f http://localhost:8080/users/sign_in > /dev/null
           initialDelaySeconds: 180
           periodSeconds: 10
           timeoutSeconds: 5
