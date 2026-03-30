@@ -310,7 +310,7 @@
       status_code: 200
     loop: >-
       {{
-        (range(1, ocp4_workload_gitlab_user_count | int + 1) | map('string') | map('regex_replace', '^(.*)$', ocp4_workload_gitlab_user_base ~ '\\1') | list)
+        (range(1, ocp4_workload_gitlab_user_count | int + 1) | map('string') | map('regex_replace', '^', ocp4_workload_gitlab_user_base) | list)
         if ocp4_workload_gitlab_auth_mode == 'native'
         else (r_keycloak_users.json | rejectattr('username', 'in', ['admin', 'root', 'ghost']) | map(attribute='username') | list)
       }}
