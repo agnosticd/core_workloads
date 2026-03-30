@@ -214,9 +214,25 @@ ocp4_workload_gitlab_application_settings:
   version_check_enabled: false
   allow_local_requests_from_web_hooks_and_services: true
   auto_devops_enabled: false
+  # Disable all rate limiting
   throttle_unauthenticated_enabled: false
   throttle_authenticated_api_enabled: false
   throttle_authenticated_web_enabled: false
+  throttle_protected_paths_enabled: false
+  rate_limiting_response_text: ""
+  issues_create_limit: 0
+  notes_create_limit: 0
+  project_export_limit: 0
+  project_download_export_limit: 0
+  project_import_limit: 0
+  raw_blob_request_limit: 0
+  group_export_limit: 0
+  group_download_export_limit: 0
+  group_import_limit: 0
+  user_email_lookup_limit: 0
+  search_rate_limit: 0
+  search_rate_limit_unauthenticated: 0
+  pipeline_limit_per_project_user_sha: 0
 
 # --------------------------------
 # Keycloak Integration Settings
