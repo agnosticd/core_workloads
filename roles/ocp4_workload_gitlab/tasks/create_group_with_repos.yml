@@ -1,0 +1,86 @@
+---
+# Create a single group and import its repositories
+# Expects _group_config variable with structure:
+#   group: Group name
+#   path: Group path
+#   visibility: Group visibility
+#   repositories: List of repositories to import
+
+- name: Create group {{ _group_config.group }}
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/groups"
+    method: POST
+    headers:
+      PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ _group_config.group }}"
+      path: "{{ _group_config.path }}"
+      visibility: "{{ _group_config.visibility }}"
+    validate_certs: false
+    status_code: [201, 400]
+  register: r_create_group
+
+- name: Get group ID for {{ _group_config.group }}
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/groups/{{ _group_config.path }}"
+    method: GET
+    headers:
+      PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+    validate_certs: false
+    status_code: 200
+  register: r_group_info
+
+- name: Import repositories into group
+  when:
+    - _group_config.repositories is defined
+    - _group_config.repositories | length > 0
+  block:
+    - name: Import repositories into {{ _group_config.group }}
+      ansible.builtin.uri:
+        url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/projects"
+        method: POST
+        headers:
+          PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          name: "{{ _repo.name }}"
+          import_url: "{{ _repo.url }}"
+          visibility: "{{ _repo.visibility }}"
+          namespace_id: "{{ r_group_info.json.id }}"
+        validate_certs: false
+        status_code: [201, 400]
+      loop: "{{ _group_config.repositories }}"
+      loop_control:
+        loop_var: _repo
+        label: "{{ _group_config.path }}/{{ _repo.name }}"
+      register: r_import_repos
+      retries: 60
+      delay: 10
+      until: r_import_repos.status in [201, 400]
+
+    - name: Wait for repository imports to complete
+      ansible.builtin.uri:
+        url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/projects/{{ _result.json.id }}/import"
+        method: GET
+        headers:
+          PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+        validate_certs: false
+        status_code: 200
+      loop: "{{ r_import_repos.results }}"
+      when:
+        - _result.status == 201
+        - _result.json is defined
+        - _result.json.id is defined
+      loop_control:
+        loop_var: _result
+        label: "{{ _result.json.path_with_namespace | default('unknown') }}"
+      register: r_import_status
+      until:
+        - r_import_status.json is defined
+        - r_import_status.json.import_status is defined
+        - r_import_status.json.import_status == 'finished'
+      retries: 60
+      delay: 10

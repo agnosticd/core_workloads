@@ -1,3 +1,188 @@
-= ocp4_workload_authentication_keycloak - Install Keycloak Operator and configure it for authentication
+= ocp4_workload_authentication_keycloak
 
-See defaults/main.yml for variables to set.
+== Role Overview
+
+This role deploys Red Hat build of Keycloak (RHBK) operator and configures it for OpenShift authentication with the following features:
+
+* Keycloak operator deployment
+* PostgreSQL database for Keycloak
+* Realm creation with OpenShift OAuth integration
+* User and admin account creation
+* Support for additional OAuth clients (e.g., GitLab, Grafana, ArgoCD)
+* Default group creation (`admins` and `users`)
+
+== Requirements
+
+* OpenShift 4.x cluster
+* Cluster admin access
+
+== Role Variables
+
+=== Keycloak Deployment Settings
+
+[cols="1,1,1,3"]
+|===
+|Variable |Default |Type |Description
+
+|ocp4_workload_authentication_keycloak_namespace
+|keycloak
+|String
+|Namespace for Keycloak deployment
+
+|ocp4_workload_authentication_keycloak_default_realm
+|sso
+|String
+|Name of the default realm to create
+
+|ocp4_workload_authentication_keycloak_channel
+|stable-v26.2
+|String
+|Operator channel
+
+|ocp4_workload_authentication_keycloak_use_catalog_source
+|false
+|Boolean
+|Use custom catalog source
+|===
+
+=== User and Admin Settings
+
+[cols="1,1,1,3"]
+|===
+|Variable |Default |Type |Description
+
+|ocp4_workload_authentication_keycloak_num_users
+|0
+|Integer
+|Number of regular users to create
+
+|ocp4_workload_authentication_keycloak_user_username_base
+|user
+|String
+|Base username for regular users (user1, user2, etc.)
+
+|ocp4_workload_authentication_keycloak_user_password
+|Generated
+|String
+|Password for all regular users
+
+|ocp4_workload_authentication_keycloak_admin_create
+|true
+|Boolean
+|Create admin user
+
+|ocp4_workload_authentication_keycloak_admin_username
+|admin-user
+|String
+|Username for admin user
+
+|ocp4_workload_authentication_keycloak_admin_password
+|Generated
+|String
+|Password for admin user
+|===
+
+=== OAuth Client Settings
+
+[cols="1,1,1,3"]
+|===
+|Variable |Default |Type |Description
+
+|ocp4_workload_authentication_keycloak_clients
+|[]
+|List
+|Additional OAuth clients to create (beyond the default OpenShift client)
+|===
+
+Each client entry should have:
+
+* `clientId`: Client ID (required)
+* `secret`: Client secret (required)
+* `redirectUris`: List of redirect URIs (optional, defaults to ["*"])
+* `description`: Client description (optional)
+* `publicClient`: true/false (optional, defaults to false)
+* `standardFlowEnabled`: true/false (optional, defaults to true)
+* `directAccessGrantsEnabled`: true/false (optional, defaults to true)
+* `serviceAccountsEnabled`: true/false (optional, defaults to true)
+
+== Usage Examples
+
+=== Example 1: Basic Keycloak Deployment
+
+[source,yaml]
+----
+- name: Deploy Keycloak
+  hosts: localhost
+  tasks:
+  - include_role:
+      name: ocp4_workload_authentication_keycloak
+    vars:
+      ocp4_workload_authentication_keycloak_num_users: 5
+----
+
+=== Example 2: Keycloak with GitLab OAuth Client
+
+[source,yaml]
+----
+- name: Deploy Keycloak with GitLab client
+  hosts: localhost
+  tasks:
+  - include_role:
+      name: ocp4_workload_authentication_keycloak
+    vars:
+      ocp4_workload_authentication_keycloak_num_users: 10
+      ocp4_workload_authentication_keycloak_user_username_base: student
+      
+      ocp4_workload_authentication_keycloak_clients:
+      - clientId: gitlab
+        secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+        redirectUris:
+        - "https://gitlab-gitlab.{{ openshift_cluster_ingress_domain }}/*"
+        description: "GitLab SSO Integration"
+----
+
+=== Example 3: Multiple OAuth Clients
+
+[source,yaml]
+----
+- name: Deploy Keycloak with multiple clients
+  hosts: localhost
+  tasks:
+  - include_role:
+      name: ocp4_workload_authentication_keycloak
+    vars:
+      ocp4_workload_authentication_keycloak_num_users: 15
+      ocp4_workload_authentication_keycloak_user_username_base: participant
+      
+      ocp4_workload_authentication_keycloak_clients:
+      - clientId: gitlab
+        secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+        redirectUris:
+        - "https://gitlab-gitlab.{{ openshift_cluster_ingress_domain }}/*"
+        description: "GitLab OAuth Client"
+      
+      - clientId: grafana
+        secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+        redirectUris:
+        - "https://grafana-grafana.{{ openshift_cluster_ingress_domain }}/login/generic_oauth"
+        description: "Grafana OAuth Client"
+      
+      - clientId: argocd
+        secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+        redirectUris:
+        - "https://argocd-server-argocd.{{ openshift_cluster_ingress_domain }}/auth/callback"
+        description: "ArgoCD OAuth Client"
+----
+
+== Default Groups
+
+The role creates two default groups:
+
+* `admins` - Admin user is assigned to this group
+* `users` - All regular users are assigned to this group
+
+These groups are created automatically and cannot be customized.
+
+== License
+
+MIT

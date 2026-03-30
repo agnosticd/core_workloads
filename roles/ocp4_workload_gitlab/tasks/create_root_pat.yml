@@ -1,0 +1,59 @@
+---
+- name: Wait for GitLab pod to be running
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ ocp4_workload_gitlab_namespace }}"
+    label_selectors:
+    - app=gitlab
+  register: r_gitlab_pod
+  until:
+  - r_gitlab_pod.resources is defined
+  - r_gitlab_pod.resources | length > 0
+  - r_gitlab_pod.resources[0].status.phase is defined
+  - r_gitlab_pod.resources[0].status.phase == 'Running'
+  retries: 30
+  delay: 10
+
+- name: Set GitLab pod name
+  ansible.builtin.set_fact:
+    _gitlab_pod_name: "{{ r_gitlab_pod.resources[0].metadata.name }}"
+
+- name: Create Personal Access Token using gitlab-rails
+  kubernetes.core.k8s_exec:
+    namespace: "{{ ocp4_workload_gitlab_namespace }}"
+    pod: "{{ _gitlab_pod_name }}"
+    command: >-
+      gitlab-rails runner "
+      token = User.find_by_username('root').personal_access_tokens.create(
+        scopes: ['api', 'read_api', 'read_user', 'read_repository', 'write_repository', 'sudo'],
+        name: 'Automation Token',
+        expires_at: 365.days.from_now
+      );
+      token.save!;
+      puts token.token"
+  register: r_create_pat
+  retries: 3
+  delay: 10
+
+- name: Set automation token from gitlab-rails output
+  ansible.builtin.set_fact:
+    _gitlab_automation_token: "{{ r_create_pat.stdout | trim }}"
+
+- name: Create secret with automation token
+  kubernetes.core.k8s:
+    state: present
+    template: gitlab-root-token-secret.yaml.j2
+
+- name: Verify PAT is active and usable
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/user"
+    method: GET
+    headers:
+      PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+    validate_certs: false
+    status_code: 200
+  register: r_verify_token
+  retries: 30
+  delay: 10
+  until: r_verify_token.status == 200

@@ -1,0 +1,43 @@
+---
+# Add a user to a group with the access_level defined in the group config
+# Expects:
+#   _user_data: User info with id and username
+#   _group_config: Group configuration with path and access_level
+
+- name: Get group info for {{ _group_config.path }}
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/groups/{{ _group_config.path }}"
+    method: GET
+    headers:
+      PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+    validate_certs: false
+    status_code: 200
+  register: r_group_info
+
+- name: Map access level to numeric value
+  ansible.builtin.set_fact:
+    _gitlab_access_level: >-
+      {{
+        {
+          'guest': 10,
+          'reporter': 20,
+          'developer': 30,
+          'maintainer': 40,
+          'owner': 50
+        }[_group_config.access_level | lower]
+      }}
+
+- name: Add user {{ _user_data.username }} to group {{ _group_config.path }}
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/groups/{{ r_group_info.json.id }}/members"
+    method: POST
+    headers:
+      PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      user_id: "{{ _user_data.id }}"
+      access_level: "{{ _gitlab_access_level }}"
+    validate_certs: false
+    status_code: [201, 409]
+  register: r_add_member

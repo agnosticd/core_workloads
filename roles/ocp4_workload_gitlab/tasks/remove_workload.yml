@@ -1,0 +1,28 @@
+---
+#####################################################################
+# Remove GitLab Namespace
+#####################################################################
+
+- name: Remove GitLab namespace
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: Namespace
+    name: "{{ ocp4_workload_gitlab_namespace }}"
+  register: r_k8s
+  until: r_k8s is successful
+  retries: 30
+  delay: 10
+
+#####################################################################
+# Clean up SCC bindings
+#####################################################################
+
+- name: Remove SCC role binding
+  kubernetes.core.k8s:
+    state: absent
+    api_version: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    name: gitlab-ce-anyuid
+    namespace: "{{ ocp4_workload_gitlab_namespace }}"
+  ignore_errors: true

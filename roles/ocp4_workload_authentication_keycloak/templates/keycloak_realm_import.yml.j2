@@ -13,6 +13,7 @@ spec:
     loginWithEmailAllowed: true
     duplicateEmailsAllowed: false
     clients:
+      # OpenShift OAuth client (always created)
       - clientId: {{ ocp4_workload_authentication_keycloak_openshift_client_id }}
         enabled: true
         clientAuthenticatorType: client-secret
@@ -25,6 +26,32 @@ spec:
         serviceAccountsEnabled: true
         frontchannelLogout: false
         protocol: openid-connect
+{% if ocp4_workload_authentication_keycloak_clients | length > 0 %}
+      # Additional clients
+{% for client in ocp4_workload_authentication_keycloak_clients %}
+      - clientId: {{ client.clientId }}
+        enabled: true
+        clientAuthenticatorType: client-secret
+        secret: {{ client.secret }}
+        publicClient: {{ client.publicClient | default(false) }}
+        redirectUris:
+{% if client.redirectUris is defined %}
+{% for uri in client.redirectUris %}
+        - {{ uri }}
+{% endfor %}
+{% else %}
+        - "*"
+{% endif %}
+        standardFlowEnabled: {{ client.standardFlowEnabled | default(true) }}
+        directAccessGrantsEnabled: {{ client.directAccessGrantsEnabled | default(true) }}
+        serviceAccountsEnabled: {{ client.serviceAccountsEnabled | default(true) }}
+        frontchannelLogout: false
+        protocol: openid-connect
+{% if client.description is defined %}
+        description: {{ client.description }}
+{% endif %}
+{% endfor %}
+{% endif %}
     roles:
       realm:
         - name: user
@@ -46,6 +73,8 @@ spec:
             temporary: false
         realmRoles:
           - user
+        groups:
+          - /users
 {% endfor %}
 {% if ocp4_workload_authentication_keycloak_admin_create %}
       - username: {{ ocp4_workload_authentication_keycloak_admin_username }}
@@ -60,11 +89,13 @@ spec:
             temporary: false
         realmRoles:
           - admin
+        groups:
+          - /admins
 {% endif %}
 {% else %}
     users: []
 {% endif %}
     groups:
+      # Default groups (always created)
       - name: admins
       - name: users
-

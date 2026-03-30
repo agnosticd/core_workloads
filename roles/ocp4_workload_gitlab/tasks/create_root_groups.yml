@@ -1,0 +1,11 @@
+---
+# Create root groups and import repositories
+
+- name: Process each root group
+  ansible.builtin.include_tasks: create_group_with_repos.yml
+  vars:
+    _group_config: "{{ item }}"
+    _group_owner: root
+  loop: "{{ ocp4_workload_gitlab_root_repositories }}"
+  loop_control:
+    label: "{{ item.group }}"

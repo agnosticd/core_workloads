@@ -1,0 +1,19 @@
+---
+galaxy_info:
+  author: AgnosticD Team
+  description: Deploy GitLab Community Edition on OpenShift
+  company: Red Hat
+  license: GPL-3.0-only
+  min_ansible_version: "2.15"
+  platforms:
+  - name: OpenShift
+    versions:
+    - all
+  galaxy_tags:
+  - ocp
+  - openshift
+  - gitlab
+  - git
+  - ci-cd
+
+dependencies: []

@@ -153,3 +153,34 @@ openshift_cluster_account_passwords:
 openshift_cluster_admin_password: 5AJcm2OfMf
 openshift_cluster_admin_username: admin
 ----
+
+== Keycloak Additional Features
+
+When using Keycloak as the authentication provider, additional features are available:
+
+=== Additional OAuth Clients
+
+You can configure additional OAuth clients for applications like GitLab, Grafana, etc.
+
+.example vars
+----
+ocp4_workload_authentication_provider: keycloak
+ocp4_workload_authentication_keycloak_clients:
+- clientId: gitlab
+  secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+  redirectUris:
+  - "https://gitlab-gitlab.apps.example.com/*"
+  description: "GitLab OAuth Client"
+- clientId: grafana
+  secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+  redirectUris:
+  - "https://grafana.apps.example.com/login/generic_oauth"
+  description: "Grafana OAuth Client"
+----
+
+=== Default Groups
+
+The role automatically creates and assigns users to default groups:
+
+* Admin and cluster accounts are assigned to: `/admins`
+* Regular user accounts are assigned to: `/users`

@@ -1,0 +1,10 @@
+---
+# Create user groups and import repositories
+
+- name: Process each user group
+  ansible.builtin.include_tasks: create_group_with_repos.yml
+  vars:
+    _group_config: "{{ item }}"
+  loop: "{{ ocp4_workload_gitlab_user_repositories }}"
+  loop_control:
+    label: "{{ item.group }}"
