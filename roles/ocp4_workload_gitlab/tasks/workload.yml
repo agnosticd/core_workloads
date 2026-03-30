@@ -274,7 +274,7 @@
         skip_confirmation: true
       validate_certs: false
       status_code: [201, 409]
-    loop: "{{ r_keycloak_users.json }}"
+    loop: "{{ r_keycloak_users.json | rejectattr('username', 'in', ['admin', 'root', 'ghost']) | list }}"
     loop_control:
       label: "{{ item.username }}"
     register: r_create_users
@@ -301,7 +301,7 @@
       {{
         (range(1, ocp4_workload_gitlab_user_count | int + 1) | map('string') | map('regex_replace', '^(.*)$', ocp4_workload_gitlab_user_base ~ '\\1') | list)
         if ocp4_workload_gitlab_auth_mode == 'native'
-        else (r_keycloak_users.json | map(attribute='username') | list)
+        else (r_keycloak_users.json | rejectattr('username', 'in', ['admin', 'root', 'ghost']) | map(attribute='username') | list)
       }}
     loop_control:
       label: "{{ item }}"
