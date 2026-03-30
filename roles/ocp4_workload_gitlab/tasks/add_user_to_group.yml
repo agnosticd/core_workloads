@@ -27,7 +27,7 @@
         }[_group_config.access_level | lower]
       }}
 
-- name: Add user {{ _user_data.username }} to group {{ _group_config.path }}
+- name: Add user to group - {{ _user_data.username ~ ' / ' ~ _group_config.path }}
   ansible.builtin.uri:
     url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/groups/{{ r_group_info.json.id }}/members"
     method: POST

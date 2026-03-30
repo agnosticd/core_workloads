@@ -323,7 +323,14 @@
     vars:
       _user_data: "{{ item.0.json[0] }}"
       _group_config: "{{ item.1 }}"
-    loop: "{{ r_user_ids.results | rejectattr('skipped', 'defined') | selectattr('json', 'defined') | product(ocp4_workload_gitlab_user_repositories | selectattr('access_level', 'in', ocp4_workload_gitlab_user_default_access_levels) | list) | list }}"
+    loop: >-
+      {{ r_user_ids.results
+         | rejectattr('skipped', 'defined')
+         | selectattr('json', 'defined')
+         | product(ocp4_workload_gitlab_user_repositories
+           | selectattr('access_level', 'in', ocp4_workload_gitlab_user_default_access_levels)
+           | list)
+         | list }}
     when:
     - item.0.json is defined
     - item.0.json | length > 0

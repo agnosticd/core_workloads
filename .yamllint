@@ -4,6 +4,7 @@ extends: default
 ignore:
 - .tox/
 - .git/
+- .ansible/
 
 rules:
   braces:
