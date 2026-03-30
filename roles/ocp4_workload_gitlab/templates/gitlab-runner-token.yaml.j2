@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitlab-runner-token
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+type: Opaque
+stringData:
+  token: "{{ r_runner_token.json.token }}"

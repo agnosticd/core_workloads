@@ -351,23 +351,13 @@
       status_code: [200, 201]
     register: r_runner_token
 
-  - name: Create runner registration token secret
+  - name: Deploy GitLab Runner resources
     kubernetes.core.k8s:
       state: present
-      definition:
-        apiVersion: v1
-        kind: Secret
-        metadata:
-          name: gitlab-runner-token
-          namespace: "{{ ocp4_workload_gitlab_namespace }}"
-        type: Opaque
-        stringData:
-          token: "{{ r_runner_token.json.token }}"
-
-  - name: Deploy GitLab Runner
-    kubernetes.core.k8s:
-      state: present
-      template: gitlab-runner.yaml.j2
+      template: "{{ item }}"
+    loop:
+    - gitlab-runner-token.yaml.j2
+    - gitlab-runner.yaml.j2
 
 #####################################################################
 # Report Information
