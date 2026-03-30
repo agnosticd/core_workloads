@@ -11,7 +11,7 @@ silent: false
 ocp4_workload_gitlab_namespace: gitlab
 
 # GitLab image and version
-ocp4_workload_gitlab_image: gitlab/gitlab-ce
+ocp4_workload_gitlab_image: quay.io/rhpds/gitlab-ce
 ocp4_workload_gitlab_image_tag: 18.10.1-ce.0
 
 # Use HTTPS route for GitLab
@@ -301,8 +301,8 @@ ocp4_workload_gitlab_cpu_limit: 4
 ocp4_workload_gitlab_runner_enabled: false
 
 # GitLab Runner image
-ocp4_workload_gitlab_runner_image: docker.io/gitlab/gitlab-runner
-ocp4_workload_gitlab_runner_image_tag: ubi-fips-227cc6a9
+ocp4_workload_gitlab_runner_image: quay.io/rhpds/gitlab-runner
+ocp4_workload_gitlab_runner_image_tag: ubi-fips-v17.8.0-amd64
 
 # GitLab Runner executor (kubernetes, docker, shell)
 ocp4_workload_gitlab_runner_executor: kubernetes
