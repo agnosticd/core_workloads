@@ -237,6 +237,11 @@ spec:
             nginx['listen_port'] = 8080
             nginx['listen_https'] = false
             gitlab_rails['gitlab_shell_ssh_port'] = 2222
+            puma['worker_processes'] = 2
+            puma['min_threads'] = 4
+            puma['max_threads'] = 4
+            puma['worker_timeout'] = 60
+            puma['per_worker_max_memory_mb'] = 1024
 {% if ocp4_workload_gitlab_auth_mode == 'keycloak' %}
             gitlab_rails['omniauth_enabled'] = true
             gitlab_rails['omniauth_allow_single_sign_on'] = ['openid_connect']
