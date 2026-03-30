@@ -46,6 +46,22 @@
       keycloak_admin_user: "{{ _ocp4_workload_authentication_keycloak_admin_username }}"
       keycloak_admin_password: "{{ _ocp4_workload_authentication_keycloak_admin_password }}"
 
+- name: Report Keycloak user groups
+  when:
+  - ocp4_workload_authentication_provider == 'keycloak'
+  - ocp4_workload_authentication_keycloak_user_groups | length > 0
+  agnosticd.core.agnosticd_user_info:
+    msg: >-
+      Keycloak user groups: {{ ocp4_workload_authentication_keycloak_user_groups | map(attribute='name') | join(', ') }}
+
+- name: Report Keycloak admin groups
+  when:
+  - ocp4_workload_authentication_provider == 'keycloak'
+  - ocp4_workload_authentication_keycloak_admin_groups | length > 0
+  agnosticd.core.agnosticd_user_info:
+    msg: >-
+      Keycloak admin groups: {{ ocp4_workload_authentication_keycloak_admin_groups | map(attribute='name') | join(', ') }}
+
 - name: Save cluster admin user data
   vars:
     _username: >-
