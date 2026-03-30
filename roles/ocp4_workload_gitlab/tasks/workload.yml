@@ -233,11 +233,12 @@
 # Add Users to Groups (Native Auth)
 #####################################################################
 
-- name: Add users to groups (native auth)
+- name: Add users to groups based on default access levels (native auth)
   when:
   - ocp4_workload_gitlab_auth_mode == 'native'
   - ocp4_workload_gitlab_user_count | int > 0
-  - ocp4_workload_gitlab_user_default_groups | length > 0
+  - ocp4_workload_gitlab_user_default_access_levels | length > 0
+  - ocp4_workload_gitlab_user_repositories | length > 0
   block:
   - name: Get user IDs from GitLab
     ansible.builtin.uri:
@@ -250,17 +251,17 @@
     loop: "{{ range(1, ocp4_workload_gitlab_user_count | int + 1) | list }}"
     register: r_user_ids
 
-  - name: Add users to default groups
+  - name: Add users to groups matching default access levels
     ansible.builtin.include_tasks: add_user_to_group.yml
     vars:
       _user_data: "{{ item.0.json[0] }}"
-      _group_path: "{{ item.1 }}"
-    loop: "{{ r_user_ids.results | product(ocp4_workload_gitlab_user_default_groups) | list }}"
+      _group_config: "{{ item.1 }}"
+    loop: "{{ r_user_ids.results | product(ocp4_workload_gitlab_user_repositories | selectattr('access_level', 'in', ocp4_workload_gitlab_user_default_access_levels) | list) | list }}"
     when:
     - item.0.json is defined
     - item.0.json | length > 0
     loop_control:
-      label: "{{ item.0.json[0].username }} -> {{ item.1 }}"
+      label: "{{ item.0.json[0].username }} -> {{ item.1.path }}"
 
 #####################################################################
 # Setup Keycloak Group Sync
@@ -273,18 +274,18 @@
     kubernetes.core.k8s_info:
       api_version: v1
       kind: Secret
-      name: keycloak-admin
+      name: keycloak-initial-admin
       namespace: "{{ ocp4_workload_gitlab_keycloak_namespace }}"
     register: r_keycloak_admin
     ignore_errors: true
 
-  - name: Create Keycloak admin credentials secret in GitLab namespace
+  - name: Set Keycloak admin credentials
     when:
     - r_keycloak_admin.resources is defined
     - r_keycloak_admin.resources | length > 0
-    kubernetes.core.k8s:
-      state: present
-      template: keycloak-admin-credentials-secret.yaml.j2
+    ansible.builtin.set_fact:
+      _ocp4_workload_gitlab_keycloak_admin_user: "{{ r_keycloak_admin.resources[0].data.username | b64decode }}"
+      _ocp4_workload_gitlab_keycloak_admin_password: "{{ r_keycloak_admin.resources[0].data.password | b64decode }}"
 
   - name: Deploy Keycloak sync cronjob
     kubernetes.core.k8s:

@@ -170,11 +170,13 @@ ocp4_workload_gitlab_root_repositories: []
 
 ocp4_workload_gitlab_user_repositories: []
 
-# Default groups for created users (native mode only)
-# List of group paths that all created users should join
-# Users will be added to these groups with the access_level defined in each group
-# Example: ["developers", "maintainers"]
-ocp4_workload_gitlab_user_default_groups: []
+# Default access levels for created users (native mode only)
+# List of access level names that determine which groups created users should join
+# Users will be added to all groups matching these access levels
+# Example: ["developer"] - adds users to all groups with access_level: "developer"
+# Example: ["developer", "maintainer"] - adds users to groups with either access level
+ocp4_workload_gitlab_user_default_access_levels:
+  - developer
 
 # --------------------------------
 # Application Settings
