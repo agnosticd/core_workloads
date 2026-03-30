@@ -44,3 +44,16 @@
   kubernetes.core.k8s:
     state: present
     template: gitlab-root-token-secret.yaml.j2
+
+- name: Verify PAT is active and usable
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_gitlab_route }}/api/v4/user"
+    method: GET
+    headers:
+      PRIVATE-TOKEN: "{{ _gitlab_automation_token }}"
+    validate_certs: false
+    status_code: 200
+  register: r_verify_token
+  retries: 30
+  delay: 10
+  until: r_verify_token.status == 200
