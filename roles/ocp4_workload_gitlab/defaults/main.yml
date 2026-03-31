@@ -300,17 +300,11 @@ ocp4_workload_gitlab_cpu_limit: 4
 # Enable GitLab Runner deployment
 ocp4_workload_gitlab_runner_enabled: false
 
-# GitLab Runner image
+# GitLab Runner Settings (Deployment-based)
 ocp4_workload_gitlab_runner_image: quay.io/rhpds/gitlab-runner
 ocp4_workload_gitlab_runner_image_tag: ubi-fips-v17.8.0-amd64
-
-# GitLab Runner executor (kubernetes, docker, shell)
 ocp4_workload_gitlab_runner_executor: kubernetes
-
-# GitLab Runner tags
 ocp4_workload_gitlab_runner_tags: "openshift,kubernetes"
-
-# GitLab Runner replicas
 ocp4_workload_gitlab_runner_replicas: 1
 
 # GitLab Runner resource limits

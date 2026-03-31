@@ -1,0 +1,82 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-runner
+  namespace: {{ ocp4_workload_gitlab_namespace }}
+spec:
+  replicas: {{ ocp4_workload_gitlab_runner_replicas }}
+  selector:
+    matchLabels:
+      app: gitlab-runner
+  template:
+    metadata:
+      labels:
+        app: gitlab-runner
+    spec:
+      serviceAccountName: gitlab-runner
+      initContainers:
+      - name: configure-runner
+        image: {{ ocp4_workload_gitlab_runner_image }}:{{ ocp4_workload_gitlab_runner_image_tag }}
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          set -ex
+
+          # Register runner with template config (merges advanced settings)
+          gitlab-runner register \
+            --template-config /configmap/register-template.toml \
+            --non-interactive \
+            --url "http://gitlab:8080" \
+            --registration-token "${REGISTRATION_TOKEN}" \
+            --executor "{{ ocp4_workload_gitlab_runner_executor }}" \
+            --description "OpenShift Runner" \
+            --tag-list "{{ ocp4_workload_gitlab_runner_tags }}" \
+            --run-untagged="true" \
+            --locked="false" \
+            --access-level="not_protected" \
+            {% if ocp4_workload_gitlab_runner_executor == 'kubernetes' %}
+            --kubernetes-namespace="{{ ocp4_workload_gitlab_namespace }}" \
+            --kubernetes-service-account="gitlab-runner" \
+            --kubernetes-pull-policy="if-not-present"
+            {% endif %}
+
+
+          echo "=== Final configuration ==="
+          cat /etc/gitlab-runner/config.toml
+        env:
+        - name: REGISTRATION_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-runner-token
+              key: token
+        volumeMounts:
+        - name: config
+          mountPath: /etc/gitlab-runner
+        - name: config-template
+          mountPath: /configmap
+      containers:
+      - name: gitlab-runner
+        image: {{ ocp4_workload_gitlab_runner_image }}:{{ ocp4_workload_gitlab_runner_image_tag }}
+        imagePullPolicy: Always
+        command:
+        - gitlab-runner
+        - run
+        - --user=gitlab-runner
+        - --working-directory=/home/gitlab-runner
+        volumeMounts:
+        - name: config
+          mountPath: /etc/gitlab-runner
+        resources:
+          requests:
+            memory: {{ ocp4_workload_gitlab_runner_memory_request }}
+            cpu: {{ ocp4_workload_gitlab_runner_cpu_request }}
+          limits:
+            memory: {{ ocp4_workload_gitlab_runner_memory_limit }}
+            cpu: {{ ocp4_workload_gitlab_runner_cpu_limit }}
+      volumes:
+      - name: config
+        emptyDir: {}
+      - name: config-template
+        configMap:
+          name: gitlab-runner-config
