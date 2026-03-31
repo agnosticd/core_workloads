@@ -46,11 +46,11 @@ ocp4_workload_gitlab_auth_mode: native
 ocp4_workload_gitlab_root_password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=16') }}"
 ocp4_workload_gitlab_root_password_length: 16
 
-# NOTE: The role automatically creates a 'gitlab-root-token' secret in the
+# NOTE: The role automatically creates a 'root-user-personal-token' secret in the
 # GitLab namespace containing a long-lived Personal Access Token (PAT) with
 # full API access. This token is used for automation (Keycloak sync, etc.)
 # and is available for external tools to interact with the GitLab API.
-# Secret: gitlab-root-token (key: token)
+# Secret: root-user-personal-token (key: token)
 # Scopes: api, read_api, read_user, read_repository, write_repository, sudo
 # Expiration: 365 days
 
