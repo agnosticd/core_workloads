@@ -431,19 +431,19 @@ The role automatically creates the following secrets in the GitLab namespace:
 |`GITLAB_ROOT_PASSWORD`, `POSTGRES_*`, `REDIS_PASSWORD`
 |GitLab root password and database credentials
 
-|`gitlab-root-token`
+|`root-user-personal-token`
 |`token`
 |GitLab Personal Access Token (PAT) for automation. This is a long-lived token (365 days) with full API access, used for user and group management during deployment and available for other automation tasks.
 |===
 
-NOTE: The `gitlab-root-token` secret contains a Personal Access Token with scopes: `api`, `read_api`, `read_user`, `read_repository`, `write_repository`, `sudo`. This token can be used by external automation tools to interact with the GitLab API.
+NOTE: The `root-user-personal-token` secret contains a Personal Access Token with scopes: `api`, `read_api`, `read_user`, `read_repository`, `write_repository`, `sudo`. This token can be used by external automation tools to interact with the GitLab API.
 
 **Example: Using the token in automation**
 
 [source,bash]
 ----
 # Get the token from the secret
-GITLAB_TOKEN=$(oc get secret gitlab-root-token -n gitlab -o jsonpath='{.data.token}' | base64 -d)
+GITLAB_TOKEN=$(oc get secret root-user-personal-token -n gitlab -o jsonpath='{.data.token}' | base64 -d)
 
 # Get GitLab URL
 GITLAB_URL=$(oc get route gitlab -n gitlab -o jsonpath='{.spec.host}')
@@ -523,7 +523,7 @@ oc logs -f deployment/gitlab -n gitlab
 ----
 # Get GitLab URL and token
 GITLAB_URL=$(oc get route gitlab -n gitlab -o jsonpath='{.spec.host}')
-GITLAB_TOKEN=$(oc get secret gitlab-root-token -n gitlab -o jsonpath='{.data.token}' | base64 -d)
+GITLAB_TOKEN=$(oc get secret root-user-personal-token -n gitlab -o jsonpath='{.data.token}' | base64 -d)
 
 # Check import status for all projects
 curl -k -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" "https://${GITLAB_URL}/api/v4/projects" | jq '.[] | {name: .name, import_status: .import_status}'

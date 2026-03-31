@@ -175,7 +175,7 @@
   # write_repository, sudo scopes). It is used by:
   # - Keycloak group sync cronjob
   # - Any other automation that needs to interact with GitLab API
-  # Secret name: gitlab-root-token (in GitLab namespace)
+  # Secret name: root-user-personal-token (in GitLab namespace)
   # Key: token
 
 #####################################################################
