@@ -219,6 +219,14 @@ ocp4_workload_gitlab_application_settings:
   # 0 = No protection, allows Developers to push
   # 2 = Full protection (default), only Maintainers can push
   default_branch_protection: 0
+  default_branch_protection_defaults:
+    allowed_to_push:
+      - access_level: 30
+    allow_force_push: true
+    allowed_to_merge:
+      - access_level: 30
+    developer_can_initial_push: false
+    code_owner_approval_required: false
   # Disable rate limiting for repository and group imports
   throttle_unauthenticated_enabled: false
   throttle_authenticated_api_enabled: false
