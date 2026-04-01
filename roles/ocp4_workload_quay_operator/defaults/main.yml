@@ -80,6 +80,10 @@ ocp4_workload_quay_operator_registry_admin_user: quayadmin
 ocp4_workload_quay_operator_registry_admin_password: ""
 ocp4_workload_quay_operator_registry_admin_password_length: 20
 
+# Save the Quay Admin credentials in a secret in the quay namespace
+ocp4_workload_quay_operator_registry_save_admin_credentials: false
+ocp4_workload_quay_operator_registry_admin_credentials_secret: quay-admin-credentials
+
 # Quay Registry Features
 ocp4_workload_quay_operator_registry_enable_clair: true
 ocp4_workload_quay_operator_registry_clair_volume_size: 100Gi

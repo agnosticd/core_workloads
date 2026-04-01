@@ -188,6 +188,21 @@
         state: present
         definition: "{{ lookup('template', 'quay-admin-token-secret.yml.j2') | from_yaml }}"
 
+    - name: Create quay admin credentials secret
+      when: ocp4_workload_quay_operator_registry_save_admin_credentials | bool
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: "{{ ocp4_workload_quay_operator_registry_admin_credentials_secret }}"
+            namespace: "{{ ocp4_workload_quay_operator_registry_namespace }}"
+          type: Opaque
+          stringData:
+            username: "{{ ocp4_workload_quay_operator_registry_admin_user }}"
+            password: "{{ _ocp4_workload_quay_operator_registry_admin_password }}"
+
   - name: Save user data for Quay console URL
     agnosticd.core.agnosticd_user_info:
       msg: "Red Hat Quay is available at {{ r_quay_registry.resources[0].status.registryEndpoint }}"
