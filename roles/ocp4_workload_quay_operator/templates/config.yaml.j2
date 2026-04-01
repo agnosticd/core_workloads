@@ -1,6 +1,7 @@
 REGISTRY_TITLE: {{ ocp4_workload_quay_operator_registry_display_name }}
 SERVER_HOSTNAME: {{ _ocp4_workload_quay_operator_registry_route }}
 EXTERNAL_TLS_TERMINATION: true
+FEATURE_USER_CREATION: true
 {% if ocp4_workload_quay_operator_registry_configure_admin | bool %}
 SUPER_USERS:
 - {{ ocp4_workload_quay_operator_registry_admin_user }}
