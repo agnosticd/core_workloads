@@ -189,13 +189,14 @@
         definition: "{{ lookup('template', 'quay-admin-token-secret.yml.j2') | from_yaml }}"
 
     - name: Create quay admin credentials secret
+      when: ocp4_workload_quay_operator_registry_save_admin_credentials | bool
       kubernetes.core.k8s:
         state: present
         definition:
           apiVersion: v1
           kind: Secret
           metadata:
-            name: quay-admin-credentials
+            name: "{{ ocp4_workload_quay_operator_registry_admin_credentials_secret }}"
             namespace: "{{ ocp4_workload_quay_operator_registry_namespace }}"
           type: Opaque
           stringData:
