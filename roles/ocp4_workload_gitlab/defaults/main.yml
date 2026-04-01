@@ -326,5 +326,5 @@ ocp4_workload_gitlab_runner_cpu_limit: "500m"
 # --------------------------------
 
 # Wait time for GitLab to be ready (seconds)
-ocp4_workload_gitlab_wait_retries: 60
+ocp4_workload_gitlab_wait_retries: 120
 ocp4_workload_gitlab_wait_delay: 10
