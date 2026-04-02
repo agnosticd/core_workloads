@@ -178,6 +178,37 @@
       retries: 120
       delay: 10
 
+    - name: Extend Quay admin token expiration
+      when: ocp4_workload_quay_operator_registry_extend_token_expiration | bool
+      ignore_errors: true
+      block:
+      - name: Get Quay database pod and ensure it's running
+        kubernetes.core.k8s_info:
+          api_version: v1
+          kind: Pod
+          namespace: "{{ ocp4_workload_quay_operator_registry_namespace }}"
+          label_selectors:
+          - quay-component=postgres
+        register: r_quay_database_pod
+        retries: 40
+        delay: 5
+        until:
+        - r_quay_database_pod.resources is defined
+        - r_quay_database_pod.resources | length == 1
+        - r_quay_database_pod.resources[0].status is defined
+        - r_quay_database_pod.resources[0].status.phase is defined
+        - r_quay_database_pod.resources[0].status.phase == "Running"
+
+      - name: Extend Quay token expiration
+        kubernetes.core.k8s_exec:
+          namespace: "{{ ocp4_workload_quay_operator_registry_namespace }}"
+          pod: "{{ r_quay_database_pod.resources[0].metadata.name }}"
+          command: psql -d quay-quay-database -c "update public.oauthaccesstoken set expires_at = '2300-12-31 00:00:00' where id = 1;"
+        register: r_extend_quay_token_expiration
+        until: r_extend_quay_token_expiration.rc == 0
+        retries: 5
+        delay: 30
+
     - name: Save access_token
       when: r_quayadmin.status == 200
       ansible.builtin.set_fact:

@@ -84,6 +84,9 @@ ocp4_workload_quay_operator_registry_admin_password_length: 20
 ocp4_workload_quay_operator_registry_save_admin_credentials: false
 ocp4_workload_quay_operator_registry_admin_credentials_secret: quay-admin-credentials
 
+# Extend Quay admin token expiration to prevent token expiry during long-running demos/labs
+ocp4_workload_quay_operator_registry_extend_token_expiration: true
+
 # Quay Registry Features
 ocp4_workload_quay_operator_registry_enable_clair: true
 ocp4_workload_quay_operator_registry_clair_volume_size: 100Gi
