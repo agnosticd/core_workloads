@@ -92,7 +92,7 @@ ocp4_workload_quay_operator_registry_enable_mirror: false
 ocp4_workload_quay_operator_registry_enable_monitoring: false
 # Quay component overrides - individual values
 # Enable/disable override sections
-ocp4_workload_quay_operator_registry_quay_overrides: false
+ocp4_workload_quay_operator_registry_quay_overrides: true
 ocp4_workload_quay_operator_registry_quay_overrides_env: true
 ocp4_workload_quay_operator_registry_quay_overrides_resources: true
 
