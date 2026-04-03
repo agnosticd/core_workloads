@@ -5,7 +5,7 @@
     template: ocp_bearer_token_lifecycle.yaml.j2
   register: r_extend_token_lifecycle
   until: r_extend_token_lifecycle is succeeded
-  retries: 5
+  retries: "{{ ocp4_workload_ansible_automation_platform_token_lifecycle_retries }}"
 
 - name: Install Red Hat Ansible Automation Platform
   ansible.builtin.include_role:
@@ -69,7 +69,7 @@
       type: Successful
       reason: Successful
       status: "True"
-    wait_timeout: 1800
+    wait_timeout: "{{ ocp4_workload_ansible_automation_platform_deploy_wait_timeout }}"
   register: r_aap
 
 - name: Set automation_controller route hostname
@@ -97,8 +97,8 @@
       validate_certs: true
     register: r_aap_license
     until: not r_aap_license.failed
-    retries: 3
-    delay: 5
+    retries: "{{ ocp4_workload_ansible_automation_platform_manifest_inject_retries }}"
+    delay: "{{ ocp4_workload_ansible_automation_platform_manifest_inject_delay }}"
 
   - name: Remove AAP manifest
     ansible.builtin.file:

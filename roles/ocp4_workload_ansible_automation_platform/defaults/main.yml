@@ -27,6 +27,14 @@ ocp4_workload_ansible_automation_platform_disable_eda: false
 ocp4_workload_ansible_automation_platform_disable_hub: true
 ocp4_workload_ansible_automation_platform_disable_lightspeed: true
 ocp4_workload_ansible_automation_platform_extra_wait_minutes: 10
+
+# ---------------------------------------------------------------
+# Retry and timeout tuning
+# ---------------------------------------------------------------
+ocp4_workload_ansible_automation_platform_token_lifecycle_retries: 5
+ocp4_workload_ansible_automation_platform_deploy_wait_timeout: 1800
+ocp4_workload_ansible_automation_platform_manifest_inject_retries: 3
+ocp4_workload_ansible_automation_platform_manifest_inject_delay: 5
 # Additional manifest overrides to be merged into the Template used to deploy AAP
 ocp4_workload_ansible_automation_platform_aap_manifest_overrides: {}
 
