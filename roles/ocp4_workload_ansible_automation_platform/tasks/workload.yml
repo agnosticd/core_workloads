@@ -116,6 +116,23 @@
     state: present
     template: eda_cluster_rolebinding.yaml.j2
 
+- name: Create AAP admin credentials secret
+  when: ocp4_workload_ansible_automation_platform_save_admin_credentials | bool
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ ocp4_workload_ansible_automation_platform_admin_credentials_secret }}"
+        namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+      type: Opaque
+      stringData:
+        username: admin
+        password: "{{ _ocp4_workload_ansible_automation_platform_admin_password }}"
+        url: "{{ automation_controller_url }}"
+  no_log: true
+
 - name: Print & save AAP access information
   agnosticd.core.agnosticd_user_info:
     msg: >-

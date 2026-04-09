@@ -22,6 +22,10 @@ ocp4_workload_ansible_automation_platform_catalog_snapshot_image_tag: v4.19_2025
 # ---------------------------------------------------------------
 ocp4_workload_ansible_automation_platform_admin_password: ""
 ocp4_workload_ansible_automation_platform_admin_password_length: 16
+
+# Save admin credentials in a secret in the AAP namespace
+ocp4_workload_ansible_automation_platform_save_admin_credentials: false
+ocp4_workload_ansible_automation_platform_admin_credentials_secret: aap-admin-credentials
 ocp4_workload_ansible_automation_platform_disable_controller: false
 ocp4_workload_ansible_automation_platform_disable_eda: false
 ocp4_workload_ansible_automation_platform_disable_hub: true
