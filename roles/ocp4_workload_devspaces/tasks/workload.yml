@@ -78,9 +78,6 @@
       loop_var: n
       label: "{{ ocp4_workload_devspaces_user_base }}{{ n }}"
 
-- name: Save user information
-  ansible.builtin.include_tasks: save_user_information.yml
-
 - name: Configure OAuth grant method
   when:
   - ocp4_workload_devspaces_oauth_grant_method is defined
@@ -95,3 +92,6 @@
   retries: 30
   delay: 10
   until: r_oauth_grant_method is successful
+
+- name: Save user information
+  ansible.builtin.include_tasks: save_user_information.yml
