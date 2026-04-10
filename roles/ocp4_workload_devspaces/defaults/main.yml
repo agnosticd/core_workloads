@@ -63,6 +63,3 @@ ocp4_workload_devspaces_oauth_access_token_inactivity_timeout: ""
 # Example recommended values to prevent double-auth:
 # ocp4_workload_devspaces_oauth_access_token_max_age_seconds: 86400
 # ocp4_workload_devspaces_oauth_access_token_inactivity_timeout: 3600
-
-# Set to "auto" to skip OAuth consent screen, preventing iframe auth issues
-ocp4_workload_devspaces_oauth_grant_method: ""
