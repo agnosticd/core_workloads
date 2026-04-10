@@ -80,3 +80,18 @@
 
 - name: Save user information
   ansible.builtin.include_tasks: save_user_information.yml
+
+- name: Configure OAuth grant method
+  when:
+  - ocp4_workload_devspaces_oauth_grant_method is defined
+  - ocp4_workload_devspaces_oauth_grant_method | length > 0
+  kubernetes.core.k8s:
+    api_version: oauth.openshift.io/v1
+    kind: OAuthClient
+    name: openshift-devspaces-client
+    definition:
+      grantMethod: "{{ ocp4_workload_devspaces_oauth_grant_method }}"
+  register: r_oauth_grant_method
+  retries: 30
+  delay: 10
+  until: r_oauth_grant_method is successful
