@@ -33,6 +33,17 @@
   - r_pipeline_controller_deployment.resources[0].status.readyReplicas is defined
   - r_pipeline_controller_deployment.resources[0].status.readyReplicas | int == r_pipeline_controller_deployment.resources[0].spec.replicas | int
 
+- name: Enable pipelines console plugin
+  when: ocp4_workload_pipelines_enable_console_plugin | bool
+  kubernetes.core.k8s_json_patch:
+    api_version: operator.openshift.io/v1
+    kind: Console
+    name: cluster
+    patch:
+    - op: add
+      path: /spec/plugins/-
+      value: pipelines-console-plugin
+
 - name: Install tkn cli tools
   when: ocp4_workload_pipelines_install_cli_tools | default(false)
   block:
