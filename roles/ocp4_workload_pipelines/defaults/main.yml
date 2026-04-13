@@ -21,6 +21,9 @@ ocp4_workload_pipelines_starting_csv: ""
 # part of a openshift-cluster deployment. When just deploying the workload no bastions are available.
 ocp4_workload_pipelines_install_cli_tools: false
 
+# Enable the pipelines console plugin in the OpenShift web console
+ocp4_workload_pipelines_enable_console_plugin: true
+
 # --------------------------------
 # Operator Catalog Snapshot Settings
 # --------------------------------
