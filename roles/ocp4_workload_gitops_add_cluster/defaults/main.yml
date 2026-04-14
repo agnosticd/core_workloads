@@ -1,0 +1,27 @@
+---
+# Directory on the bastion host to search for kubeconfig files.
+ocp4_workload_gitops_add_cluster_kubeconfig_dir: /home/cloud-user
+
+# Glob pattern used to find kubeconfig files within the directory above.
+# Only files whose names match this pattern are considered.
+ocp4_workload_gitops_add_cluster_kubeconfig_pattern: "*kubeconfig*"
+
+# ArgoCD namespace where the gitops instance is running.
+ocp4_workload_gitops_add_cluster_argocd_namespace: openshift-gitops
+
+# Whether to skip TLS verification when ArgoCD connects to discovered clusters.
+# defaults to secure because we usually have the caData from kubeconfig
+ocp4_workload_gitops_add_cluster_cluster_insecure: false
+
+# Dict of clusters to add, keyed by cluster name.
+# Each entry requires 'api_url' and 'api_token'.
+# Uses the same format as the AgnosticV 'clusters' variable.
+# Example:
+#   ocp4_workload_gitops_add_cluster_clusters:
+#     sno1:
+#       api_url: https://api.sno1.example.com:6443
+#       api_token: sha256~xxxx
+#     sno2:
+#       api_url: https://api.sno2.example.com:6443
+#       api_token: sha256~xxxx
+ocp4_workload_gitops_add_cluster_clusters: {}

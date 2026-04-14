@@ -1,0 +1,6 @@
+---
+- name: Remove discovered clusters from ArgoCD
+  ansible.builtin.debug:
+    msg: >-
+      Cluster removal is not implemented.
+      Remove clusters manually from ArgoCD if needed.

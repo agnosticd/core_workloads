@@ -1,0 +1,4 @@
+---
+_ocp4_workload_gitops_add_cluster_kubeconfig: {}
+_ocp4_workload_gitops_add_cluster_cluster_info: []
+_ocp4_workload_gitops_add_cluster_existing_clusters: []

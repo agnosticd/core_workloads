@@ -1,0 +1,76 @@
+---
+- name: Get existing ArgoCD cluster secrets
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    namespace: "{{ ocp4_workload_gitops_add_cluster_argocd_namespace }}"
+    label_selectors:
+      - "argocd.argoproj.io/secret-type=cluster"
+  register: _argocd_cluster_secrets
+
+- name: Set list of existing ArgoCD cluster server URLs
+  ansible.builtin.set_fact:
+    _ocp4_workload_gitops_add_cluster_existing_clusters: >-
+      {{ _argocd_cluster_secrets.resources
+         | map(attribute='data')
+         | map(attribute='server')
+         | map('b64decode')
+         | list
+         + [openshift_api_url] }}
+
+- name: Report existing ArgoCD clusters (includes hub cluster API URL)
+  ansible.builtin.debug:
+    msg: "Clusters already in ArgoCD or hub: {{ _ocp4_workload_gitops_add_cluster_existing_clusters }}"
+
+# --- Kubeconfig discovery from bastion ---
+
+- name: Find kubeconfig files on bastion
+  delegate_to: "{{ groups['bastions'][0] }}"
+  become: true
+  ansible.builtin.find:
+    paths: "{{ ocp4_workload_gitops_add_cluster_kubeconfig_dir }}"
+    patterns: "{{ ocp4_workload_gitops_add_cluster_kubeconfig_pattern }}"
+    file_type: file
+    recurse: true
+  register: _kubeconfig_files
+
+- name: Report discovered kubeconfig files
+  delegate_to: "{{ groups['bastions'][0] }}"
+  become: true
+  ansible.builtin.find:
+    paths: "{{ ocp4_workload_gitops_add_cluster_kubeconfig_dir }}"
+    patterns: "{{ ocp4_workload_gitops_add_cluster_kubeconfig_pattern }}"
+    file_type: file
+    recurse: true
+  register: _kubeconfig_files
+- name: Report discovered kubeconfig files
+  ansible.builtin.debug:
+    msg: "Found kubeconfig files: {{ _kubeconfig_files.files | map(attribute='path') | list }}"
+
+- name: Process each kubeconfig file
+  when: _kubeconfig_files.files | length > 0
+  ansible.builtin.include_tasks: add_cluster_from_kubeconfig.yml
+  loop: "{{ _kubeconfig_files.files | map(attribute='path') | list }}"
+  loop_control:
+    loop_var: _kubeconfig_path
+
+- name: Fetch files to the controller
+  delegate_to: "{{ groups['bastions'][0] }}"
+  become: true
+  ansible.builtin.fetch:
+    src: "{{ item.path }}"
+    dest: "{{ output_dir }}/"
+  loop: "{{ _kubeconfig_files.files }}"
+  register: _controller_kubeconfig_files
+
+# incredibly frustrating.  This is the only way to get the node names.
+# kube connection caching is nearly impossible to override
+- name: Get node names using kubectl command
+  ansible.builtin.command:
+    cmd: "kubectl get nodes --kubeconfig={{ item.dest }} -o jsonpath='{.items[*].metadata.name}'"
+  loop: "{{ _controller_kubeconfig_files.results }}"
+  register: _nodes
+
+- name: Set fact of all node names
+  ansible.builtin.set_fact:
+    ocp4_workload_gitops_add_cluster_all_node_names: "{{ _nodes.results | map(attribute='stdout') | list }}"

@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_gitops_add_cluster
+  author: Red Hat
+  description: |
+    Add external clusters to the local ArgoCD instance by discovering
+    kubeconfig files on the bastion host and registering any clusters
+    not already present.
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms: []
+  galaxy_tags:
+  - ocp
+  - openshift
+  - gitops
+  - argocd
+dependencies: []

@@ -1,0 +1,102 @@
+= ocp4_workload_gitops_add_cluster - Add external clusters to ArgoCD
+
+== Role overview
+
+This workload registers external OpenShift clusters with the local ArgoCD (OpenShift GitOps) instance. It supports two methods for discovering clusters, which can be used independently or together:
+
+1. **Explicit clusters via variables** -- provide a dict of cluster API URLs and tokens (same format as the AgnosticV `clusters` variable).
+2. **Kubeconfig discovery** -- automatically find kubeconfig files on the bastion host and register the clusters they contain.
+
+Clusters that are already registered in ArgoCD are skipped. The hub cluster (where ArgoCD runs) is also excluded automatically.
+
+=== Task files
+
+* link:./tasks/workload.yml[workload.yml] -- Provision: discovers and registers clusters with ArgoCD.
+* link:./tasks/add_cluster_from_kubeconfig.yml[add_cluster_from_kubeconfig.yml] -- Processes a single kubeconfig file, extracts unique clusters, and creates ArgoCD cluster secrets.
+* link:./tasks/remove_workload.yml[remove_workload.yml] -- Removal is not implemented. Remove clusters manually from ArgoCD if needed.
+
+=== How it works
+
+. Queries existing ArgoCD cluster secrets (label `argocd.argoproj.io/secret-type=cluster`) and builds a list of already-registered server URLs. The hub cluster's `openshift_api_url` is added to this list so it is never re-registered.
+. If `ocp4_workload_gitops_add_cluster_clusters` is provided, iterates over the dict and creates an ArgoCD cluster secret for each entry not already registered. Authentication uses a bearer token (`api_token`).
+. Searches the bastion host for kubeconfig files matching the configured pattern. For each file, parses the YAML, deduplicates by server URL, extracts credentials (client certificate or token), and creates ArgoCD cluster secrets for any clusters not already registered.
+
+== Prerequisites
+
+* OpenShift GitOps (ArgoCD) must be installed on the hub cluster (e.g. via `ocp4_workload_openshift_gitops`).
+* For kubeconfig discovery: a bastion host must be accessible via the `bastions` inventory group.
+* For explicit clusters: each target cluster must have a service account with a long-lived token and `cluster-admin` privileges (e.g. created by the `openshift_cluster_admin_service_account` role in agnosticd-v2).
+
+== Variables
+
+=== Explicit cluster registration
+
+[cols="3,1,5",options="header"]
+|===
+| Variable | Default | Description
+
+| `ocp4_workload_gitops_add_cluster_clusters`
+| `{}`
+| Dict of clusters to add, keyed by cluster name. Each entry requires `api_url` and `api_token`. Uses the same format as the AgnosticV `clusters` variable.
+|===
+
+Example:
+
+[source,yaml]
+----
+ocp4_workload_gitops_add_cluster_clusters:
+  sno1:
+    api_url: https://api.sno1.example.com:6443
+    api_token: "{{ openshift_cluster_admin_token }}"
+  sno2:
+    api_url: https://api.sno2.example.com:6443
+    api_token: sha256~xxxx
+----
+
+=== Kubeconfig discovery
+
+[cols="3,1,5",options="header"]
+|===
+| Variable | Default | Description
+
+| `ocp4_workload_gitops_add_cluster_kubeconfig_dir`
+| `/home/cloud-user`
+| Directory on the bastion host to search for kubeconfig files.
+
+| `ocp4_workload_gitops_add_cluster_kubeconfig_pattern`
+| `*kubeconfig*`
+| Glob pattern for matching kubeconfig file names. The search is recursive.
+|===
+
+=== General
+
+[cols="3,1,5",options="header"]
+|===
+| Variable | Default | Description
+
+| `ocp4_workload_gitops_add_cluster_argocd_namespace`
+| `openshift-gitops`
+| Namespace where the ArgoCD instance is running.
+
+| `ocp4_workload_gitops_add_cluster_cluster_insecure`
+| `true`
+| Whether to skip TLS verification when ArgoCD connects to discovered clusters.
+|===
+
+== AgnosticV usage
+
+[source,yaml]
+----
+workloads:
+- agnosticd.core_workloads.ocp4_workload_gitops_add_cluster
+
+# Explicit clusters (token-based)
+ocp4_workload_gitops_add_cluster_clusters:
+  sno1:
+    api_url: "{{ sno1_api_url }}"
+    api_token: "{{ sno1_cluster_admin_token }}"
+
+# Kubeconfig discovery (runs in addition to explicit clusters)
+ocp4_workload_gitops_add_cluster_kubeconfig_dir: /home/cloud-user
+ocp4_workload_gitops_add_cluster_kubeconfig_pattern: "*kubeconfig*"
+----
