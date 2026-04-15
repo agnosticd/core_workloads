@@ -188,6 +188,10 @@
   retries: 120
   delay: 5
 
+- name: Configure OpenShift authentication
+  when: ocp4_workload_rhacs_openshift_auth_enable | bool
+  ansible.builtin.include_tasks: openshift_auth.yml
+
 - name: Create Console Plugin
   when: ocp4_workload_rhacs_central_enable_console_plugin | bool
   kubernetes.core.k8s:

@@ -1,0 +1,112 @@
+---
+- name: Get existing RHACS auth providers
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/authProviders"
+    method: GET
+    user: admin
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: 200
+  register: r_rhacs_auth_providers
+
+- name: Find existing OpenShift auth provider
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_existing_openshift_provider: >-
+      {{
+        r_rhacs_auth_providers.json.authProviders
+        | default([])
+        | selectattr('name', 'equalto', 'openshift-oauth')
+        | list
+        | first
+        | default('')
+      }}
+
+- name: Create OpenShift Identity Provider in RHACS
+  when: _ocp4_workload_rhacs_existing_openshift_provider | length == 0
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/authProviders"
+    user: admin
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
+    force_basic_auth: true
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: openshift-oauth
+      type: openshift
+      minimumAccessRole: "None"
+    validate_certs: false
+  register: r_idp_response
+
+- name: Set OpenShift auth provider ID
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_openshift_provider_id: >-
+      {{
+        r_idp_response.json.id
+        if _ocp4_workload_rhacs_existing_openshift_provider | length == 0
+        else _ocp4_workload_rhacs_existing_openshift_provider.id
+      }}
+
+- name: Get existing RHACS groups
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/groups"
+    method: GET
+    user: admin
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: 200
+  register: r_rhacs_groups
+
+- name: Check if group already exists for this auth provider
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_existing_group: >-
+      {{
+        r_rhacs_groups.json.groups
+        | default([])
+        | selectattr('props.authProviderId', 'equalto', _ocp4_workload_rhacs_openshift_provider_id)
+        | list
+        | first
+        | default('')
+      }}
+
+- name: Create group for Identity Provider
+  when: _ocp4_workload_rhacs_existing_group | length == 0
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/groups"
+    user: admin
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
+    force_basic_auth: true
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      props:
+        authProviderId: "{{ _ocp4_workload_rhacs_openshift_provider_id }}"
+      roleName: "{{ ocp4_workload_rhacs_openshift_auth_minimum_access_role }}"
+    validate_certs: false
+
+- name: Save OpenShift auth provider ID to secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: acs-auth-provider
+        namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+      stringData:
+        authProviderId: "{{ _ocp4_workload_rhacs_openshift_provider_id }}"
+      type: Opaque
+  register: r_auth_provider_secret
+  until: r_auth_provider_secret is successful
+  retries: 5
+  delay: 5
+
+- name: Save OpenShift auth provider information
+  agnosticd.core.agnosticd_user_info:
+    data:
+      acs_openshift_auth_provider_id: "{{ _ocp4_workload_rhacs_openshift_provider_id }}"

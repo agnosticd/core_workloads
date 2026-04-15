@@ -94,3 +94,11 @@ ocp4_workload_rhacs_sensor_limits_memory: "8Gi"
 
 # Storage class for all PVCs (empty = use cluster default)
 ocp4_workload_rhacs_central_storage_class: ""
+
+# --------------------------------
+# OpenShift OAuth Authentication
+# --------------------------------
+# When enabled, configures the built-in OpenShift OAuth server as an
+# auth provider on RHACS Central. All OpenShift users get the minimum access role.
+ocp4_workload_rhacs_openshift_auth_enable: false
+ocp4_workload_rhacs_openshift_auth_minimum_access_role: "None"
