@@ -99,7 +99,7 @@
         name: acs-auth-provider
         namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
       stringData:
-        openshiftAuthProviderId: "{{ _ocp4_workload_rhacs_openshift_provider_id }}"
+        authProviderId: "{{ _ocp4_workload_rhacs_openshift_provider_id }}"
       type: Opaque
   register: r_auth_provider_secret
   until: r_auth_provider_secret is successful
