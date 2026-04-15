@@ -30,5 +30,5 @@
     body:
       props:
         authProviderId: "{{ r_idp_response.json.id }}"
-      roleName: "{{ _ocp4_workload_rhacs_openshift_auth_minimum_access_role }}"
+      roleName: "{{ ocp4_workload_rhacs_openshift_auth_minimum_access_role }}"
     validate_certs: false
