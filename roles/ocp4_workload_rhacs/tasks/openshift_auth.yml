@@ -1,0 +1,34 @@
+---
+- name: Create OpenShift Identity Provider in RHACS
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/authProviders"
+    user: admin
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
+    force_basic_auth: true
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: openshift-oauth
+      type: openshift
+      enabled: true
+      active: true
+    validate_certs: false
+  register: r_idp_response
+
+- name: Create group for Identity Provider
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/groups"
+    user: admin
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
+    force_basic_auth: true
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      props:
+        authProviderId: "{{ r_idp_response.json.id }}"
+      roleName: "{{ _ocp4_workload_rhacs_openshift_auth_minimum_access_role }}"
+    validate_certs: false

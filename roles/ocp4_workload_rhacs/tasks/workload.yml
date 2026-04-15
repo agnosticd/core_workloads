@@ -188,6 +188,10 @@
   retries: 120
   delay: 5
 
+- name: Configure OpenShift authentication
+  when: ocp4_workload_rhacs_openshift_auth_enable | bool
+  ansible.builtin.include_tasks: openshift_auth.yml
+
 - name: Configure Keycloak OIDC authentication
   when: ocp4_workload_rhacs_keycloak_auth_enable | bool
   ansible.builtin.include_tasks: keycloak_auth.yml
