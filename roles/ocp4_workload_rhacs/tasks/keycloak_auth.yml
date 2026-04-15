@@ -1,0 +1,105 @@
+---
+- name: Get KeycloakRealmImport CR
+  kubernetes.core.k8s_info:
+    api_version: k8s.keycloak.org/v2alpha1
+    kind: KeycloakRealmImport
+    name: "{{ ocp4_workload_rhacs_keycloak_realm_name }}"
+    namespace: "{{ ocp4_workload_rhacs_keycloak_namespace }}"
+  register: r_keycloak_realm_import
+  retries: 5
+  delay: 5
+  until:
+  - r_keycloak_realm_import.resources is defined
+  - r_keycloak_realm_import.resources | length > 0
+
+- name: Extract Keycloak OIDC client configuration
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_keycloak_client: >-
+      {{
+        r_keycloak_realm_import.resources[0].spec.realm.clients
+        | selectattr('clientId', 'equalto', ocp4_workload_rhacs_keycloak_client_id)
+        | first
+      }}
+
+- name: Set Keycloak OIDC facts
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_keycloak_issuer: "https://sso.{{ openshift_cluster_ingress_domain }}/realms/{{ ocp4_workload_rhacs_keycloak_realm_name }}"
+    _ocp4_workload_rhacs_keycloak_client_secret: "{{ _ocp4_workload_rhacs_keycloak_client.secret }}"
+    _ocp4_workload_rhacs_keycloak_auth_provider_name: "{{ r_keycloak_realm_import.resources[0].spec.realm.realm | capitalize }}"
+
+- name: Get existing RHACS auth providers
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/authProviders"
+    method: GET
+    user: admin
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: 200
+  register: r_rhacs_auth_providers
+
+- name: Find existing Keycloak auth provider
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_existing_auth_provider: >-
+      {{
+        r_rhacs_auth_providers.json.authProviders
+        | default([])
+        | selectattr('name', 'equalto', _ocp4_workload_rhacs_keycloak_auth_provider_name)
+        | list
+        | first
+        | default('')
+      }}
+
+- name: Create Keycloak OIDC auth provider in RHACS
+  when: _ocp4_workload_rhacs_existing_auth_provider | length == 0
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/authProviders"
+    body:
+      name: "{{ _ocp4_workload_rhacs_keycloak_auth_provider_name }}"
+      type: oidc
+      config:
+        issuer: "{{ _ocp4_workload_rhacs_keycloak_issuer }}"
+        client_id: "{{ ocp4_workload_rhacs_keycloak_client_id }}"
+        client_secret: "{{ _ocp4_workload_rhacs_keycloak_client_secret }}"
+        mode: "{{ ocp4_workload_rhacs_keycloak_oidc_mode }}"
+      minimumAccessRole: "{{ ocp4_workload_rhacs_keycloak_minimum_access_role }}"
+    method: POST
+    user: admin
+    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
+    body_format: json
+    force_basic_auth: true
+    validate_certs: false
+    status_code: 200
+  register: r_rhacs_auth_provider
+
+- name: Store auth provider ID fact
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_keycloak_auth_provider_id: >-
+      {{
+        r_rhacs_auth_provider.json.id
+        if _ocp4_workload_rhacs_existing_auth_provider | length == 0
+        else _ocp4_workload_rhacs_existing_auth_provider.id
+      }}
+
+- name: Create Secret for auth provider ID
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: acs-auth-provider
+        namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+      data:
+        authProviderId: "{{ _ocp4_workload_rhacs_keycloak_auth_provider_id | b64encode }}"
+      type: Opaque
+  register: r_auth_provider_secret
+  until: r_auth_provider_secret is successful
+  retries: 5
+  delay: 5
+
+- name: Save Keycloak auth provider information
+  agnosticd.core.agnosticd_user_info:
+    data:
+      acs_auth_provider_id: "{{ _ocp4_workload_rhacs_keycloak_auth_provider_id }}"
+      acs_auth_provider_name: "{{ _ocp4_workload_rhacs_keycloak_auth_provider_name }}"

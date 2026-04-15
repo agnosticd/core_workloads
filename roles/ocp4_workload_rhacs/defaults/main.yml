@@ -94,3 +94,15 @@ ocp4_workload_rhacs_sensor_limits_memory: "8Gi"
 
 # Storage class for all PVCs (empty = use cluster default)
 ocp4_workload_rhacs_central_storage_class: ""
+
+# --------------------------------
+# Keycloak OIDC Authentication
+# --------------------------------
+# When enabled, configures Keycloak as an OIDC auth provider on RHACS Central.
+# Requires Keycloak to be deployed with a KeycloakRealmImport CR.
+ocp4_workload_rhacs_keycloak_auth_enable: false
+ocp4_workload_rhacs_keycloak_namespace: keycloak
+ocp4_workload_rhacs_keycloak_realm_name: keycloak
+ocp4_workload_rhacs_keycloak_client_id: "idp-4-ocp"
+ocp4_workload_rhacs_keycloak_minimum_access_role: "None"
+ocp4_workload_rhacs_keycloak_oidc_mode: "fragment"

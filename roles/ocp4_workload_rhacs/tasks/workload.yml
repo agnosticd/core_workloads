@@ -188,6 +188,10 @@
   retries: 120
   delay: 5
 
+- name: Configure Keycloak OIDC authentication
+  when: ocp4_workload_rhacs_keycloak_auth_enable | bool
+  ansible.builtin.include_tasks: keycloak_auth.yml
+
 - name: Create Console Plugin
   when: ocp4_workload_rhacs_central_enable_console_plugin | bool
   kubernetes.core.k8s:
