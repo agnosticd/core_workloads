@@ -39,6 +39,9 @@
       minimumAccessRole: "None"
     validate_certs: false
   register: r_idp_response
+  until: r_idp_response is successful
+  retries: 10
+  delay: 10
 
 - name: Set OpenShift auth provider ID
   ansible.builtin.set_fact:
