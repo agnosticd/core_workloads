@@ -36,8 +36,7 @@
     body:
       name: openshift-oauth
       type: openshift
-      enabled: true
-      active: true
+      minimumAccessRole: "None"
     validate_certs: false
   register: r_idp_response
 
@@ -89,3 +88,25 @@
         authProviderId: "{{ _ocp4_workload_rhacs_openshift_provider_id }}"
       roleName: "{{ ocp4_workload_rhacs_openshift_auth_minimum_access_role }}"
     validate_certs: false
+
+- name: Save OpenShift auth provider ID to secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: acs-auth-provider
+        namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+      stringData:
+        openshiftAuthProviderId: "{{ _ocp4_workload_rhacs_openshift_provider_id }}"
+      type: Opaque
+  register: r_auth_provider_secret
+  until: r_auth_provider_secret is successful
+  retries: 5
+  delay: 5
+
+- name: Save OpenShift auth provider information
+  agnosticd.core.agnosticd_user_info:
+    data:
+      acs_openshift_auth_provider_id: "{{ _ocp4_workload_rhacs_openshift_provider_id }}"
