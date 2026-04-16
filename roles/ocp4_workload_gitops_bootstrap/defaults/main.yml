@@ -37,3 +37,15 @@ ocp4_workload_gitops_bootstrap_application_health_retries: 90
 ocp4_workload_gitops_bootstrap_application_health_required: true
 
 ocp4_workload_gitops_bootstrap_application_sync_required: true # false is great for development
+
+# When the bootstrap manages child Application CRDs that include complex or
+# long-running workloads (e.g. an ArgoCD instance deployed by an operator),
+# ArgoCD adds tracking annotations and a transient .operation field to those
+# CRDs after creation. These fields are not present in the Helm template, so
+# the bootstrap reports OutOfSync during the window when child apps are
+# actively syncing — which can cause provisioning wait tasks to time out.
+#
+# Set to true to add ignoreDifferences rules for /metadata/annotations and
+# /operation on child Application CRDs. Has no effect on other resource types.
+# Default: false — existing labs are unaffected unless they opt in.
+ocp4_workload_gitops_bootstrap_application_ignore_tracking: false
