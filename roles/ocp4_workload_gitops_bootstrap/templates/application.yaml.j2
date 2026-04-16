@@ -50,3 +50,13 @@ spec:
             operator: Exists
       jsonPointers:
         - /data
+    # ArgoCD adds a tracking annotation (argocd.argoproj.io/tracking-id) and a
+    # transient .operation field to every resource it manages, including the child
+    # Application CRDs this bootstrap creates. Without this entry the bootstrap
+    # reports OutOfSync whenever a child Application is actively syncing or has
+    # been annotated — causing provisioning wait tasks to time out.
+    - group: argoproj.io
+      kind: Application
+      jsonPointers:
+        - /metadata/annotations
+        - /operation
