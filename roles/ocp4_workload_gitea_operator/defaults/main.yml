@@ -104,6 +104,13 @@ ocp4_workload_gitea_operator_mailer_helo_hostname: ''
 ocp4_workload_gitea_operator_webhook_allowed_hosts_list: 'external,private'
 ocp4_workload_gitea_operator_webhook_skip_tls_verify: false
 
+# Packages storage path. When set, configures the Gitea [packages] PATH in app.ini.
+# Use a path on the persistent volume (e.g. /gitea-repositories/packages) to
+# ensure package registry contents (Helm charts, etc.) survive pod restarts.
+# Requires gitea-operator v2.2.0 or later (giteaPackagesPath CR field).
+# Leave empty to use Gitea's compiled-in default (/home/gitea/data/packages/).
+ocp4_workload_gitea_operator_packages_storage_path: ""
+
 # Create an admin user (delegated to the operator as of Operator v1.1.0)
 # Note: the admin user can NOT be named 'admin'
 ocp4_workload_gitea_operator_create_admin: false

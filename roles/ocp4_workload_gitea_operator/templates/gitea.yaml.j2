@@ -61,3 +61,6 @@ spec:
 
   giteaWebhookAllowedHostList: {{ocp4_workload_gitea_operator_webhook_allowed_hosts_list }}
   giteaWebhookSkipTlsVerify: {{ ocp4_workload_gitea_operator_webhook_skip_tls_verify | bool }}
+{% if ocp4_workload_gitea_operator_packages_storage_path | default("") | length > 0 %}
+  giteaPackagesPath: {{ ocp4_workload_gitea_operator_packages_storage_path }}
+{% endif %}
