@@ -10,6 +10,10 @@
     status_code: 200
   register: r_rhacs_auth_providers
 
+- name: Debug existing auth providers
+  ansible.builtin.debug:
+    var: r_rhacs_auth_providers
+
 - name: Find existing OpenShift auth provider
   ansible.builtin.set_fact:
     _ocp4_workload_rhacs_existing_openshift_provider: >-
@@ -28,7 +32,7 @@
 
 - name: Abort
   ansible.builtin.fail:
-  
+
 - name: Create OpenShift Identity Provider in RHACS
   when: _ocp4_workload_rhacs_existing_openshift_provider | length == 0
   ansible.builtin.uri:
