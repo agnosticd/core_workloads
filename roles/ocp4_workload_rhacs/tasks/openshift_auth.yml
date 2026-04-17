@@ -10,14 +10,6 @@
     status_code: 200
   register: r_rhacs_auth_providers
 
-- name: Debug existing auth providers
-  ansible.builtin.debug:
-    var: r_rhacs_auth_providers
-
-- name: Debug admin password
-  ansible.builtin.debug:
-    var: _ocp4_workload_rhacs_central_admin_password
-
 - name: Find existing OpenShift auth provider
   ansible.builtin.set_fact:
     _ocp4_workload_rhacs_existing_openshift_provider: >-
@@ -29,13 +21,6 @@
         | first
         | default('')
       }}
-
-- name: Debug existing OpenShift auth provider
-  ansible.builtin.debug:
-    var: _ocp4_workload_rhacs_existing_openshift_provider
-
-- name: Abort
-  ansible.builtin.fail:
 
 - name: Create OpenShift Identity Provider in RHACS
   when: _ocp4_workload_rhacs_existing_openshift_provider | length == 0
@@ -68,23 +53,6 @@
         if _ocp4_workload_rhacs_existing_openshift_provider | length == 0
         else _ocp4_workload_rhacs_existing_openshift_provider.id
       }}
-
-- name: Activate OpenShift auth provider
-  ansible.builtin.uri:
-    url: "{{ _ocp4_workload_rhacs_central_route }}/v1/authProviders/{{ _ocp4_workload_rhacs_openshift_provider_id }}"
-    user: admin
-    password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
-    force_basic_auth: true
-    method: PUT
-    body_format: json
-    body:
-      id: "{{ _ocp4_workload_rhacs_openshift_provider_id }}"
-      name: openshift-oauth
-      type: openshift
-      enabled: true
-      active: true
-    validate_certs: false
-    status_code: 200
 
 - name: Get existing RHACS groups
   ansible.builtin.uri:
