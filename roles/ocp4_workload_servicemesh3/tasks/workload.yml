@@ -33,7 +33,7 @@
     wait_condition:
       type: Ready
       status: "True"
-    wait_timeout: 120
+    wait_timeout: 600
 
 - name: Create the Istio resource
   kubernetes.core.k8s:
@@ -43,7 +43,7 @@
     wait_condition:
       type: Ready
       status: "True"
-    wait_timeout: 120
+    wait_timeout: 600
 
 - name: Enable Istio user workload monitoring
   when: ocp4_workload_servicemesh3_istio_monitoring | bool
