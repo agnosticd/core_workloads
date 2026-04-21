@@ -67,6 +67,17 @@
     kind: Namespace
     name: openshift-storage
 
+- name: Label openshift-storage namespace for cluster monitoring
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: openshift-storage
+    state: patched
+    definition:
+      metadata:
+        labels:
+          openshift.io/cluster-monitoring: "true"
+
 - name: Create CatalogSource
   when: ocp4_workload_openshift_data_foundation_catalogsource_setup | bool
   kubernetes.core.k8s:
@@ -97,11 +108,11 @@
 
 - name: Wait for the console plugin to become available
   kubernetes.core.k8s_info:
-    api_version: console.openshift.io/v1alpha1
+    api_version: console.openshift.io/v1
     kind: ConsolePlugin
     name: odf-console
   register: r_console_plugin
-  retries: 200
+  retries: 100
   delay: 10
   until: r_console_plugin.resources | list | length == 1
 
@@ -120,6 +131,10 @@
   kubernetes.core.k8s:
     state: present
     template: storagecluster.yaml.j2
+  register: r_storagecluster
+  retries: 100
+  delay: 5
+  until: r_storagecluster is success
 
 - name: Wait for ODF Storage Cluster to finish deploying
   kubernetes.core.k8s_info:
