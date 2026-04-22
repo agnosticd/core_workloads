@@ -3,6 +3,15 @@
   ansible.builtin.debug:
     msg: "Setting up OpenShift Data Foundation"
 
+- name: Assert ODF channel is at least stable-4.19
+  ansible.builtin.assert:
+    that:
+    - ocp4_workload_openshift_data_foundation_channel is match('stable-\d+\.\d+')
+    - ocp4_workload_openshift_data_foundation_channel | regex_replace('^stable-', '') is version('4.19', '>=')
+    fail_msg: >-
+      ODF channel must be at least stable-4.19.
+      Current channel: {{ ocp4_workload_openshift_data_foundation_channel }}
+
 - name: Define label_selector list
   ansible.builtin.set_fact:
     label_selector_list:
@@ -58,6 +67,17 @@
     kind: Namespace
     name: openshift-storage
 
+- name: Label openshift-storage namespace for cluster monitoring
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: openshift-storage
+    state: patched
+    definition:
+      metadata:
+        labels:
+          openshift.io/cluster-monitoring: "true"
+
 - name: Create CatalogSource
   when: ocp4_workload_openshift_data_foundation_catalogsource_setup | bool
   kubernetes.core.k8s:
@@ -74,18 +94,6 @@
     state: present
     template: subscription.yaml.j2
 
-- name: Wait for the CRD storagesystems to become available
-  kubernetes.core.k8s_info:
-    api_version: apiextensions.k8s.io/v1
-    kind: CustomResourceDefinition
-    name: storagesystems.odf.openshift.io
-  register: r_crd_storagesystems
-  retries: 200
-  delay: 10
-  until:
-  - r_crd_storagesystems.resources is defined
-  - r_crd_storagesystems.resources | list | length == 1
-
 - name: Wait for the CRD storagecluster to become available
   kubernetes.core.k8s_info:
     api_version: apiextensions.k8s.io/v1
@@ -100,11 +108,11 @@
 
 - name: Wait for the console plugin to become available
   kubernetes.core.k8s_info:
-    api_version: console.openshift.io/v1alpha1
+    api_version: console.openshift.io/v1
     kind: ConsolePlugin
     name: odf-console
   register: r_console_plugin
-  retries: 200
+  retries: 100
   delay: 10
   until: r_console_plugin.resources | list | length == 1
 
@@ -123,29 +131,10 @@
   kubernetes.core.k8s:
     state: present
     template: storagecluster.yaml.j2
-
-- name: Create the ODF StorageSystem
-  kubernetes.core.k8s:
-    state: present
-    template: storagesystem.yaml.j2
-  register: r_k8s_run
-  until: r_k8s_run is not failed
-  delay: 10
-  retries: 3
-
-- name: Wait for ODF Storage System to finish deploying
-  kubernetes.core.k8s_info:
-    api_version: odf.openshift.io/v1alpha1
-    kind: StorageSystem
-    name: ocs-storagecluster-storagesystem
-    namespace: openshift-storage
-    wait: true
-    wait_condition:
-      reason: ReconcileCompleted
-      status: 'True'
-      type: Available
-    wait_sleep: 10
-    wait_timeout: "{{ ocp4_workload_openshift_data_foundation_ceph_storage_system_deploy_timeout }}"
+  register: r_storagecluster
+  retries: 100
+  delay: 5
+  until: r_storagecluster is success
 
 - name: Wait for ODF Storage Cluster to finish deploying
   kubernetes.core.k8s_info:
