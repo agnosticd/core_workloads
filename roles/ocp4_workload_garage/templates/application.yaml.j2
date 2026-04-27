@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: garage
     app.kubernetes.io/component: application
   finalizers:
-  - resources-finalizer.argocd.argoproj.io
+  - resources-finalizer.argocd.argoproj.io/foreground
 spec:
   project: default
   source:
@@ -48,6 +48,7 @@ spec:
 
             [kubernetes_discovery]
             namespace = "{{ ocp4_workload_garage_namespace }}"
+            service_name = "{{ ocp4_workload_garage_application_name }}-headless"
             skip_crd = false
 
         deployment:
