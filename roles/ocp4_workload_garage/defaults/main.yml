@@ -14,8 +14,12 @@ ocp4_workload_garage_chart_revision: main-v1
 ocp4_workload_garage_chart_path: script/helm/garage
 
 # Garage configuration
+# Number of StatefulSet pods
 ocp4_workload_garage_replicas: 1
+# Number of copies of each object stored across nodes. Must be <= replicas.
+# "1" = no redundancy (testing only), "2" = tolerates 1 node failure, "3" = tolerates 2 node failures.
 ocp4_workload_garage_replication_mode: "1"
+# Database engine for metadata: "lmdb" (recommended) or "sqlite"
 ocp4_workload_garage_db_engine: lmdb
 ocp4_workload_garage_s3_region: garage
 
