@@ -28,7 +28,7 @@ ocp4_workload_garage_replication_factor: 1
 ocp4_workload_garage_consistency_mode: consistent
 # Database engine for metadata: "lmdb" (recommended) or "sqlite"
 ocp4_workload_garage_db_engine: lmdb
-ocp4_workload_garage_s3_region: garage
+ocp4_workload_garage_s3_region: us-east-1
 
 # Storage - metadata
 ocp4_workload_garage_storage_meta_size: 1Gi

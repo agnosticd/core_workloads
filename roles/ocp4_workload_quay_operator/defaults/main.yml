@@ -173,4 +173,4 @@ ocp4_workload_quay_operator_garage_credentials_secret: garage-s3-credentials
 ocp4_workload_quay_operator_garage_bucket_name: quay-registry
 
 # S3 region (must match Garage's s3_region config)
-ocp4_workload_quay_operator_garage_region: garage
+ocp4_workload_quay_operator_garage_region: us-east-1
