@@ -86,7 +86,7 @@
     register: r_garage_layout
 
   - name: Assign and apply cluster layout
-    when: "'NO ROLE ASSIGNED' in r_garage_layout.stdout"
+    when: "'No nodes currently have a role' in r_garage_layout.stdout"
     block:
     - name: Assign nodes to cluster layout
       kubernetes.core.k8s_exec:
