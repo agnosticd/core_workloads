@@ -26,7 +26,6 @@
     template: application.yaml.j2
 
 - name: Wait for Garage Application to sync
-  when: ocp4_workload_garage_wait_for_deployment | bool
   kubernetes.core.k8s_info:
     api_version: argoproj.io/v1alpha1
     kind: Application
@@ -45,7 +44,6 @@
   - r_application.resources[0].status.health.status == 'Healthy'
 
 - name: Wait for Garage StatefulSet to be ready
-  when: ocp4_workload_garage_wait_for_deployment | bool
   kubernetes.core.k8s_info:
     api_version: apps/v1
     kind: StatefulSet
@@ -126,6 +124,13 @@
       pod: "{{ _ocp4_workload_garage_service_name }}-0"
       command: ./garage key create {{ ocp4_workload_garage_key_name }}
     register: r_garage_key
+    retries: 10
+    delay: 5
+    until: r_garage_key is success
+
+  - name: Debug API key creation
+    ansible.builtin.debug:
+      msg: "{{ r_garage_key }}"
 
   - name: Set API key credentials
     ansible.builtin.set_fact:
@@ -155,31 +160,6 @@
     loop: "{{ ocp4_workload_garage_buckets }}"
     loop_control:
       loop_var: bucket_name
-
-- name: Report Garage information to user
-  when: ocp4_workload_garage_enable_user_info_messages | bool
-  block:
-  - name: Set Garage user info messages
-    ansible.builtin.set_fact:
-      _garage_user_info_messages:
-      - msg: "Garage S3 Endpoint (internal): {{ _ocp4_workload_garage_s3_endpoint_internal }}"
-        when: true
-      - msg: "Garage S3 Endpoint (external): {{ _ocp4_workload_garage_s3_endpoint_external }}"
-        when: "{{ _ocp4_workload_garage_s3_endpoint_external | length > 0 }}"
-      - msg: "Garage S3 Access Key: {{ _ocp4_workload_garage_access_key }}"
-        when: "{{ _ocp4_workload_garage_access_key | length > 0 }}"
-      - msg: "Garage S3 Secret Key: {{ _ocp4_workload_garage_secret_key }}"
-        when: "{{ _ocp4_workload_garage_access_key | length > 0 }}"
-      - msg: "Garage Web UI: {{ _ocp4_workload_garage_web_url }}"
-        when: "{{ _ocp4_workload_garage_web_url | length > 0 }}"
-      - msg: "Garage S3 Buckets Created: {{ ocp4_workload_garage_buckets | join(', ') }}"
-        when: "{{ ocp4_workload_garage_buckets | default([]) | length > 0 }}"
-
-  - name: Print Garage information
-    when: item.when | bool
-    agnosticd.core.agnosticd_user_info:
-      msg: "{{ item.msg }}"
-    loop: "{{ _garage_user_info_messages }}"
 
 - name: Save Garage data for user
   when: ocp4_workload_garage_enable_user_info_data | bool

@@ -61,6 +61,3 @@ ocp4_workload_garage_sync_retry_limit: 5
 # User info configuration
 ocp4_workload_garage_enable_user_info_messages: true
 ocp4_workload_garage_enable_user_info_data: true
-
-# Wait for deployment readiness
-ocp4_workload_garage_wait_for_deployment: true
