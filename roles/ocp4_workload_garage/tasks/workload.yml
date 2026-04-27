@@ -164,26 +164,40 @@
 - name: Create API key and buckets
   when: ocp4_workload_garage_key_name | length > 0
   block:
+  - name: Check if Garage API key already exists
+    kubernetes.core.k8s_exec:
+      namespace: "{{ ocp4_workload_garage_namespace }}"
+      pod: "{{ _ocp4_workload_garage_service_name }}-0"
+      command: ./garage key info {{ ocp4_workload_garage_key_name }}
+    register: r_garage_key_info
+    failed_when: false
+
   - name: Create Garage API key
+    when: r_garage_key_info.rc != 0
     kubernetes.core.k8s_exec:
       namespace: "{{ ocp4_workload_garage_namespace }}"
       pod: "{{ _ocp4_workload_garage_service_name }}-0"
       command: ./garage key create {{ ocp4_workload_garage_key_name }}
-    register: r_garage_key
+    register: r_garage_key_create
     retries: 10
     delay: 5
-    until: r_garage_key is success
+    until: r_garage_key_create is success
 
-  - name: Debug API key creation
-    ansible.builtin.debug:
-      msg: "{{ r_garage_key }}"
-
-  - name: Set API key credentials
+  - name: Set API key credentials from new key
+    when: r_garage_key_info.rc != 0
     ansible.builtin.set_fact:
       _ocp4_workload_garage_access_key: >-
-        {{ r_garage_key.stdout | regex_search('Key ID: (\S+)', '\1') | first }}
+        {{ r_garage_key_create.stdout | regex_search('Key ID: (\S+)', '\1') | first }}
       _ocp4_workload_garage_secret_key: >-
-        {{ r_garage_key.stdout | regex_search('Secret key: (\S+)', '\1') | first }}
+        {{ r_garage_key_create.stdout | regex_search('Secret key: (\S+)', '\1') | first }}
+
+  - name: Set API key credentials from existing key
+    when: r_garage_key_info.rc == 0
+    ansible.builtin.set_fact:
+      _ocp4_workload_garage_access_key: >-
+        {{ r_garage_key_info.stdout | regex_search('Key ID: (\S+)', '\1') | first }}
+      _ocp4_workload_garage_secret_key: >-
+        {{ r_garage_key_info.stdout | regex_search('Secret key: (\S+)', '\1') | first }}
 
   - name: Save Garage credentials to Secret
     kubernetes.core.k8s:
@@ -205,6 +219,10 @@
       namespace: "{{ ocp4_workload_garage_namespace }}"
       pod: "{{ _ocp4_workload_garage_service_name }}-0"
       command: ./garage bucket create {{ bucket_name }}
+    register: r_bucket_create
+    failed_when:
+    - r_bucket_create.rc != 0
+    - "'already exists' not in r_bucket_create.stderr"
     loop: "{{ ocp4_workload_garage_buckets }}"
     loop_control:
       loop_var: bucket_name
@@ -216,7 +234,7 @@
       pod: "{{ _ocp4_workload_garage_service_name }}-0"
       command: >-
         ./garage bucket allow --read --write
-        {{ bucket_name }} --key {{ ocp4_workload_garage_key_name }}
+        {{ bucket_name }} --key {{ _ocp4_workload_garage_access_key }}
     loop: "{{ ocp4_workload_garage_buckets }}"
     loop_control:
       loop_var: bucket_name
