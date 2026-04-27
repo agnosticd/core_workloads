@@ -29,6 +29,8 @@ spec:
             replication_factor = {{ ocp4_workload_garage_replication_factor }}
             consistency_mode = "{{ ocp4_workload_garage_consistency_mode }}"
             compression_level = 1
+            rpc_bind_addr = "[::]:3901"
+            rpc_secret = "__RPC_SECRET_REPLACE__"
 
             [s3_api]
             s3_region = "{{ ocp4_workload_garage_s3_region }}"
@@ -38,10 +40,6 @@ spec:
             bind_addr = "[::]:3902"
             root_domain = ".web.garage.tld"
             index = "index.html"
-
-            [rpc]
-            bind_addr = "[::]:3901"
-            secret = "__RPC_SECRET_REPLACE__"
 
             [admin]
             api_bind_addr = "[::]:3903"
