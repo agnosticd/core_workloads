@@ -7,6 +7,8 @@ metadata:
   labels:
     app.kubernetes.io/name: garage
     app.kubernetes.io/component: application
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
