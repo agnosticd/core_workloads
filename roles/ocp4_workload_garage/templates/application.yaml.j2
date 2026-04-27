@@ -52,13 +52,18 @@ spec:
             cpu: {{ ocp4_workload_garage_resources_limits_cpu }}
             memory: {{ ocp4_workload_garage_resources_limits_memory }}
 
-        # Clear hardcoded UIDs (1000) to let OpenShift assign from namespace range
-        podSecurityContext: {}
+        # Null out hardcoded UIDs (1000) so OpenShift assigns from namespace range
+        podSecurityContext:
+          runAsUser: null
+          runAsGroup: null
+          fsGroup: null
+          runAsNonRoot: true
 
         securityContext:
           capabilities:
             drop:
             - ALL
+          readOnlyRootFilesystem: true
 
         ingress:
           s3:
