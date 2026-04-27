@@ -47,7 +47,8 @@ The role performs the following tasks:
 === Garage Configuration
 
 * `ocp4_workload_garage_replicas`: Number of StatefulSet replicas (default: `1`)
-* `ocp4_workload_garage_replication_mode`: Number of copies per object, must be `<= replicas` (default: `"1"`)
+* `ocp4_workload_garage_replication_factor`: Number of copies per object, must be `<= replicas` (default: `1`)
+* `ocp4_workload_garage_consistency_mode`: Read/write quorum behavior: `consistent`, `degraded`, or `dangerous` (default: `consistent`)
 * `ocp4_workload_garage_db_engine`: Database engine: `lmdb` or `sqlite` (default: `lmdb`)
 * `ocp4_workload_garage_s3_region`: S3 region name (default: `garage`)
 
@@ -135,7 +136,7 @@ The role performs the following tasks:
       name: ocp4_workload_garage
     vars:
       ocp4_workload_garage_replicas: 3
-      ocp4_workload_garage_replication_mode: "2"
+      ocp4_workload_garage_replication_factor: 2
       ocp4_workload_garage_storage_data_size: 50Gi
       ocp4_workload_garage_storage_data_storage_class: ocs-storagecluster-ceph-rbd
       ocp4_workload_garage_buckets:

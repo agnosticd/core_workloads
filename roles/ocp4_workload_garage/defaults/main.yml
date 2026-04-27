@@ -22,8 +22,10 @@ ocp4_workload_garage_image_pull_policy: IfNotPresent
 # Number of StatefulSet pods
 ocp4_workload_garage_replicas: 1
 # Number of copies of each object stored across nodes. Must be <= replicas.
-# "1" = no redundancy (testing only), "2" = tolerates 1 node failure, "3" = tolerates 2 node failures.
-ocp4_workload_garage_replication_mode: "1"
+# 1 = no redundancy (testing only), 2 = tolerates 1 node failure, 3 = tolerates 2 node failures.
+ocp4_workload_garage_replication_factor: 1
+# Read/write quorum behavior: "consistent" (default), "degraded", or "dangerous"
+ocp4_workload_garage_consistency_mode: consistent
 # Database engine for metadata: "lmdb" (recommended) or "sqlite"
 ocp4_workload_garage_db_engine: lmdb
 ocp4_workload_garage_s3_region: garage

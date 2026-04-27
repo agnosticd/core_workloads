@@ -17,10 +17,36 @@ spec:
       values: |
         garage:
           dbEngine: {{ ocp4_workload_garage_db_engine }}
-          replicationMode: "{{ ocp4_workload_garage_replication_mode }}"
           s3:
             api:
               region: {{ ocp4_workload_garage_s3_region }}
+          garageTomlString: |
+            metadata_dir = "/mnt/meta"
+            data_dir = "/mnt/data"
+            db_engine = "{{ ocp4_workload_garage_db_engine }}"
+            replication_factor = {{ ocp4_workload_garage_replication_factor }}
+            consistency_mode = "{{ ocp4_workload_garage_consistency_mode }}"
+            compression_level = 1
+
+            [s3_api]
+            s3_region = "{{ ocp4_workload_garage_s3_region }}"
+            api_bind_addr = "[::]:3900"
+
+            [s3_web]
+            bind_addr = "[::]:3902"
+            root_domain = ".web.garage.tld"
+            index = "index.html"
+
+            [rpc]
+            bind_addr = "[::]:3901"
+            secret = "__RPC_SECRET_REPLACE__"
+
+            [admin]
+            api_bind_addr = "[::]:3903"
+
+            [kubernetes_discovery]
+            namespace = "{{ ocp4_workload_garage_namespace }}"
+            skip_crd = false
 
         deployment:
           replicaCount: {{ ocp4_workload_garage_replicas }}

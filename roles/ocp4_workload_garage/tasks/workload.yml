@@ -59,6 +59,46 @@
   - r_garage_statefulset.resources[0].status.readyReplicas is defined
   - r_garage_statefulset.resources[0].status.readyReplicas | int == ocp4_workload_garage_replicas | int
 
+- name: Configure Garage cluster layout
+  block:
+  - name: Get Garage node IDs
+    kubernetes.core.k8s_exec:
+      namespace: "{{ ocp4_workload_garage_namespace }}"
+      pod: "{{ _ocp4_workload_garage_service_name }}-0"
+      command: ./garage status
+    register: r_garage_status
+    retries: 10
+    delay: 5
+    until: r_garage_status is success
+
+  - name: Extract node IDs from status output
+    ansible.builtin.set_fact:
+      _ocp4_workload_garage_node_ids: >-
+        {{ r_garage_status.stdout
+        | regex_findall('([0-9a-f]{16})\s+.*garage-\d+')
+        | list }}
+
+  - name: Assign nodes to cluster layout
+    kubernetes.core.k8s_exec:
+      namespace: "{{ ocp4_workload_garage_namespace }}"
+      pod: "{{ _ocp4_workload_garage_service_name }}-0"
+      command: >-
+        ./garage layout assign -z dc1
+        -c {{ ocp4_workload_garage_storage_data_size }}
+        {{ item }}
+    loop: "{{ _ocp4_workload_garage_node_ids }}"
+
+  - name: Apply cluster layout
+    kubernetes.core.k8s_exec:
+      namespace: "{{ ocp4_workload_garage_namespace }}"
+      pod: "{{ _ocp4_workload_garage_service_name }}-0"
+      command: ./garage layout apply --version 1
+    register: r_layout_apply
+    failed_when:
+    - r_layout_apply.rc != 0
+    - "'already up to date' not in r_layout_apply.stderr"
+    - "'already up to date' not in r_layout_apply.stdout"
+
 - name: Create S3 API Route
   when: ocp4_workload_garage_s3_api_route_enabled | bool
   kubernetes.core.k8s:
