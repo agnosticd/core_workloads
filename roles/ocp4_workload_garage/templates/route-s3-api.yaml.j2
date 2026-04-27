@@ -1,0 +1,21 @@
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: garage-s3-api
+  namespace: {{ ocp4_workload_garage_namespace }}
+  labels:
+    app.kubernetes.io/name: garage
+    app.kubernetes.io/component: s3-api
+spec:
+{% if ocp4_workload_garage_s3_api_route_host | length > 0 %}
+  host: {{ ocp4_workload_garage_s3_api_route_host }}
+{% endif %}
+  to:
+    kind: Service
+    name: {{ _ocp4_workload_garage_service_name }}
+  port:
+    targetPort: 3900
+  tls:
+    termination: {{ ocp4_workload_garage_s3_api_route_tls_termination }}
+    insecureEdgeTerminationPolicy: {{ ocp4_workload_garage_s3_api_route_tls_insecure_policy }}

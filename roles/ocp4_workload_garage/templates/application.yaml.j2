@@ -1,0 +1,87 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ ocp4_workload_garage_application_name }}
+  namespace: {{ ocp4_workload_garage_gitops_namespace }}
+  labels:
+    app.kubernetes.io/name: garage
+    app.kubernetes.io/component: application
+spec:
+  project: default
+  source:
+    repoURL: {{ ocp4_workload_garage_chart_repo }}
+    targetRevision: {{ ocp4_workload_garage_chart_revision }}
+    path: {{ ocp4_workload_garage_chart_path }}
+    helm:
+      values: |
+        garage:
+          dbEngine: {{ ocp4_workload_garage_db_engine }}
+          replicationMode: "{{ ocp4_workload_garage_replication_mode }}"
+          s3:
+            api:
+              region: {{ ocp4_workload_garage_s3_region }}
+
+        deployment:
+          replicaCount: {{ ocp4_workload_garage_replicas }}
+
+        persistence:
+          enabled: true
+          meta:
+            size: {{ ocp4_workload_garage_storage_meta_size }}
+{% if ocp4_workload_garage_storage_meta_storage_class | length > 0 %}
+            storageClass: {{ ocp4_workload_garage_storage_meta_storage_class }}
+{% endif %}
+          data:
+            size: {{ ocp4_workload_garage_storage_data_size }}
+{% if ocp4_workload_garage_storage_data_storage_class | length > 0 %}
+            storageClass: {{ ocp4_workload_garage_storage_data_storage_class }}
+{% endif %}
+
+        resources:
+          requests:
+            cpu: {{ ocp4_workload_garage_resources_requests_cpu }}
+            memory: {{ ocp4_workload_garage_resources_requests_memory }}
+          limits:
+            cpu: {{ ocp4_workload_garage_resources_limits_cpu }}
+            memory: {{ ocp4_workload_garage_resources_limits_memory }}
+
+        podSecurityContext:
+          runAsNonRoot: true
+
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+
+        ingress:
+          s3:
+            api:
+              enabled: false
+          web:
+            enabled: false
+
+{% if ocp4_workload_garage_helm_values | length > 0 %}
+        {{ ocp4_workload_garage_helm_values | to_nice_yaml(indent=2) | indent(8) }}
+{% endif %}
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ ocp4_workload_garage_namespace }}
+
+  syncPolicy:
+{% if ocp4_workload_garage_sync_policy_automated %}
+    automated:
+      prune: {{ ocp4_workload_garage_sync_policy_prune | lower }}
+      selfHeal: {{ ocp4_workload_garage_sync_policy_self_heal | lower }}
+{% endif %}
+    syncOptions:
+    - CreateNamespace=true
+    - RespectIgnoreDifferences=true
+    retry:
+      limit: {{ ocp4_workload_garage_sync_retry_limit }}
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

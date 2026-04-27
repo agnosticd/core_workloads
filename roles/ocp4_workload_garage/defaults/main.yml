@@ -1,0 +1,66 @@
+---
+# Garage (S3-compatible distributed object storage) workload configuration
+
+# Namespace
+ocp4_workload_garage_namespace: garage
+
+# ArgoCD Application configuration
+ocp4_workload_garage_application_name: garage
+ocp4_workload_garage_gitops_namespace: openshift-gitops
+
+# Helm chart source
+ocp4_workload_garage_chart_repo: https://git.deuxfleurs.fr/Deuxfleurs/garage
+ocp4_workload_garage_chart_revision: main-v1
+ocp4_workload_garage_chart_path: script/helm/garage
+
+# Garage configuration
+ocp4_workload_garage_replicas: 1
+ocp4_workload_garage_replication_mode: "1"
+ocp4_workload_garage_db_engine: lmdb
+ocp4_workload_garage_s3_region: garage
+
+# Storage - metadata
+ocp4_workload_garage_storage_meta_size: 1Gi
+ocp4_workload_garage_storage_meta_storage_class: ""
+
+# Storage - data
+ocp4_workload_garage_storage_data_size: 10Gi
+ocp4_workload_garage_storage_data_storage_class: ""
+
+# Resource limits
+ocp4_workload_garage_resources_requests_cpu: 100m
+ocp4_workload_garage_resources_requests_memory: 256Mi
+ocp4_workload_garage_resources_limits_cpu: 1000m
+ocp4_workload_garage_resources_limits_memory: 1Gi
+
+# S3 API Route (port 3900)
+ocp4_workload_garage_s3_api_route_enabled: true
+ocp4_workload_garage_s3_api_route_host: ""
+ocp4_workload_garage_s3_api_route_tls_termination: edge
+ocp4_workload_garage_s3_api_route_tls_insecure_policy: Redirect
+
+# Web UI Route (port 3902)
+ocp4_workload_garage_web_route_enabled: false
+ocp4_workload_garage_web_route_host: ""
+ocp4_workload_garage_web_route_tls_termination: edge
+ocp4_workload_garage_web_route_tls_insecure_policy: Redirect
+
+# Post-deploy: API key and buckets
+ocp4_workload_garage_key_name: garage-api-key
+ocp4_workload_garage_buckets: []
+
+# Catch-all for arbitrary Helm values (merged last, can override anything)
+ocp4_workload_garage_helm_values: {}
+
+# ArgoCD sync configuration
+ocp4_workload_garage_sync_policy_automated: true
+ocp4_workload_garage_sync_policy_self_heal: true
+ocp4_workload_garage_sync_policy_prune: true
+ocp4_workload_garage_sync_retry_limit: 5
+
+# User info configuration
+ocp4_workload_garage_enable_user_info_messages: true
+ocp4_workload_garage_enable_user_info_data: true
+
+# Wait for deployment readiness
+ocp4_workload_garage_wait_for_deployment: true

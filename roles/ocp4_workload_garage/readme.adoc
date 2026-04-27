@@ -1,0 +1,235 @@
+= ocp4_workload_garage - Deploy Garage S3-Compatible Object Storage
+
+== Role overview
+
+* This role deploys https://garagehq.deuxfleurs.fr/[Garage] on OpenShift using GitOps/ArgoCD
+* Garage provides S3-compatible distributed object storage
+* Supports multi-node deployments with configurable replication
+* Includes optional automatic API key and bucket creation
+
+== Features
+
+* GitOps-based deployment using OpenShift GitOps (ArgoCD)
+* S3-compatible API endpoint (port 3900)
+* Optional web interface (port 3902)
+* Distributed architecture with configurable replication
+* Automatic API key and bucket provisioning via built-in CLI
+* OpenShift Route integration for external access
+* Catch-all Helm values variable for full customization
+
+== Deployment
+
+This role assumes OpenShift GitOps is already installed in the `openshift-gitops` namespace.
+
+The role performs the following tasks:
+
+* Creates the Garage namespace (default: `garage`)
+* Deploys an ArgoCD Application resource pointing to the Garage Helm chart
+* Waits for the Application to sync and StatefulSet to be ready
+* Creates OpenShift Routes for S3 API and optionally web UI
+* Optionally creates an API key and S3 buckets via `garage` CLI
+* Reports access information to users (endpoints, credentials)
+
+== Variables
+
+=== Namespace Configuration
+
+* `ocp4_workload_garage_namespace`: Namespace for Garage deployment (default: `garage`)
+
+=== ArgoCD Configuration
+
+* `ocp4_workload_garage_application_name`: ArgoCD Application name (default: `garage`)
+* `ocp4_workload_garage_gitops_namespace`: OpenShift GitOps namespace (default: `openshift-gitops`)
+* `ocp4_workload_garage_chart_repo`: Helm chart repository URL (default: `https://git.deuxfleurs.fr/Deuxfleurs/garage`)
+* `ocp4_workload_garage_chart_revision`: Git branch/tag (default: `main-v1`)
+* `ocp4_workload_garage_chart_path`: Path to chart in repo (default: `script/helm/garage`)
+
+=== Garage Configuration
+
+* `ocp4_workload_garage_replicas`: Number of StatefulSet replicas (default: `1`)
+* `ocp4_workload_garage_replication_mode`: Number of copies per object, must be `<= replicas` (default: `"1"`)
+* `ocp4_workload_garage_db_engine`: Database engine: `lmdb` or `sqlite` (default: `lmdb`)
+* `ocp4_workload_garage_s3_region`: S3 region name (default: `garage`)
+
+=== Storage Configuration
+
+* `ocp4_workload_garage_storage_meta_size`: Metadata volume size (default: `1Gi`)
+* `ocp4_workload_garage_storage_meta_storage_class`: Storage class for metadata (default: empty = default class)
+* `ocp4_workload_garage_storage_data_size`: Data volume size (default: `10Gi`)
+* `ocp4_workload_garage_storage_data_storage_class`: Storage class for data (default: empty = default class)
+
+=== Resource Limits
+
+* `ocp4_workload_garage_resources_requests_cpu`: CPU request (default: `100m`)
+* `ocp4_workload_garage_resources_requests_memory`: Memory request (default: `256Mi`)
+* `ocp4_workload_garage_resources_limits_cpu`: CPU limit (default: `1000m`)
+* `ocp4_workload_garage_resources_limits_memory`: Memory limit (default: `1Gi`)
+
+=== Route Configuration
+
+* `ocp4_workload_garage_s3_api_route_enabled`: Enable Route for S3 API (default: `true`)
+* `ocp4_workload_garage_s3_api_route_host`: Custom hostname (default: auto-generated)
+* `ocp4_workload_garage_s3_api_route_tls_termination`: TLS termination (default: `edge`)
+* `ocp4_workload_garage_s3_api_route_tls_insecure_policy`: Insecure policy (default: `Redirect`)
+* `ocp4_workload_garage_web_route_enabled`: Enable Route for web UI (default: `false`)
+* `ocp4_workload_garage_web_route_host`: Custom hostname (default: auto-generated)
+
+=== API Key and Bucket Creation
+
+* `ocp4_workload_garage_key_name`: Name of the API key to create (default: `garage-api-key`)
+* `ocp4_workload_garage_buckets`: List of S3 bucket names to create (default: `[]`)
+** Example: `['datasets', 'ml-models', 'backups']`
+
+=== Custom Helm Values
+
+* `ocp4_workload_garage_helm_values`: Dictionary of arbitrary Helm values merged last (default: `{}`)
+** These override any values set by explicit variables above
+** See the Garage Helm chart for all available options
+
+=== Sync Policy
+
+* `ocp4_workload_garage_sync_policy_automated`: Enable automated sync (default: `true`)
+* `ocp4_workload_garage_sync_policy_self_heal`: Enable self-healing (default: `true`)
+* `ocp4_workload_garage_sync_policy_prune`: Enable resource pruning (default: `true`)
+
+== Example Usage
+
+=== Basic Deployment
+
+[source,yaml]
+----
+- name: Deploy Garage
+  hosts: localhost
+  tasks:
+  - name: Include Garage workload
+    include_role:
+      name: ocp4_workload_garage
+----
+
+=== With Bucket Creation
+
+[source,yaml]
+----
+- name: Deploy Garage with buckets
+  hosts: localhost
+  tasks:
+  - name: Include Garage workload
+    include_role:
+      name: ocp4_workload_garage
+    vars:
+      ocp4_workload_garage_buckets:
+      - my-data-bucket
+      - ml-models
+      - datasets
+----
+
+=== Multi-Node with Replication
+
+[source,yaml]
+----
+- name: Deploy Garage with replication
+  hosts: localhost
+  tasks:
+  - name: Include Garage workload
+    include_role:
+      name: ocp4_workload_garage
+    vars:
+      ocp4_workload_garage_replicas: 3
+      ocp4_workload_garage_replication_mode: "2"
+      ocp4_workload_garage_storage_data_size: 50Gi
+      ocp4_workload_garage_storage_data_storage_class: ocs-storagecluster-ceph-rbd
+      ocp4_workload_garage_buckets:
+      - production-data
+----
+
+=== Custom Helm Values
+
+[source,yaml]
+----
+- name: Deploy Garage with custom Helm overrides
+  hosts: localhost
+  tasks:
+  - name: Include Garage workload
+    include_role:
+      name: ocp4_workload_garage
+    vars:
+      ocp4_workload_garage_helm_values:
+        garage:
+          compressionLevel: "3"
+          blockSize: "1048576"
+        monitoring:
+          metrics:
+            enabled: true
+          serviceMonitor:
+            enabled: true
+----
+
+== Accessing Garage
+
+After deployment, users will receive:
+
+* *S3 Endpoint (internal)*: For pod-to-pod communication within the cluster
+* *S3 Endpoint (external)*: Via OpenShift Route (if enabled)
+* *S3 Access Key*: For S3 API authentication
+* *S3 Secret Key*: For S3 API authentication
+* *Web UI URL*: If web route is enabled
+
+== Using S3 API
+
+You can use any S3-compatible client (AWS CLI, boto3, mc, etc.):
+
+[source,bash]
+----
+# Using AWS CLI
+aws configure set aws_access_key_id <access-key>
+aws configure set aws_secret_access_key <secret-key>
+aws --endpoint-url https://<s3-route-url> s3 ls
+aws --endpoint-url https://<s3-route-url> s3 cp file.txt s3://my-bucket/
+
+# Using MinIO Client (mc)
+mc alias set mygarage https://<s3-route-url> <access-key> <secret-key>
+mc ls mygarage
+mc cp file.txt mygarage/my-bucket/
+----
+
+== Removal
+
+To remove the Garage deployment:
+
+[source,yaml]
+----
+- name: Remove Garage
+  hosts: localhost
+  tasks:
+  - name: Include Garage workload
+    include_role:
+      name: ocp4_workload_garage
+    vars:
+      ACTION: destroy
+----
+
+This will:
+
+* Delete OpenShift Routes
+* Delete the ArgoCD Application (which removes all Garage resources)
+* Delete the Garage namespace
+
+NOTE: Removing the workload will delete the PVCs and all data unless you have external backups.
+
+== Garage Architecture
+
+Garage is a distributed object storage system designed for self-hosting:
+
+* *S3 API*: S3-compatible API on port 3900
+* *Web Endpoint*: Static website hosting on port 3902
+* *RPC*: Inter-node communication on port 3901
+* *Admin API*: Cluster management on port 3903
+* *LMDB/SQLite*: Metadata storage engine
+* *Kubernetes Discovery*: Automatic node discovery via CRD
+
+The deployment uses:
+
+* Kubernetes StatefulSet (supports multiple replicas)
+* PersistentVolumeClaims for metadata and data storage
+* OpenShift Routes for external access
+* Service for internal cluster access
