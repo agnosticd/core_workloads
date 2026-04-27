@@ -51,7 +51,7 @@ ocp4_workload_garage_s3_api_route_tls_termination: edge
 ocp4_workload_garage_s3_api_route_tls_insecure_policy: Redirect
 
 # Web UI Route (port 3902)
-ocp4_workload_garage_web_route_enabled: false
+ocp4_workload_garage_web_route_enabled: true
 ocp4_workload_garage_web_route_host: ""
 ocp4_workload_garage_web_route_tls_termination: edge
 ocp4_workload_garage_web_route_tls_insecure_policy: Redirect

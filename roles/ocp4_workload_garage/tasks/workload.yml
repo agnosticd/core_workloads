@@ -78,26 +78,32 @@
         | regex_findall('([0-9a-f]{16})\s+.*garage-\d+')
         | list }}
 
-  - name: Assign nodes to cluster layout
+  - name: Check if nodes already have roles assigned
     kubernetes.core.k8s_exec:
       namespace: "{{ ocp4_workload_garage_namespace }}"
       pod: "{{ _ocp4_workload_garage_service_name }}-0"
-      command: >-
-        ./garage layout assign -z dc1
-        -c {{ ocp4_workload_garage_storage_data_size }}
-        {{ item }}
-    loop: "{{ _ocp4_workload_garage_node_ids }}"
+      command: ./garage layout show
+    register: r_garage_layout
 
-  - name: Apply cluster layout
-    kubernetes.core.k8s_exec:
-      namespace: "{{ ocp4_workload_garage_namespace }}"
-      pod: "{{ _ocp4_workload_garage_service_name }}-0"
-      command: ./garage layout apply --version 1
-    register: r_layout_apply
-    failed_when:
-    - r_layout_apply.rc != 0
-    - "'already up to date' not in r_layout_apply.stderr"
-    - "'already up to date' not in r_layout_apply.stdout"
+  - name: Assign and apply cluster layout
+    when: "'NO ROLE ASSIGNED' in r_garage_layout.stdout"
+    block:
+    - name: Assign nodes to cluster layout
+      kubernetes.core.k8s_exec:
+        namespace: "{{ ocp4_workload_garage_namespace }}"
+        pod: "{{ _ocp4_workload_garage_service_name }}-0"
+        command: >-
+          ./garage layout assign -z dc1
+          -c {{ ocp4_workload_garage_storage_data_size }}
+          {{ item }}
+      loop: "{{ _ocp4_workload_garage_node_ids }}"
+
+    - name: Apply cluster layout
+      kubernetes.core.k8s_exec:
+        namespace: "{{ ocp4_workload_garage_namespace }}"
+        pod: "{{ _ocp4_workload_garage_service_name }}-0"
+        command: ./garage layout apply --version 1
+      register: r_layout_apply
 
 - name: Create S3 API Route
   when: ocp4_workload_garage_s3_api_route_enabled | bool
