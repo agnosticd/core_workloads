@@ -1,0 +1,252 @@
+---
+- name: Set internal variables
+  ansible.builtin.set_fact:
+    _ocp4_workload_garage_service_name: "{{ ocp4_workload_garage_application_name }}"
+    _ocp4_workload_garage_s3_endpoint_internal: >-
+      http://{{ ocp4_workload_garage_application_name }}.{{ ocp4_workload_garage_namespace }}.svc.cluster.local:3900
+    _ocp4_workload_garage_s3_endpoint_external: ""
+    _ocp4_workload_garage_web_url: ""
+    _ocp4_workload_garage_access_key: ""
+    _ocp4_workload_garage_secret_key: ""
+
+- name: Create Garage namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ ocp4_workload_garage_namespace }}"
+        labels:
+          argocd.argoproj.io/managed-by: "{{ ocp4_workload_garage_gitops_namespace }}"
+
+- name: Create ArgoCD Application for Garage
+  kubernetes.core.k8s:
+    state: present
+    template: application.yaml.j2
+
+- name: Wait for Garage Application to sync
+  kubernetes.core.k8s_info:
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: "{{ ocp4_workload_garage_application_name }}"
+    namespace: "{{ ocp4_workload_garage_gitops_namespace }}"
+  register: r_application
+  retries: 60
+  delay: 10
+  until:
+  - r_application.resources is defined
+  - r_application.resources | length > 0
+  - r_application.resources[0].status is defined
+  - r_application.resources[0].status.sync is defined
+  - r_application.resources[0].status.sync.status == 'Synced'
+  - r_application.resources[0].status.health is defined
+  - r_application.resources[0].status.health.status == 'Healthy'
+
+- name: Wait for Garage StatefulSet to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: StatefulSet
+    name: "{{ _ocp4_workload_garage_service_name }}"
+    namespace: "{{ ocp4_workload_garage_namespace }}"
+  register: r_garage_statefulset
+  retries: 60
+  delay: 10
+  until:
+  - r_garage_statefulset.resources is defined
+  - r_garage_statefulset.resources | length > 0
+  - r_garage_statefulset.resources[0].status is defined
+  - r_garage_statefulset.resources[0].status.readyReplicas is defined
+  - r_garage_statefulset.resources[0].status.readyReplicas | int == ocp4_workload_garage_replicas | int
+
+- name: Configure Garage cluster layout
+  block:
+  - name: Get Garage node IDs
+    kubernetes.core.k8s_exec:
+      namespace: "{{ ocp4_workload_garage_namespace }}"
+      pod: "{{ _ocp4_workload_garage_service_name }}-0"
+      command: ./garage status
+    register: r_garage_status
+    retries: 10
+    delay: 5
+    until: r_garage_status is success
+
+  - name: Extract node IDs from status output
+    ansible.builtin.set_fact:
+      _ocp4_workload_garage_node_ids: >-
+        {{ r_garage_status.stdout
+        | regex_findall('([0-9a-f]{16})\s+.*garage-\d+')
+        | list }}
+
+  - name: Check if nodes already have roles assigned
+    kubernetes.core.k8s_exec:
+      namespace: "{{ ocp4_workload_garage_namespace }}"
+      pod: "{{ _ocp4_workload_garage_service_name }}-0"
+      command: ./garage layout show
+    register: r_garage_layout
+
+  - name: Assign and apply cluster layout
+    when: "'No nodes currently have a role' in r_garage_layout.stdout"
+    block:
+    - name: Assign nodes to cluster layout
+      kubernetes.core.k8s_exec:
+        namespace: "{{ ocp4_workload_garage_namespace }}"
+        pod: "{{ _ocp4_workload_garage_service_name }}-0"
+        command: >-
+          ./garage layout assign -z dc1
+          -c {{ ocp4_workload_garage_storage_data_size }}
+          {{ item }}
+      loop: "{{ _ocp4_workload_garage_node_ids }}"
+
+    - name: Apply cluster layout
+      kubernetes.core.k8s_exec:
+        namespace: "{{ ocp4_workload_garage_namespace }}"
+        pod: "{{ _ocp4_workload_garage_service_name }}-0"
+        command: ./garage layout apply --version 1
+      register: r_layout_apply
+
+- name: Create S3 API Route
+  when: ocp4_workload_garage_s3_api_route_enabled | bool
+  kubernetes.core.k8s:
+    state: present
+    template: route-s3-api.yaml.j2
+
+- name: Create Web UI Route
+  when: ocp4_workload_garage_web_route_enabled | bool
+  kubernetes.core.k8s:
+    state: present
+    template: route-web.yaml.j2
+
+- name: Get S3 API Route
+  when: ocp4_workload_garage_s3_api_route_enabled | bool
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: s3
+    namespace: "{{ ocp4_workload_garage_namespace }}"
+  register: r_garage_s3_route
+  retries: 30
+  delay: 5
+  until:
+  - r_garage_s3_route.resources is defined
+  - r_garage_s3_route.resources | length > 0
+  - r_garage_s3_route.resources[0].spec.host is defined
+
+- name: Set S3 API endpoint URL
+  when:
+  - ocp4_workload_garage_s3_api_route_enabled | bool
+  - r_garage_s3_route.resources | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_garage_s3_endpoint_external: "https://{{ r_garage_s3_route.resources[0].spec.host }}"
+
+- name: Get Web UI Route
+  when: ocp4_workload_garage_web_route_enabled | bool
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: garage
+    namespace: "{{ ocp4_workload_garage_namespace }}"
+  register: r_garage_web_route
+  retries: 30
+  delay: 5
+  until:
+  - r_garage_web_route.resources is defined
+  - r_garage_web_route.resources | length > 0
+  - r_garage_web_route.resources[0].spec.host is defined
+
+- name: Set Web UI URL
+  when:
+  - ocp4_workload_garage_web_route_enabled | bool
+  - r_garage_web_route.resources | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_garage_web_url: "https://{{ r_garage_web_route.resources[0].spec.host }}"
+
+- name: Create API key and buckets
+  when: ocp4_workload_garage_key_name | length > 0
+  block:
+  - name: Check if Garage API key already exists
+    kubernetes.core.k8s_exec:
+      namespace: "{{ ocp4_workload_garage_namespace }}"
+      pod: "{{ _ocp4_workload_garage_service_name }}-0"
+      command: ./garage key info {{ ocp4_workload_garage_key_name }}
+    register: r_garage_key_info
+    failed_when: false
+
+  - name: Create Garage API key
+    when: r_garage_key_info.rc != 0
+    kubernetes.core.k8s_exec:
+      namespace: "{{ ocp4_workload_garage_namespace }}"
+      pod: "{{ _ocp4_workload_garage_service_name }}-0"
+      command: ./garage key create {{ ocp4_workload_garage_key_name }}
+    register: r_garage_key_create
+    retries: 10
+    delay: 5
+    until: r_garage_key_create is success
+
+  - name: Set API key credentials from new key
+    when: r_garage_key_info.rc != 0
+    ansible.builtin.set_fact:
+      _ocp4_workload_garage_access_key: >-
+        {{ r_garage_key_create.stdout | regex_search('Key ID: (\S+)', '\1') | first }}
+      _ocp4_workload_garage_secret_key: >-
+        {{ r_garage_key_create.stdout | regex_search('Secret key: (\S+)', '\1') | first }}
+
+  - name: Set API key credentials from existing key
+    when: r_garage_key_info.rc == 0
+    ansible.builtin.set_fact:
+      _ocp4_workload_garage_access_key: >-
+        {{ r_garage_key_info.stdout | regex_search('Key ID: (\S+)', '\1') | first }}
+      _ocp4_workload_garage_secret_key: >-
+        {{ r_garage_key_info.stdout | regex_search('Secret key: (\S+)', '\1') | first }}
+
+  - name: Save Garage credentials to Secret
+    kubernetes.core.k8s:
+      state: present
+      definition:
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: "{{ ocp4_workload_garage_credentials_secret }}"
+          namespace: "{{ ocp4_workload_garage_namespace }}"
+        type: Opaque
+        stringData:
+          access_key: "{{ _ocp4_workload_garage_access_key }}"
+          secret_key: "{{ _ocp4_workload_garage_secret_key }}"
+
+  - name: Create Garage buckets
+    when: ocp4_workload_garage_buckets | default([]) | length > 0
+    kubernetes.core.k8s_exec:
+      namespace: "{{ ocp4_workload_garage_namespace }}"
+      pod: "{{ _ocp4_workload_garage_service_name }}-0"
+      command: ./garage bucket create {{ bucket_name }}
+    register: r_bucket_create
+    failed_when:
+    - r_bucket_create.rc != 0
+    - "'already exists' not in r_bucket_create.stderr"
+    loop: "{{ ocp4_workload_garage_buckets }}"
+    loop_control:
+      loop_var: bucket_name
+
+  - name: Grant key access to buckets
+    when: ocp4_workload_garage_buckets | default([]) | length > 0
+    kubernetes.core.k8s_exec:
+      namespace: "{{ ocp4_workload_garage_namespace }}"
+      pod: "{{ _ocp4_workload_garage_service_name }}-0"
+      command: >-
+        ./garage bucket allow --read --write
+        {{ bucket_name }} --key {{ _ocp4_workload_garage_access_key }}
+    loop: "{{ ocp4_workload_garage_buckets }}"
+    loop_control:
+      loop_var: bucket_name
+
+- name: Save Garage data for user
+  when: ocp4_workload_garage_enable_user_info_data | bool
+  agnosticd.core.agnosticd_user_info:
+    data:
+      garage_s3_access_key_id: "{{ _ocp4_workload_garage_access_key }}"
+      garage_s3_secret_access_key: "{{ _ocp4_workload_garage_secret_key }}"
+      garage_s3_endpoint_internal: "{{ _ocp4_workload_garage_s3_endpoint_internal }}"
+      garage_s3_endpoint_external: "{{ _ocp4_workload_garage_s3_endpoint_external }}"
+      garage_web_url: "{{ _ocp4_workload_garage_web_url }}"
+      garage_buckets: "{{ ocp4_workload_garage_buckets | default([]) }}"
+      garage_namespace: "{{ ocp4_workload_garage_namespace }}"
