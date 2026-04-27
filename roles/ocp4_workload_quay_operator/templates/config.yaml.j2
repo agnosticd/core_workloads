@@ -8,13 +8,12 @@ SUPER_USERS:
 FEATURE_USER_INITIALIZE: true
 {% endif %}
 {% if ocp4_workload_quay_operator_s4_storage_enabled | bool %}
-# S4 Storage Configuration
 DISTRIBUTED_STORAGE_CONFIG:
   s4storage:
     - RadosGWStorage
-    - hostname: s4-api-{{ ocp4_workload_quay_operator_s4_namespace }}.{{ openshift_cluster_ingress_domain }}
-      port: 443
-      is_secure: true
+    - hostname: s4.{{ ocp4_workload_quay_operator_s4_namespace }}.svc.cluster.local
+      port: 7480
+      is_secure: false
       bucket_name: {{ ocp4_workload_quay_operator_s4_bucket_name }}
       storage_path: /datastorage/registry
       access_key: {{ ocp4_workload_quay_operator_s4_access_key }}
@@ -22,4 +21,18 @@ DISTRIBUTED_STORAGE_CONFIG:
 DISTRIBUTED_STORAGE_DEFAULT_LOCATIONS: []
 DISTRIBUTED_STORAGE_PREFERENCE:
 - s4storage
+{% elif ocp4_workload_quay_operator_garage_storage_enabled | bool %}
+DISTRIBUTED_STORAGE_CONFIG:
+  garagestorage:
+    - RadosGWStorage
+    - hostname: garage.{{ ocp4_workload_quay_operator_garage_namespace }}.svc.cluster.local
+      port: 3900
+      is_secure: false
+      bucket_name: {{ ocp4_workload_quay_operator_garage_bucket_name }}
+      storage_path: /datastorage/registry
+      access_key: {{ _ocp4_workload_quay_operator_garage_access_key }}
+      secret_key: {{ _ocp4_workload_quay_operator_garage_secret_key }}
+DISTRIBUTED_STORAGE_DEFAULT_LOCATIONS: []
+DISTRIBUTED_STORAGE_PREFERENCE:
+- garagestorage
 {% endif %}

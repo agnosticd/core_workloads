@@ -59,6 +59,7 @@ ocp4_workload_garage_web_route_tls_insecure_policy: Redirect
 
 # Post-deploy: API key and buckets
 ocp4_workload_garage_key_name: garage-api-key
+ocp4_workload_garage_credentials_secret: garage-s3-credentials
 ocp4_workload_garage_buckets: []
 
 # Catch-all for arbitrary Helm values (merged last, can override anything)

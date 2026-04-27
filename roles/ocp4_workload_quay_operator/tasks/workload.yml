@@ -20,8 +20,52 @@
         S4 storage service not found in namespace {{ ocp4_workload_quay_operator_s4_namespace }}.
         Deploy S4 first using ocp4_workload_s4 role.
 
+  - name: Check Garage service and credentials
+    when: ocp4_workload_quay_operator_garage_storage_enabled | bool
+    block:
+    - name: Check Garage service exists
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Service
+        name: garage
+        namespace: "{{ ocp4_workload_quay_operator_garage_namespace }}"
+      register: r_garage_service
+
+    - name: Assert that Garage service exists
+      ansible.builtin.assert:
+        that:
+        - r_garage_service.resources | length == 1
+        fail_msg: >-
+          Garage storage service not found in namespace {{ ocp4_workload_quay_operator_garage_namespace }}.
+          Deploy Garage first using ocp4_workload_garage role.
+
+    - name: Read Garage credentials Secret
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: "{{ ocp4_workload_quay_operator_garage_credentials_secret }}"
+        namespace: "{{ ocp4_workload_quay_operator_garage_namespace }}"
+      register: r_garage_credentials
+
+    - name: Assert that Garage credentials Secret exists
+      ansible.builtin.assert:
+        that:
+        - r_garage_credentials.resources | length == 1
+        fail_msg: >-
+          Garage credentials secret '{{ ocp4_workload_quay_operator_garage_credentials_secret }}'
+          not found in namespace {{ ocp4_workload_quay_operator_garage_namespace }}.
+
+    - name: Set Garage credentials from Secret
+      ansible.builtin.set_fact:
+        _ocp4_workload_quay_operator_garage_access_key: >-
+          {{ r_garage_credentials.resources[0].data.access_key | b64decode }}
+        _ocp4_workload_quay_operator_garage_secret_key: >-
+          {{ r_garage_credentials.resources[0].data.secret_key | b64decode }}
+
   - name: Check Noobaa BucketClass exists
-    when: not (ocp4_workload_quay_operator_s4_storage_enabled | bool)
+    when: >-
+      not (ocp4_workload_quay_operator_s4_storage_enabled | bool)
+      and not (ocp4_workload_quay_operator_garage_storage_enabled | bool)
     kubernetes.core.k8s_info:
       api_version: noobaa.io/v1alpha1
       kind: BucketClass
@@ -29,7 +73,9 @@
     register: r_bucket_class
 
   - name: Assert that Noobaa BucketClass exists
-    when: not (ocp4_workload_quay_operator_s4_storage_enabled | bool)
+    when: >-
+      not (ocp4_workload_quay_operator_s4_storage_enabled | bool)
+      and not (ocp4_workload_quay_operator_garage_storage_enabled | bool)
     ansible.builtin.assert:
       that:
       - r_bucket_class.resources | length == 1

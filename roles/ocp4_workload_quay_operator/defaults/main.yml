@@ -154,3 +154,23 @@ ocp4_workload_quay_operator_s4_endpoint: "http://s4.{{ ocp4_workload_quay_operat
 
 # S3 region
 ocp4_workload_quay_operator_s4_region: us-east-1
+
+# --------------------------------
+# S3 Storage Configuration (Garage)
+# --------------------------------
+# Set to true to use Garage storage, false to use Noobaa (OCS)
+# Only one of s4_storage_enabled or garage_storage_enabled should be true
+ocp4_workload_quay_operator_garage_storage_enabled: false
+
+# Garage namespace (must match ocp4_workload_garage_namespace)
+ocp4_workload_quay_operator_garage_namespace: garage
+
+# Name of the K8s Secret containing Garage credentials
+# Created automatically by the ocp4_workload_garage role
+ocp4_workload_quay_operator_garage_credentials_secret: garage-s3-credentials
+
+# Bucket name for Quay registry storage
+ocp4_workload_quay_operator_garage_bucket_name: quay-registry
+
+# S3 region (must match Garage's s3_region config)
+ocp4_workload_quay_operator_garage_region: garage

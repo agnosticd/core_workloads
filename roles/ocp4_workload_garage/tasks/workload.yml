@@ -185,6 +185,20 @@
       _ocp4_workload_garage_secret_key: >-
         {{ r_garage_key.stdout | regex_search('Secret key: (\S+)', '\1') | first }}
 
+  - name: Save Garage credentials to Secret
+    kubernetes.core.k8s:
+      state: present
+      definition:
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: "{{ ocp4_workload_garage_credentials_secret }}"
+          namespace: "{{ ocp4_workload_garage_namespace }}"
+        type: Opaque
+        stringData:
+          access_key: "{{ _ocp4_workload_garage_access_key }}"
+          secret_key: "{{ _ocp4_workload_garage_secret_key }}"
+
   - name: Create Garage buckets
     when: ocp4_workload_garage_buckets | default([]) | length > 0
     kubernetes.core.k8s_exec:
