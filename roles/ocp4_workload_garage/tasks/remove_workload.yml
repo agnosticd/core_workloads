@@ -4,7 +4,7 @@
     state: absent
     api_version: route.openshift.io/v1
     kind: Route
-    name: garage-s3-api
+    name: s3
     namespace: "{{ ocp4_workload_garage_namespace }}"
 
 - name: Delete Web UI Route
@@ -12,7 +12,7 @@
     state: absent
     api_version: route.openshift.io/v1
     kind: Route
-    name: garage-web
+    name: garage
     namespace: "{{ ocp4_workload_garage_namespace }}"
 
 - name: Delete ArgoCD Application
