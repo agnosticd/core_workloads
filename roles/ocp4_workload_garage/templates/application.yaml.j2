@@ -24,6 +24,12 @@ spec:
 
         deployment:
           replicaCount: {{ ocp4_workload_garage_replicas }}
+          image:
+            repository: {{ ocp4_workload_garage_image_repository }}
+{% if ocp4_workload_garage_image_tag | length > 0 %}
+            tag: "{{ ocp4_workload_garage_image_tag }}"
+{% endif %}
+            pullPolicy: {{ ocp4_workload_garage_image_pull_policy }}
 
         persistence:
           enabled: true
@@ -46,14 +52,13 @@ spec:
             cpu: {{ ocp4_workload_garage_resources_limits_cpu }}
             memory: {{ ocp4_workload_garage_resources_limits_memory }}
 
-        podSecurityContext:
-          runAsNonRoot: true
+        # Clear hardcoded UIDs (1000) to let OpenShift assign from namespace range
+        podSecurityContext: {}
 
         securityContext:
           capabilities:
             drop:
             - ALL
-          readOnlyRootFilesystem: true
 
         ingress:
           s3:

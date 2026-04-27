@@ -13,6 +13,11 @@ ocp4_workload_garage_chart_repo: https://git.deuxfleurs.fr/Deuxfleurs/garage
 ocp4_workload_garage_chart_revision: main-v1
 ocp4_workload_garage_chart_path: script/helm/garage
 
+# Image configuration (empty tag defaults to chart's appVersion)
+ocp4_workload_garage_image_repository: dxflrs/amd64_garage
+ocp4_workload_garage_image_tag: ""
+ocp4_workload_garage_image_pull_policy: IfNotPresent
+
 # Garage configuration
 # Number of StatefulSet pods
 ocp4_workload_garage_replicas: 1
