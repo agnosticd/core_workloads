@@ -1,0 +1,21 @@
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: s3
+  namespace: {{ ocp4_workload_seaweedfs_namespace }}
+  labels:
+    app.kubernetes.io/name: seaweedfs
+    app.kubernetes.io/component: s3-api
+spec:
+{% if ocp4_workload_seaweedfs_s3_api_route_host | length > 0 %}
+  host: {{ ocp4_workload_seaweedfs_s3_api_route_host }}
+{% endif %}
+  to:
+    kind: Service
+    name: {{ ocp4_workload_seaweedfs_application_name }}-s3
+  port:
+    targetPort: 8333
+  tls:
+    termination: {{ ocp4_workload_seaweedfs_s3_api_route_tls_termination }}
+    insecureEdgeTerminationPolicy: {{ ocp4_workload_seaweedfs_s3_api_route_tls_insecure_policy }}

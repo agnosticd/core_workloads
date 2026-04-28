@@ -62,10 +62,53 @@
         _ocp4_workload_quay_operator_garage_secret_key: >-
           {{ r_garage_credentials.resources[0].data.secret_key | b64decode }}
 
+  - name: Check SeaweedFS service and credentials
+    when: ocp4_workload_quay_operator_seaweedfs_storage_enabled | bool
+    block:
+    - name: Check SeaweedFS S3 service exists
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Service
+        name: "{{ ocp4_workload_quay_operator_seaweedfs_namespace }}-s3"
+        namespace: "{{ ocp4_workload_quay_operator_seaweedfs_namespace }}"
+      register: r_seaweedfs_service
+
+    - name: Assert that SeaweedFS S3 service exists
+      ansible.builtin.assert:
+        that:
+        - r_seaweedfs_service.resources | length == 1
+        fail_msg: >-
+          SeaweedFS S3 service not found in namespace {{ ocp4_workload_quay_operator_seaweedfs_namespace }}.
+          Deploy SeaweedFS first using ocp4_workload_seaweedfs role.
+
+    - name: Read SeaweedFS credentials Secret
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: "{{ ocp4_workload_quay_operator_seaweedfs_credentials_secret }}"
+        namespace: "{{ ocp4_workload_quay_operator_seaweedfs_namespace }}"
+      register: r_seaweedfs_credentials
+
+    - name: Assert that SeaweedFS credentials Secret exists
+      ansible.builtin.assert:
+        that:
+        - r_seaweedfs_credentials.resources | length == 1
+        fail_msg: >-
+          SeaweedFS credentials secret '{{ ocp4_workload_quay_operator_seaweedfs_credentials_secret }}'
+          not found in namespace {{ ocp4_workload_quay_operator_seaweedfs_namespace }}.
+
+    - name: Set SeaweedFS credentials from Secret
+      ansible.builtin.set_fact:
+        _ocp4_workload_quay_operator_seaweedfs_access_key: >-
+          {{ r_seaweedfs_credentials.resources[0].data.access_key | b64decode }}
+        _ocp4_workload_quay_operator_seaweedfs_secret_key: >-
+          {{ r_seaweedfs_credentials.resources[0].data.secret_key | b64decode }}
+
   - name: Check Noobaa BucketClass exists
     when: >-
       not (ocp4_workload_quay_operator_s4_storage_enabled | bool)
       and not (ocp4_workload_quay_operator_garage_storage_enabled | bool)
+      and not (ocp4_workload_quay_operator_seaweedfs_storage_enabled | bool)
     kubernetes.core.k8s_info:
       api_version: noobaa.io/v1alpha1
       kind: BucketClass
@@ -76,6 +119,7 @@
     when: >-
       not (ocp4_workload_quay_operator_s4_storage_enabled | bool)
       and not (ocp4_workload_quay_operator_garage_storage_enabled | bool)
+      and not (ocp4_workload_quay_operator_seaweedfs_storage_enabled | bool)
     ansible.builtin.assert:
       that:
       - r_bucket_class.resources | length == 1

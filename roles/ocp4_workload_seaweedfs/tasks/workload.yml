@@ -1,0 +1,228 @@
+---
+- name: Set internal variables
+  ansible.builtin.set_fact:
+    _ocp4_workload_seaweedfs_s3_endpoint_internal: >-
+      http://{{ ocp4_workload_seaweedfs_application_name }}-s3.{{ ocp4_workload_seaweedfs_namespace }}.svc.cluster.local:8333
+    _ocp4_workload_seaweedfs_s3_endpoint_external: ""
+    _ocp4_workload_seaweedfs_access_key: ""
+    _ocp4_workload_seaweedfs_secret_key: ""
+
+- name: Generate S3 credentials
+  block:
+  - name: Generate S3 access key
+    when: ocp4_workload_seaweedfs_access_key | default('') | length == 0
+    ansible.builtin.set_fact:
+      _ocp4_workload_seaweedfs_access_key: >-
+        {{ lookup('password', '/dev/null length={{ ocp4_workload_seaweedfs_access_key_length }} chars=ascii_letters,digits') }}
+
+  - name: Use provided S3 access key
+    when: ocp4_workload_seaweedfs_access_key | default('') | length > 0
+    ansible.builtin.set_fact:
+      _ocp4_workload_seaweedfs_access_key: "{{ ocp4_workload_seaweedfs_access_key }}"
+
+  - name: Generate S3 secret key
+    when: ocp4_workload_seaweedfs_secret_key | default('') | length == 0
+    ansible.builtin.set_fact:
+      _ocp4_workload_seaweedfs_secret_key: >-
+        {{ lookup('password', '/dev/null length={{ ocp4_workload_seaweedfs_secret_key_length }} chars=ascii_letters,digits') }}
+
+  - name: Use provided S3 secret key
+    when: ocp4_workload_seaweedfs_secret_key | default('') | length > 0
+    ansible.builtin.set_fact:
+      _ocp4_workload_seaweedfs_secret_key: "{{ ocp4_workload_seaweedfs_secret_key }}"
+
+- name: Create SeaweedFS namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ ocp4_workload_seaweedfs_namespace }}"
+        labels:
+          argocd.argoproj.io/managed-by: "{{ ocp4_workload_seaweedfs_gitops_namespace }}"
+
+- name: Create SeaweedFS S3 config Secret
+  when: ocp4_workload_seaweedfs_s3_auth_enabled | bool
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ ocp4_workload_seaweedfs_s3_config_secret }}"
+        namespace: "{{ ocp4_workload_seaweedfs_namespace }}"
+      type: Opaque
+      stringData:
+        seaweedfs_s3_config: |
+          {
+            "identities": [
+              {
+                "name": "admin",
+                "credentials": [
+                  {
+                    "accessKey": "{{ _ocp4_workload_seaweedfs_access_key }}",
+                    "secretKey": "{{ _ocp4_workload_seaweedfs_secret_key }}"
+                  }
+                ],
+                "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+              }
+            ]
+          }
+
+- name: Create ArgoCD Application for SeaweedFS
+  kubernetes.core.k8s:
+    state: present
+    template: application.yaml.j2
+
+- name: Wait for SeaweedFS Application to sync
+  kubernetes.core.k8s_info:
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: "{{ ocp4_workload_seaweedfs_application_name }}"
+    namespace: "{{ ocp4_workload_seaweedfs_gitops_namespace }}"
+  register: r_application
+  retries: 60
+  delay: 10
+  until:
+  - r_application.resources is defined
+  - r_application.resources | length > 0
+  - r_application.resources[0].status is defined
+  - r_application.resources[0].status.sync is defined
+  - r_application.resources[0].status.sync.status == 'Synced'
+  - r_application.resources[0].status.health is defined
+  - r_application.resources[0].status.health.status == 'Healthy'
+
+- name: Wait for SeaweedFS Master StatefulSet to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: StatefulSet
+    name: "{{ ocp4_workload_seaweedfs_application_name }}-master"
+    namespace: "{{ ocp4_workload_seaweedfs_namespace }}"
+  register: r_seaweedfs_master
+  retries: 60
+  delay: 10
+  until:
+  - r_seaweedfs_master.resources is defined
+  - r_seaweedfs_master.resources | length > 0
+  - r_seaweedfs_master.resources[0].status is defined
+  - r_seaweedfs_master.resources[0].status.readyReplicas is defined
+  - r_seaweedfs_master.resources[0].status.readyReplicas | int == ocp4_workload_seaweedfs_master_replicas | int
+
+- name: Wait for SeaweedFS Volume StatefulSet to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: StatefulSet
+    name: "{{ ocp4_workload_seaweedfs_application_name }}-volume"
+    namespace: "{{ ocp4_workload_seaweedfs_namespace }}"
+  register: r_seaweedfs_volume
+  retries: 60
+  delay: 10
+  until:
+  - r_seaweedfs_volume.resources is defined
+  - r_seaweedfs_volume.resources | length > 0
+  - r_seaweedfs_volume.resources[0].status is defined
+  - r_seaweedfs_volume.resources[0].status.readyReplicas is defined
+  - r_seaweedfs_volume.resources[0].status.readyReplicas | int == ocp4_workload_seaweedfs_volume_replicas | int
+
+- name: Wait for SeaweedFS Filer StatefulSet to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: StatefulSet
+    name: "{{ ocp4_workload_seaweedfs_application_name }}-filer"
+    namespace: "{{ ocp4_workload_seaweedfs_namespace }}"
+  register: r_seaweedfs_filer
+  retries: 60
+  delay: 10
+  until:
+  - r_seaweedfs_filer.resources is defined
+  - r_seaweedfs_filer.resources | length > 0
+  - r_seaweedfs_filer.resources[0].status is defined
+  - r_seaweedfs_filer.resources[0].status.readyReplicas is defined
+  - r_seaweedfs_filer.resources[0].status.readyReplicas | int == ocp4_workload_seaweedfs_filer_replicas | int
+
+- name: Create S3 API Route
+  when: ocp4_workload_seaweedfs_s3_api_route_enabled | bool
+  kubernetes.core.k8s:
+    state: present
+    template: route-s3-api.yaml.j2
+
+- name: Get S3 API Route
+  when: ocp4_workload_seaweedfs_s3_api_route_enabled | bool
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: s3
+    namespace: "{{ ocp4_workload_seaweedfs_namespace }}"
+  register: r_seaweedfs_s3_route
+  retries: 30
+  delay: 5
+  until:
+  - r_seaweedfs_s3_route.resources is defined
+  - r_seaweedfs_s3_route.resources | length > 0
+  - r_seaweedfs_s3_route.resources[0].spec.host is defined
+
+- name: Set S3 API endpoint URL
+  when:
+  - ocp4_workload_seaweedfs_s3_api_route_enabled | bool
+  - r_seaweedfs_s3_route.resources | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_seaweedfs_s3_endpoint_external: "https://{{ r_seaweedfs_s3_route.resources[0].spec.host }}"
+
+- name: Create buckets
+  when: ocp4_workload_seaweedfs_buckets | default([]) | length > 0
+  block:
+  - name: Create SeaweedFS buckets
+    kubernetes.core.k8s_exec:
+      namespace: "{{ ocp4_workload_seaweedfs_namespace }}"
+      pod: "{{ ocp4_workload_seaweedfs_application_name }}-filer-0"
+      command: >-
+        /usr/bin/weed shell
+        -master {{ ocp4_workload_seaweedfs_application_name }}-master:9333
+        -filer {{ ocp4_workload_seaweedfs_application_name }}-filer:8888
+        -shell.command 's3.bucket.create -name {{ bucket_name }}'
+    register: r_bucket_create
+    failed_when:
+    - r_bucket_create.rc != 0
+    - "'already exists' not in (r_bucket_create.stderr | default(''))"
+    retries: 10
+    delay: 5
+    until: r_bucket_create is success or 'already exists' in (r_bucket_create.stderr | default(''))
+    loop: "{{ ocp4_workload_seaweedfs_buckets }}"
+    loop_control:
+      loop_var: bucket_name
+
+- name: Save SeaweedFS credentials to Secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ ocp4_workload_seaweedfs_credentials_secret }}"
+        namespace: "{{ ocp4_workload_seaweedfs_namespace }}"
+      type: Opaque
+      stringData:
+        access_key: "{{ _ocp4_workload_seaweedfs_access_key }}"
+        secret_key: "{{ _ocp4_workload_seaweedfs_secret_key }}"
+
+- name: Save SeaweedFS information for user
+  when: ocp4_workload_seaweedfs_enable_user_info_messages | bool
+  agnosticd.core.agnosticd_user_info:
+    msg: |-
+      SeaweedFS S3-compatible storage deployed in namespace {{ ocp4_workload_seaweedfs_namespace }}.
+      Internal S3 endpoint: {{ _ocp4_workload_seaweedfs_s3_endpoint_internal }}
+      {% if _ocp4_workload_seaweedfs_s3_endpoint_external | length > 0 %}
+      External S3 endpoint: {{ _ocp4_workload_seaweedfs_s3_endpoint_external }}
+      {% endif %}
+
+- name: Save SeaweedFS data for user
+  when: ocp4_workload_seaweedfs_enable_user_info_data | bool
+  agnosticd.core.agnosticd_user_info:
+    data:
+      seaweedfs_s3_access_key_id: "{{ _ocp4_workload_seaweedfs_access_key }}"
+      seaweedfs_s3_secret_access_key: "{{ _ocp4_workload_seaweedfs_secret_key }}"
+      seaweedfs_s3_endpoint_internal: "{{ _ocp4_workload_seaweedfs_s3_endpoint_internal }}"
+      seaweedfs_s3_endpoint_external: "{{ _ocp4_workload_seaweedfs_s3_endpoint_external }}"
+      seaweedfs_buckets: "{{ ocp4_workload_seaweedfs_buckets | default([]) }}"
+      seaweedfs_namespace: "{{ ocp4_workload_seaweedfs_namespace }}"

@@ -35,4 +35,18 @@ DISTRIBUTED_STORAGE_CONFIG:
 DISTRIBUTED_STORAGE_DEFAULT_LOCATIONS: []
 DISTRIBUTED_STORAGE_PREFERENCE:
 - garagestorage
+{% elif ocp4_workload_quay_operator_seaweedfs_storage_enabled | bool %}
+DISTRIBUTED_STORAGE_CONFIG:
+  seaweedfsstorage:
+    - RadosGWStorage
+    - hostname: {{ ocp4_workload_quay_operator_seaweedfs_namespace }}-s3.{{ ocp4_workload_quay_operator_seaweedfs_namespace }}.svc.cluster.local
+      port: 8333
+      is_secure: false
+      bucket_name: {{ ocp4_workload_quay_operator_seaweedfs_bucket_name }}
+      storage_path: /datastorage/registry
+      access_key: {{ _ocp4_workload_quay_operator_seaweedfs_access_key }}
+      secret_key: {{ _ocp4_workload_quay_operator_seaweedfs_secret_key }}
+DISTRIBUTED_STORAGE_DEFAULT_LOCATIONS: []
+DISTRIBUTED_STORAGE_PREFERENCE:
+- seaweedfsstorage
 {% endif %}
