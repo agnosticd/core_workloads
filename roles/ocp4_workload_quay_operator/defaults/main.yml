@@ -130,15 +130,13 @@ ocp4_workload_quay_operator_registry_startup_probe_failure_threshold: 30
 # --------------------------------
 # Storage Backend Configuration
 # --------------------------------
-# Set to true to use S4 storage, false to use Noobaa (OCS)
-# Default: false (uses Noobaa/OpenShift Container Storage)
-ocp4_workload_quay_operator_s4_storage_enabled: false
+# All false -> use Noobaa/OpenShift Container Storage
+# Only one of s4_storage_enabled, garage_storage_enabled, or seaweedfs_storage_enabled should be true
 
 # --------------------------------
 # S3 Storage Configuration (S4)
 # --------------------------------
-# Only used when ocp4_workload_quay_operator_s4_storage_enabled: true
-# Quay uses S4 storage for object storage backend
+ocp4_workload_quay_operator_s4_storage_enabled: false
 
 # S4 S3 endpoint configuration
 ocp4_workload_quay_operator_s4_namespace: s4
@@ -155,11 +153,11 @@ ocp4_workload_quay_operator_s4_endpoint: "http://s4.{{ ocp4_workload_quay_operat
 # S3 region
 ocp4_workload_quay_operator_s4_region: us-east-1
 
-# --------------------------------
+# ---------------------------------
 # S3 Storage Configuration (Garage)
-# --------------------------------
+# ---------------------------------
 # Set to true to use Garage storage, false to use Noobaa (OCS)
-# Only one of s4_storage_enabled or garage_storage_enabled should be true
+# Only one of s4_storage_enabled, garage_storage_enabled, or seaweedfs_storage_enabled should be true
 ocp4_workload_quay_operator_garage_storage_enabled: false
 
 # Garage namespace (must match ocp4_workload_garage_namespace)
@@ -174,3 +172,23 @@ ocp4_workload_quay_operator_garage_bucket_name: quay-registry
 
 # S3 region (must match Garage's s3_region config)
 ocp4_workload_quay_operator_garage_region: us-east-1
+
+# ------------------------------------
+# S3 Storage Configuration (SeaweedFS)
+# ------------------------------------
+# Set to true to use SeaweedFS storage
+# Only one of s4_storage_enabled, garage_storage_enabled, or seaweedfs_storage_enabled should be true
+ocp4_workload_quay_operator_seaweedfs_storage_enabled: false
+
+# SeaweedFS namespace (must match ocp4_workload_seaweedfs_namespace)
+ocp4_workload_quay_operator_seaweedfs_namespace: seaweedfs
+
+# Name of the K8s Secret containing SeaweedFS credentials
+# Created automatically by the ocp4_workload_seaweedfs role
+ocp4_workload_quay_operator_seaweedfs_credentials_secret: seaweedfs-s3-credentials
+
+# Bucket name for Quay registry storage
+ocp4_workload_quay_operator_seaweedfs_bucket_name: quay-registry
+
+# S3 region (must match SeaweedFS config)
+ocp4_workload_quay_operator_seaweedfs_region: us-east-1

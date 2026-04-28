@@ -1,0 +1,130 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ ocp4_workload_seaweedfs_application_name }}
+  namespace: {{ ocp4_workload_seaweedfs_gitops_namespace }}
+  labels:
+    app.kubernetes.io/name: seaweedfs
+    app.kubernetes.io/component: application
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io/foreground
+spec:
+  project: default
+  source:
+    repoURL: {{ ocp4_workload_seaweedfs_chart_repo }}
+    targetRevision: {{ ocp4_workload_seaweedfs_chart_revision }}
+    path: {{ ocp4_workload_seaweedfs_chart_path }}
+    helm:
+      values: |
+        global:
+          seaweedfs:
+            image:
+              name: {{ ocp4_workload_seaweedfs_image_name }}
+          imagePullPolicy: {{ ocp4_workload_seaweedfs_image_pull_policy }}
+
+        master:
+          replicas: {{ ocp4_workload_seaweedfs_master_replicas }}
+          defaultReplication: "{{ ocp4_workload_seaweedfs_replication }}"
+          data:
+            type: persistentVolumeClaim
+            size: {{ ocp4_workload_seaweedfs_storage_master_size }}
+{% if ocp4_workload_seaweedfs_storage_master_storage_class | length > 0 %}
+            storageClass: {{ ocp4_workload_seaweedfs_storage_master_storage_class }}
+{% endif %}
+          logs:
+            type: persistentVolumeClaim
+            size: {{ ocp4_workload_seaweedfs_storage_master_size }}
+{% if ocp4_workload_seaweedfs_storage_master_storage_class | length > 0 %}
+            storageClass: {{ ocp4_workload_seaweedfs_storage_master_storage_class }}
+{% endif %}
+          resources:
+            requests:
+              cpu: {{ ocp4_workload_seaweedfs_resources_requests_cpu }}
+              memory: {{ ocp4_workload_seaweedfs_resources_requests_memory }}
+            limits:
+              cpu: {{ ocp4_workload_seaweedfs_resources_limits_cpu }}
+              memory: {{ ocp4_workload_seaweedfs_resources_limits_memory }}
+
+        volume:
+          replicas: {{ ocp4_workload_seaweedfs_volume_replicas }}
+          dataDirs:
+          - name: data1
+            type: persistentVolumeClaim
+            size: {{ ocp4_workload_seaweedfs_storage_volume_size }}
+{% if ocp4_workload_seaweedfs_storage_volume_storage_class | length > 0 %}
+            storageClass: {{ ocp4_workload_seaweedfs_storage_volume_storage_class }}
+{% endif %}
+            maxVolumes: 0
+          idx:
+            type: persistentVolumeClaim
+            size: {{ ocp4_workload_seaweedfs_storage_master_size }}
+{% if ocp4_workload_seaweedfs_storage_volume_storage_class | length > 0 %}
+            storageClass: {{ ocp4_workload_seaweedfs_storage_volume_storage_class }}
+{% endif %}
+          logs:
+            type: persistentVolumeClaim
+            size: {{ ocp4_workload_seaweedfs_storage_master_size }}
+{% if ocp4_workload_seaweedfs_storage_volume_storage_class | length > 0 %}
+            storageClass: {{ ocp4_workload_seaweedfs_storage_volume_storage_class }}
+{% endif %}
+          resources:
+            requests:
+              cpu: {{ ocp4_workload_seaweedfs_resources_requests_cpu }}
+              memory: {{ ocp4_workload_seaweedfs_resources_requests_memory }}
+            limits:
+              cpu: {{ ocp4_workload_seaweedfs_resources_limits_cpu }}
+              memory: {{ ocp4_workload_seaweedfs_resources_limits_memory }}
+
+        filer:
+          replicas: {{ ocp4_workload_seaweedfs_filer_replicas }}
+          s3:
+            enabled: true
+            port: 8333
+            enableAuth: {{ ocp4_workload_seaweedfs_s3_auth_enabled | bool | lower }}
+          data:
+            type: persistentVolumeClaim
+            size: {{ ocp4_workload_seaweedfs_storage_filer_size }}
+{% if ocp4_workload_seaweedfs_storage_filer_storage_class | length > 0 %}
+            storageClass: {{ ocp4_workload_seaweedfs_storage_filer_storage_class }}
+{% endif %}
+          logs:
+            type: persistentVolumeClaim
+            size: {{ ocp4_workload_seaweedfs_storage_filer_size }}
+{% if ocp4_workload_seaweedfs_storage_filer_storage_class | length > 0 %}
+            storageClass: {{ ocp4_workload_seaweedfs_storage_filer_storage_class }}
+{% endif %}
+          resources:
+            requests:
+              cpu: {{ ocp4_workload_seaweedfs_resources_requests_cpu }}
+              memory: {{ ocp4_workload_seaweedfs_resources_requests_memory }}
+            limits:
+              cpu: {{ ocp4_workload_seaweedfs_resources_limits_cpu }}
+              memory: {{ ocp4_workload_seaweedfs_resources_limits_memory }}
+
+        s3:
+          enabled: false
+
+{% if ocp4_workload_seaweedfs_helm_values | length > 0 %}
+        {{ ocp4_workload_seaweedfs_helm_values | to_nice_yaml(indent=2) | indent(8) }}
+{% endif %}
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ ocp4_workload_seaweedfs_namespace }}
+
+  syncPolicy:
+{% if ocp4_workload_seaweedfs_sync_policy_automated %}
+    automated:
+      prune: {{ ocp4_workload_seaweedfs_sync_policy_prune | lower }}
+      selfHeal: {{ ocp4_workload_seaweedfs_sync_policy_self_heal | lower }}
+{% endif %}
+    syncOptions:
+    - CreateNamespace=true
+    - RespectIgnoreDifferences=true
+    retry:
+      limit: {{ ocp4_workload_seaweedfs_sync_retry_limit }}
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
