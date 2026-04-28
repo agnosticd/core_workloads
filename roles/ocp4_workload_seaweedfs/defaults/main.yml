@@ -93,5 +93,4 @@ ocp4_workload_seaweedfs_sync_policy_prune: true
 ocp4_workload_seaweedfs_sync_retry_limit: 5
 
 # User info configuration
-ocp4_workload_seaweedfs_enable_user_info_messages: true
 ocp4_workload_seaweedfs_enable_user_info_data: true

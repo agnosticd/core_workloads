@@ -206,16 +206,6 @@
         access_key: "{{ _ocp4_workload_seaweedfs_access_key }}"
         secret_key: "{{ _ocp4_workload_seaweedfs_secret_key }}"
 
-- name: Save SeaweedFS information for user
-  when: ocp4_workload_seaweedfs_enable_user_info_messages | bool
-  agnosticd.core.agnosticd_user_info:
-    msg: |-
-      SeaweedFS S3-compatible storage deployed in namespace {{ ocp4_workload_seaweedfs_namespace }}.
-      Internal S3 endpoint: {{ _ocp4_workload_seaweedfs_s3_endpoint_internal }}
-      {% if _ocp4_workload_seaweedfs_s3_endpoint_external | length > 0 %}
-      External S3 endpoint: {{ _ocp4_workload_seaweedfs_s3_endpoint_external }}
-      {% endif %}
-
 - name: Save SeaweedFS data for user
   when: ocp4_workload_seaweedfs_enable_user_info_data | bool
   agnosticd.core.agnosticd_user_info:
