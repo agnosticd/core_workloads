@@ -177,17 +177,17 @@
       namespace: "{{ ocp4_workload_seaweedfs_namespace }}"
       pod: "{{ ocp4_workload_seaweedfs_application_name }}-filer-0"
       command: >-
+        sh -c 'echo "s3.bucket.create -name {{ bucket_name }}" |
         /usr/bin/weed shell
         -master {{ ocp4_workload_seaweedfs_application_name }}-master:9333
-        -filer {{ ocp4_workload_seaweedfs_application_name }}-filer:8888
-        -shell.command 's3.bucket.create -name {{ bucket_name }}'
+        -filer {{ ocp4_workload_seaweedfs_application_name }}-filer:8888'
     register: r_bucket_create
     failed_when:
     - r_bucket_create.rc != 0
-    - "'already exists' not in (r_bucket_create.stderr | default(''))"
+    - "'already exists' not in (r_bucket_create.stdout | default('') ~ r_bucket_create.stderr | default(''))"
     retries: 10
     delay: 5
-    until: r_bucket_create is success or 'already exists' in (r_bucket_create.stderr | default(''))
+    until: r_bucket_create is not failed
     loop: "{{ ocp4_workload_seaweedfs_buckets }}"
     loop_control:
       loop_var: bucket_name
