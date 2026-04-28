@@ -81,12 +81,7 @@ spec:
           s3:
             enabled: true
             port: 8333
-{% if ocp4_workload_seaweedfs_s3_auth_enabled | bool %}
-            enableAuth: true
-            existingConfigSecret: {{ ocp4_workload_seaweedfs_s3_config_secret }}
-{% else %}
-            enableAuth: false
-{% endif %}
+            enableAuth: {{ ocp4_workload_seaweedfs_s3_auth_enabled | bool | lower }}
           data:
             type: persistentVolumeClaim
             size: {{ ocp4_workload_seaweedfs_storage_filer_size }}

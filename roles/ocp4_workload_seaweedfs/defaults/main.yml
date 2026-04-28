@@ -64,18 +64,18 @@ ocp4_workload_seaweedfs_s3_api_route_tls_termination: edge
 ocp4_workload_seaweedfs_s3_api_route_tls_insecure_policy: Redirect
 
 # S3 authentication
-# When enabled, creates a config Secret with access credentials
-# that the SeaweedFS S3 gateway uses for IAM
+# When enabled, credentials are configured dynamically via weed shell
+# after the filer pods are ready (avoids SeaweedFS static config bug)
 ocp4_workload_seaweedfs_s3_auth_enabled: true
+
+# S3 IAM user name for dynamic credential creation
+ocp4_workload_seaweedfs_s3_user: s3admin
 
 # S3 credentials - leave empty to auto-generate
 ocp4_workload_seaweedfs_access_key: ""
 ocp4_workload_seaweedfs_secret_key: ""
 ocp4_workload_seaweedfs_access_key_length: 20
 ocp4_workload_seaweedfs_secret_key_length: 40
-
-# Name of the S3 config Secret (SeaweedFS IAM config, consumed by Helm chart)
-ocp4_workload_seaweedfs_s3_config_secret: seaweedfs-s3-config
 
 # Post-deploy: credentials Secret and buckets
 # This Secret stores access_key/secret_key in the same format as the garage role

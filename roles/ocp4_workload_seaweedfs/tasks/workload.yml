@@ -42,34 +42,6 @@
         labels:
           argocd.argoproj.io/managed-by: "{{ ocp4_workload_seaweedfs_gitops_namespace }}"
 
-- name: Create SeaweedFS S3 config Secret
-  when: ocp4_workload_seaweedfs_s3_auth_enabled | bool
-  kubernetes.core.k8s:
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: "{{ ocp4_workload_seaweedfs_s3_config_secret }}"
-        namespace: "{{ ocp4_workload_seaweedfs_namespace }}"
-      type: Opaque
-      stringData:
-        seaweedfs_s3_config: |
-          {
-            "identities": [
-              {
-                "name": "admin",
-                "credentials": [
-                  {
-                    "accessKey": "{{ _ocp4_workload_seaweedfs_access_key }}",
-                    "secretKey": "{{ _ocp4_workload_seaweedfs_secret_key }}"
-                  }
-                ],
-                "actions": ["Admin", "Read", "Write", "List", "Tagging"]
-              }
-            ]
-          }
-
 - name: Create ArgoCD Application for SeaweedFS
   kubernetes.core.k8s:
     state: present
@@ -140,6 +112,26 @@
   - r_seaweedfs_filer.resources[0].status is defined
   - r_seaweedfs_filer.resources[0].status.readyReplicas is defined
   - r_seaweedfs_filer.resources[0].status.readyReplicas | int == ocp4_workload_seaweedfs_filer_replicas | int
+
+- name: Configure S3 credentials dynamically
+  when: ocp4_workload_seaweedfs_s3_auth_enabled | bool
+  kubernetes.core.k8s_exec:
+    namespace: "{{ ocp4_workload_seaweedfs_namespace }}"
+    pod: "{{ ocp4_workload_seaweedfs_application_name }}-filer-0"
+    command: >-
+      sh -c 'echo "s3.configure
+      -access_key {{ _ocp4_workload_seaweedfs_access_key }}
+      -secret_key {{ _ocp4_workload_seaweedfs_secret_key }}
+      -user {{ ocp4_workload_seaweedfs_s3_user }}
+      -actions Admin,Read,Write,List,Tagging
+      -apply" |
+      /usr/bin/weed shell
+      -master {{ ocp4_workload_seaweedfs_application_name }}-master:9333
+      -filer {{ ocp4_workload_seaweedfs_application_name }}-filer:8888'
+  register: r_s3_configure
+  retries: 10
+  delay: 5
+  until: r_s3_configure is not failed
 
 - name: Create S3 API Route
   when: ocp4_workload_seaweedfs_s3_api_route_enabled | bool
