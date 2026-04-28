@@ -21,7 +21,7 @@ ocp4_workload_seaweedfs_image_name: chrislusf/seaweedfs
 ocp4_workload_seaweedfs_image_tag: ""
 ocp4_workload_seaweedfs_image_pull_policy: IfNotPresent
 
-# Component replicas
+# Component replicas (only odd numbers allowed)
 # Master: manages cluster topology and volume assignments
 ocp4_workload_seaweedfs_master_replicas: 1
 # Volume: stores actual file data
