@@ -30,7 +30,6 @@
         tsig_secret: "{{ r_tsig_secret.resources[0].data[tsig_secret_ref_key] | b64decode }}"
       
     - name: Create specific CNAME record for central
-      when: cluster_dns_server is defined
       community.general.nsupdate:
         server: >-
           {{ ddns_server
