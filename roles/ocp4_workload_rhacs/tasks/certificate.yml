@@ -31,11 +31,7 @@
       
     - name: Create specific CNAME record for central
       community.general.nsupdate:
-        server: >-
-          {{ ddns_server
-          | ansible.utils.ipaddr
-          | ternary(cluster_dns_server, lookup('community.general.dig', ddns_server))
-          }}
+        server: "{{ lookup('community.general.dig', ddns_server) }}"
         zone: "{{ ddns_zone }}"
         record: "central-{{ ocp4_workload_rhacs_central_namespace }}.{{ openshift_cluster_ingress_domain }}"
         type: CNAME
