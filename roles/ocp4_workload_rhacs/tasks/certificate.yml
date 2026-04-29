@@ -12,7 +12,7 @@
   - name: Set facts from ClusterIssuer
     vars:
       _webhook: "{{ r_clusterissuer.resources[0].spec.acme.solvers[0].dns01.webhook.config }}"
-    set_fact:
+    ansible.builtin.set_fact:
       ddns_server: "{{ _webhook.ddnsServer }}"
       ddns_zone: "{{ _webhook.ddnsZone }}"
       tsig_key_name: "{{ _webhook.tsigKeyName }}"
@@ -26,7 +26,7 @@
       namespace: cert-manager
     register: r_tsig_secret
   - name: Set TSIG secret fact
-    set_fact:
+    ansible.builtin.set_fact:
       tsig_secret: "{{ r_tsig_secret.resources[0].data[tsig_secret_ref_key] | b64decode }}"
 
   - name: Create specific CNAME record for central
