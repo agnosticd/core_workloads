@@ -5,7 +5,7 @@
     kind: ClusterIssuer
     name: acme-bifrost-production-ddns
   register: r_clusterissuer
-      
+
 - name: Create specific CNAME record for central
   when: r_clusterissuer.resources | default([]) | length > 0
   block:
