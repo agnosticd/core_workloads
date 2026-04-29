@@ -41,7 +41,7 @@
         type: CNAME
         ttl: 30
         port: "{{ cluster_dns_port | d('53') }}"
-        value: "console-openshift-console.{{ openshift_cluster_ingress_domain }}
+        value: "console-openshift-console.{{ openshift_cluster_ingress_domain }}"
         key_name: "{{ tsig_key_name }}"
         key_secret: "{{ tsig_secret }}"
         key_algorithm: "hmac-sha256"
