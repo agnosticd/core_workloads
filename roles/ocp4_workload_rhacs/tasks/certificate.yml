@@ -1,13 +1,14 @@
 ---
+- name: Get ClusterIssuer info
+  kubernetes.core.k8s_info:
+    api_version: cert-manager.io/v1
+    kind: ClusterIssuer
+    name: acme-bifrost-production-ddns
+  register: r_clusterissuer
+      
 - name: Create specific CNAME record for central
-  when: cluster_dns_server is defined
+  when: r_clusterissuer.resources | default([]) | length > 0
   block:
-    - name: Get ClusterIssuer info
-      kubernetes.core.k8s_info:
-        api_version: cert-manager.io/v1
-        kind: ClusterIssuer
-        name: acme-bifrost-production-ddns
-      register: r_clusterissuer
     - name: Set facts from ClusterIssuer
       vars:
         _webhook: "{{ r_clusterissuer.resources[0].spec.acme.solvers[0].dns01.webhook.config }}"
