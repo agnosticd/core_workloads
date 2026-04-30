@@ -73,7 +73,12 @@
     ansible.builtin.set_fact:
       _ocp4_workload_rhacs_record_name: "{{ _ocp4_workload_rhacs_route_hostname | regex_replace('\\.' + _ocp4_workload_rhacs_ddns_zone + '$', '') }}"
 
+  - name: Check if DNS record already exists
+    ansible.builtin.set_fact:
+      _ocp4_workload_rhacs_existing_dns: "{{ lookup('dig', _ocp4_workload_rhacs_route_hostname, '@' + _ocp4_workload_rhacs_ddns_server, wantlist=True) | first | default('') }}"
+
   - name: Add DNS A record for Central route
+    when: _ocp4_workload_rhacs_existing_dns != _ocp4_workload_rhacs_router_ip
     community.general.nsupdate:
       key_name: "{{ _ocp4_workload_rhacs_tsig_key_name }}"
       key_secret: "{{ _ocp4_workload_rhacs_tsig_secret }}"
@@ -88,10 +93,9 @@
     register: r_dns_update
 
   - name: Wait for DNS propagation
-    ansible.builtin.command:
-      cmd: "dig +short {{ _ocp4_workload_rhacs_route_hostname }} @{{ _ocp4_workload_rhacs_ddns_server }}"
-    register: r_dns_check
+    when: r_dns_update is changed
+    ansible.builtin.set_fact:
+      _ocp4_workload_rhacs_dns_check: "{{ lookup('dig', _ocp4_workload_rhacs_route_hostname, '@' + _ocp4_workload_rhacs_ddns_server, wantlist=True) | first | default('') }}"
     retries: 5
     delay: 2
-    until: r_dns_check.stdout == _ocp4_workload_rhacs_router_ip
-    changed_when: false
+    until: _ocp4_workload_rhacs_dns_check == _ocp4_workload_rhacs_router_ip
