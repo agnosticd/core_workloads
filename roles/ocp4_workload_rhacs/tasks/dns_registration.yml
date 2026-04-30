@@ -99,7 +99,7 @@
         state: present
       register: r_dns_update
 
-    - name: Wait for DNS propagation
+    - name: Wait for DNS propagation # noqa no-handler
       when: r_dns_update is changed
       ansible.builtin.set_fact:
         _ocp4_workload_rhacs_dns_check: "{{ lookup('dig', _ocp4_workload_rhacs_route_hostname, '@' + _ocp4_workload_rhacs_ddns_server, wantlist=True) | first | default('') }}" # yamllint disable-line rule:line-length
