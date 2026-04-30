@@ -14,7 +14,7 @@
     _ocp4_workload_rhacs_platform: "{{ r_infrastructure.resources[0].status.platform | default('Unknown') }}"
 
 - name: Register DNS A record for Central route
-  when: _ocp4_workload_rhacs_platform == "BareMetal"
+  when: _ocp4_workload_rhacs_platform in ["BareMetal","None"] # None is for SNO
   block:
   - name: Get Central route information
     kubernetes.core.k8s_info:
@@ -53,7 +53,7 @@
   - name: If using ddns, create specific route
     when: _ocp4_workload_rhacs_dns_issuer.spec.acme.solvers[0].dns01.webhook.config.ddnsServer | default("") | length > 0
     block:
-  
+
     - name: Extract DNS configuration from ClusterIssuer
       ansible.builtin.set_fact:
         _ocp4_workload_rhacs_ddns_server: "{{ _ocp4_workload_rhacs_dns_issuer.spec.acme.solvers[0].dns01.webhook.config.ddnsServer }}"
@@ -61,7 +61,7 @@
         _ocp4_workload_rhacs_tsig_key_name: "{{ _ocp4_workload_rhacs_dns_issuer.spec.acme.solvers[0].dns01.webhook.config.tsigKeyName }}"
         _ocp4_workload_rhacs_tsig_algorithm: "{{ _ocp4_workload_rhacs_dns_issuer.spec.acme.solvers[0].dns01.webhook.config.tsigAlgorithm }}"
         _ocp4_workload_rhacs_tsig_secret_ref: "{{ _ocp4_workload_rhacs_dns_issuer.spec.acme.solvers[0].dns01.webhook.config.tsigSecretRef }}"
-  
+
     - name: Get TSIG secret from cert-manager
       kubernetes.core.k8s_info:
         api_version: v1
@@ -69,19 +69,21 @@
         name: "{{ _ocp4_workload_rhacs_tsig_secret_ref.name }}"
         namespace: cert-manager
       register: r_tsig_secret
-  
+
     - name: Extract TSIG secret value
       ansible.builtin.set_fact:
         _ocp4_workload_rhacs_tsig_secret: "{{ r_tsig_secret.resources[0].data[_ocp4_workload_rhacs_tsig_secret_ref.key] | b64decode }}"
-  
+
     - name: Extract record name from full hostname
       ansible.builtin.set_fact:
+        # yamllint disable-line rule:line-length
         _ocp4_workload_rhacs_record_name: "{{ _ocp4_workload_rhacs_route_hostname | regex_replace('\\.' + _ocp4_workload_rhacs_ddns_zone + '$', '') }}"
-  
+
     - name: Check if DNS record already exists
       ansible.builtin.set_fact:
+        # yamllint disable-line rule:line-length
         _ocp4_workload_rhacs_existing_dns: "{{ lookup('dig', _ocp4_workload_rhacs_route_hostname, '@' + _ocp4_workload_rhacs_ddns_server, wantlist=True) | first | default('') }}"
-  
+
     - name: Add DNS A record for Central route
       when: _ocp4_workload_rhacs_existing_dns != _ocp4_workload_rhacs_router_ip
       community.general.nsupdate:
@@ -96,11 +98,11 @@
         ttl: "{{ ocp4_workload_rhacs_dns_record_ttl }}"
         state: present
       register: r_dns_update
-  
-    - name: Wait for DNS propagation
+
+    - name: Wait for DNS propagation # noqa no-handler
       when: r_dns_update is changed
       ansible.builtin.set_fact:
-        _ocp4_workload_rhacs_dns_check: "{{ lookup('dig', _ocp4_workload_rhacs_route_hostname, '@' + _ocp4_workload_rhacs_ddns_server, wantlist=True) | first | default('') }}"
+        _ocp4_workload_rhacs_dns_check: "{{ lookup('dig', _ocp4_workload_rhacs_route_hostname, '@' + _ocp4_workload_rhacs_ddns_server, wantlist=True) | first | default('') }}" # yamllint disable-line rule:line-length
       retries: 5
       delay: 2
       until: _ocp4_workload_rhacs_dns_check == _ocp4_workload_rhacs_router_ip
