@@ -39,18 +39,20 @@
       kind: ClusterIssuer
     register: r_cluster_issuers_dns
 
+  - name: Find ClusterIssuer with DNS01 solver
+    ansible.builtin.set_fact:
+      _ocp4_workload_rhacs_dns_issuer: >-
+        {{
+          r_cluster_issuers_dns.resources
+          | selectattr('spec.acme.solvers', 'defined')
+          | selectattr('spec.acme.solvers', 'search', 'dns01')
+          | first
+        }}
+    when: r_cluster_issuers_dns.resources | length > 0
+
   - name: If using ddns, create specific route
     when: _ocp4_workload_rhacs_dns_issuer.spec.acme.solvers[0].dns01.webhook.config.ddnsServer | default("") | length > 0
     block:
-    - name: Find ClusterIssuer with DNS01 solver
-      ansible.builtin.set_fact:
-        _ocp4_workload_rhacs_dns_issuer: >-
-          {{
-            r_cluster_issuers_dns.resources
-            | selectattr('spec.acme.solvers', 'defined')
-            | selectattr('spec.acme.solvers', 'search', 'dns01')
-            | first
-          }}
   
     - name: Extract DNS configuration from ClusterIssuer
       ansible.builtin.set_fact:
