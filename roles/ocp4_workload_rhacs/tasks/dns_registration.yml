@@ -14,7 +14,7 @@
     _ocp4_workload_rhacs_platform: "{{ r_infrastructure.resources[0].status.platform | default('Unknown') }}"
 
 - name: Register DNS A record for Central route
-  when: _ocp4_workload_rhacs_platform == "BareMetal"
+  when: _ocp4_workload_rhacs_platform in ["BareMetal","None"] # None is for SNO
   block:
   - name: Get Central route information
     kubernetes.core.k8s_info:
