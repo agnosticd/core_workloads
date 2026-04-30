@@ -33,7 +33,7 @@
     community.general.nsupdate:
       server: "{{ lookup('community.general.dig', ddns_server) }}"
       zone: "{{ ddns_zone }}"
-      record: "central-{{ ocp4_workload_rhacs_central_namespace }}.{{ openshift_cluster_inress_domain | replace('.' + ddns_zone, '') }}"
+      record: "central-{{ ocp4_workload_rhacs_central_namespace }}.{{ openshift_cluster_ingress_domain | replace('.' + ddns_zone, '') }}"
       type: CNAME
       ttl: 30
       port: "{{ cluster_dns_port | d('53') }}"
