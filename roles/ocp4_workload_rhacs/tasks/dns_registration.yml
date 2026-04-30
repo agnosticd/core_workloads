@@ -78,12 +78,12 @@
       ansible.builtin.set_fact:
         # yamllint disable-line rule:line-length
         _ocp4_workload_rhacs_record_name: "{{ _ocp4_workload_rhacs_route_hostname | regex_replace('\\.' + _ocp4_workload_rhacs_ddns_zone + '$', '') }}"
- 
+
     - name: Check if DNS record already exists
       ansible.builtin.set_fact:
         # yamllint disable-line rule:line-length
         _ocp4_workload_rhacs_existing_dns: "{{ lookup('dig', _ocp4_workload_rhacs_route_hostname, '@' + _ocp4_workload_rhacs_ddns_server, wantlist=True) | first | default('') }}"
- 
+
     - name: Add DNS A record for Central route
       when: _ocp4_workload_rhacs_existing_dns != _ocp4_workload_rhacs_router_ip
       community.general.nsupdate:
