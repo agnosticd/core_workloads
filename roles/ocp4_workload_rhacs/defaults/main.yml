@@ -96,6 +96,15 @@ ocp4_workload_rhacs_sensor_limits_memory: "8Gi"
 ocp4_workload_rhacs_central_storage_class: ""
 
 # --------------------------------
+# DNS Registration
+# --------------------------------
+# When enabled, automatically registers DNS A record for the Central route
+# Only applies to BareMetal clusters
+# Requires cert-manager ClusterIssuer with DNS01 solver configured
+ocp4_workload_rhacs_enable_dns_registration: true
+ocp4_workload_rhacs_dns_record_ttl: 30
+
+# --------------------------------
 # OpenShift OAuth Authentication
 # --------------------------------
 # When enabled, configures the built-in OpenShift OAuth server as an

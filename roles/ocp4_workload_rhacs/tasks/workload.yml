@@ -118,6 +118,10 @@
     _ocp4_workload_rhacs_central_host: "{{ r_stackrox_central_route.resources[0].spec.host }}"
     _ocp4_workload_rhacs_central_route: "https://{{ r_stackrox_central_route.resources[0].spec.host }}"
 
+- name: Register DNS for Central route
+  when: ocp4_workload_rhacs_enable_dns_registration | bool
+  ansible.builtin.include_tasks: dns_registration.yml
+
 - name: Wait for StackRox Central to return 200 status
   ansible.builtin.uri:
     url: "{{ _ocp4_workload_rhacs_central_route }}"
