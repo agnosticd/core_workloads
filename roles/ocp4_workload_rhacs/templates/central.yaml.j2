@@ -35,6 +35,13 @@ spec:
         enabled: false
       route:
         enabled: true
+{% if ocp4_workload_rhacs_enable_reencrypt_route | bool %}
+        reencrypt:
+          enabled: true
+          tls:
+            destinationCACertificate: |
+{{ ocp4_workload_rhacs_reencrypt_destination_ca | indent(14, first=False) }}
+{% endif %}
     persistence:
       persistentVolumeClaim:
         claimName: stackrox-db

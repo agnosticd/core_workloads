@@ -69,6 +69,25 @@
   when: ocp4_workload_rhacs_enable_route_certs | bool
   ansible.builtin.include_tasks: certificate.yml
 
+- name: Extract CA certificate chain for reencrypt route
+  when: ocp4_workload_rhacs_enable_reencrypt_route | bool
+  block:
+    - name: Get rhacs-central-tls secret
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: rhacs-central-tls
+        namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+      register: r_rhacs_central_tls_secret
+      failed_when: r_rhacs_central_tls_secret.resources | length == 0
+
+    - name: Extract and process certificate chain
+      ansible.builtin.set_fact:
+        ocp4_workload_rhacs_reencrypt_destination_ca: >-
+          {{ r_rhacs_central_tls_secret.resources[0].data['tls.crt']
+             | b64decode
+             | regex_replace('^.*?-----END CERTIFICATE-----\n', '', multiline=True) }}
+
 - name: Create Central
   vars:
     _ocp4_workload_rhacs_central_certificate: "{{ r_certificate_central is defined and r_certificate_central is succeeded }}"
