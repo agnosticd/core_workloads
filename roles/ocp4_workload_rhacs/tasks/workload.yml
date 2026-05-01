@@ -257,10 +257,10 @@
   agnosticd.core.agnosticd_user_info:
     msg: "{{ item }}"
   loop:
-  - ""
-  - "Your RHACS console is available at: {{ _ocp4_workload_rhacs_central_route }}"
-  - "RHACS portal username: admin"
-  - "RHACS portal password: {{ _ocp4_workload_rhacs_central_admin_password }}"
+    - ""
+    - "Your RHACS console is available at: {{ _ocp4_workload_rhacs_central_route }}"
+    - "RHACS portal username: admin"
+    - "RHACS portal password: {{ _ocp4_workload_rhacs_central_admin_password }}"
 
 - name: Save user data
   agnosticd.core.agnosticd_user_info:
