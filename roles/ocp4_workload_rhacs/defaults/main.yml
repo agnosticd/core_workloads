@@ -25,6 +25,10 @@ ocp4_workload_rhacs_enable_vm_scanning: false
 # If no certificate is issued successfully, the role will deploy Central without a proper certificate
 ocp4_workload_rhacs_enable_route_certs: true
 
+# Enable reencrypt route for Central
+# Requires rhacs-central-tls secret to exist in stackrox namespace
+ocp4_workload_rhacs_enable_reencrypt_route: false
+
 # Enable collector config for rhacs 4.8+
 ocp4_workload_rhacs_collector_config_enable: false
 ocp4_workload_rhacs_collector_config_expternal_ips_enable: true
