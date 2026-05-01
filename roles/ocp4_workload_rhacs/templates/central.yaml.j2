@@ -38,9 +38,11 @@ spec:
 {% if ocp4_workload_rhacs_enable_reencrypt_route | bool %}
         reencrypt:
           enabled: true
+{% if ocp4_workload_rhacs_reencrypt_destination_ca is defined %}
           tls:
             destinationCACertificate: |
 {{ ocp4_workload_rhacs_reencrypt_destination_ca | indent(14, True) }}
+{% endif %}
 {% endif %}
     persistence:
       persistentVolumeClaim:
