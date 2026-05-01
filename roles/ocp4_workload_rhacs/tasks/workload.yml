@@ -99,7 +99,7 @@
 
     - name: Combine intermediate CAs with cluster trust bundle
       ansible.builtin.set_fact:
-        ocp4_workload_rhacs_reencrypt_destination_ca: >-
+        _ocp4_workload_rhacs_reencrypt_destination_ca: >-
           {{ _cert_intermediate_ca_chain }}{{ r_cluster_trusted_ca_bundle.resources[0].data['ca-bundle.crt'] }}
 
 - name: Create Central

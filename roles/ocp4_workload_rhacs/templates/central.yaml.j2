@@ -35,14 +35,12 @@ spec:
         enabled: false
       route:
         enabled: true
-{% if ocp4_workload_rhacs_enable_reencrypt_route | bool %}
+{% if ocp4_workload_rhacs_enable_reencrypt_route | bool and _ocp4_workload_rhacs_reencrypt_destination_ca is defined %}
         reencrypt:
           enabled: true
-{% if ocp4_workload_rhacs_reencrypt_destination_ca is defined %}
           tls:
             destinationCACertificate: |
-{{ ocp4_workload_rhacs_reencrypt_destination_ca | indent(14, True) }}
-{% endif %}
+{{ _ocp4_workload_rhacs_reencrypt_destination_ca | indent(14, True) }}
 {% endif %}
     persistence:
       persistentVolumeClaim:
