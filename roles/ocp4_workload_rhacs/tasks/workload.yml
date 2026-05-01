@@ -69,18 +69,20 @@
   when: ocp4_workload_rhacs_enable_route_certs | bool
   ansible.builtin.include_tasks: certificate.yml
 
-- name: Extract CA certificate chain for reencrypt route
+- name: Get rhacs-central-tls secret for reencrypt route
   when: ocp4_workload_rhacs_enable_reencrypt_route | bool
-  block:
-    - name: Get rhacs-central-tls secret
-      kubernetes.core.k8s_info:
-        api_version: v1
-        kind: Secret
-        name: rhacs-central-tls
-        namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
-      register: r_rhacs_central_tls_secret
-      failed_when: r_rhacs_central_tls_secret.resources | length == 0
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: rhacs-central-tls
+    namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+  register: r_rhacs_central_tls_secret
 
+- name: Extract CA certificate chain for reencrypt route
+  when:
+    - ocp4_workload_rhacs_enable_reencrypt_route | bool
+    - r_rhacs_central_tls_secret.resources | default([]) | length > 0
+  block:
     - name: Extract intermediate CA chain from certificate
       ansible.builtin.set_fact:
         _cert_intermediate_ca_chain: >-
@@ -97,7 +99,7 @@
 
     - name: Combine intermediate CAs with cluster trust bundle
       ansible.builtin.set_fact:
-        ocp4_workload_rhacs_reencrypt_destination_ca: >-
+        _ocp4_workload_rhacs_reencrypt_destination_ca: >-
           {{ _cert_intermediate_ca_chain }}{{ r_cluster_trusted_ca_bundle.resources[0].data['ca-bundle.crt'] }}
 
 - name: Create Central
