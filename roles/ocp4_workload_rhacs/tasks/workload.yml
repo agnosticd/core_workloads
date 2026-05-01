@@ -81,9 +81,21 @@
       register: r_rhacs_central_tls_secret
       failed_when: r_rhacs_central_tls_secret.resources | length == 0
 
-    - name: Extract and process certificate chain
+    - name: Extract intermediate CA chain from certificate
       ansible.builtin.set_fact:
-        ocp4_workload_rhacs_reencrypt_destination_ca: "{{ r_rhacs_central_tls_secret.resources[0].data['tls.crt'] | b64decode | regex_replace('^[\\s\\S]*?-----END CERTIFICATE-----\\n', '') }}"
+        _cert_intermediate_ca_chain: "{{ r_rhacs_central_tls_secret.resources[0].data['tls.crt'] | b64decode | regex_replace('^[\\s\\S]*?-----END CERTIFICATE-----\\n', '') }}"
+
+    - name: Get cluster trusted CA bundle
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: ConfigMap
+        name: trusted-ca-bundle
+        namespace: openshift-config-managed
+      register: r_cluster_trusted_ca_bundle
+
+    - name: Combine intermediate CAs with cluster trust bundle
+      ansible.builtin.set_fact:
+        ocp4_workload_rhacs_reencrypt_destination_ca: "{{ _cert_intermediate_ca_chain }}{{ r_cluster_trusted_ca_bundle.resources[0].data['ca-bundle.crt'] }}"
 
 - name: Create Central
   vars:
