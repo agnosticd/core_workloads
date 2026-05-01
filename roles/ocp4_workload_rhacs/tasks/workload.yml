@@ -83,10 +83,10 @@
 
     - name: Extract and process certificate chain
       ansible.builtin.set_fact:
-        ocp4_workload_rhacs_reencrypt_destination_ca: >-
+        ocp4_workload_rhacs_reencrypt_destination_ca: |-
           {{ r_rhacs_central_tls_secret.resources[0].data['tls.crt']
              | b64decode
-             | regex_replace('^.*?-----END CERTIFICATE-----\n', '', multiline=True) }}
+             | regex_replace('^.*?-----END CERTIFICATE-----\n', '') }}
 
 - name: Create Central
   vars:

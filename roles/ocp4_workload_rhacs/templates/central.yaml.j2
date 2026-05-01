@@ -40,7 +40,7 @@ spec:
           enabled: true
           tls:
             destinationCACertificate: |
-{{ ocp4_workload_rhacs_reencrypt_destination_ca | indent(14, first=False) }}
+{{ ocp4_workload_rhacs_reencrypt_destination_ca | indent(14, True) }}
 {% endif %}
     persistence:
       persistentVolumeClaim:
