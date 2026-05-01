@@ -137,6 +137,25 @@
     _ocp4_workload_rhacs_central_host: "{{ r_stackrox_central_route.resources[0].spec.host }}"
     _ocp4_workload_rhacs_central_route: "https://{{ r_stackrox_central_route.resources[0].spec.host }}"
 
+- name: Get Central reencrypt route
+  when: ocp4_workload_rhacs_enable_reencrypt_route | bool
+  block:
+    - name: Get reencrypt route info
+      kubernetes.core.k8s_info:
+        kind: Route
+        api_version: route.openshift.io/v1
+        namespace: "{{ ocp4_workload_rhacs_central_namespace }}"
+        name: central-reencrypt
+      register: r_stackrox_central_reencrypt_route
+      retries: 5
+      delay: 5
+      until: r_stackrox_central_reencrypt_route.resources[0].spec.host is defined
+
+    - name: Store Central reencrypt Route facts
+      ansible.builtin.set_fact:
+        _ocp4_workload_rhacs_central_reencrypt_host: "{{ r_stackrox_central_reencrypt_route.resources[0].spec.host }}"
+        _ocp4_workload_rhacs_central_reencrypt_route: "https://{{ r_stackrox_central_reencrypt_route.resources[0].spec.host }}"
+
 - name: Register DNS for Central route
   when: ocp4_workload_rhacs_enable_dns_registration | bool
   ansible.builtin.include_tasks: dns_registration.yml
@@ -256,15 +275,19 @@
 - name: Print user info
   agnosticd.core.agnosticd_user_info:
     msg: "{{ item }}"
-  loop:
-    - ""
-    - "Your RHACS console is available at: {{ _ocp4_workload_rhacs_central_route }}"
-    - "RHACS portal username: admin"
-    - "RHACS portal password: {{ _ocp4_workload_rhacs_central_admin_password }}"
+  loop: >-
+    {{ ['', 'Your RHACS console is available at: ' + _ocp4_workload_rhacs_central_route]
+    + (['RHACS reencrypt route is available at: ' + _ocp4_workload_rhacs_central_reencrypt_route]
+       if ocp4_workload_rhacs_enable_reencrypt_route | bool and _ocp4_workload_rhacs_central_reencrypt_route is defined
+       else [])
+    + ['RHACS portal username: admin', 'RHACS portal password: ' + _ocp4_workload_rhacs_central_admin_password] }}
 
 - name: Save user data
   agnosticd.core.agnosticd_user_info:
-    data:
-      acs_route: "{{ _ocp4_workload_rhacs_central_route }}"
-      acs_portal_username: admin
-      acs_portal_password: "{{ _ocp4_workload_rhacs_central_admin_password }}"
+    data: >-
+      {{ {'acs_route': _ocp4_workload_rhacs_central_route,
+          'acs_portal_username': 'admin',
+          'acs_portal_password': _ocp4_workload_rhacs_central_admin_password}
+      | combine({'acs_reencrypt_route': _ocp4_workload_rhacs_central_reencrypt_route}
+                if ocp4_workload_rhacs_enable_reencrypt_route | bool and _ocp4_workload_rhacs_central_reencrypt_route is defined
+                else {}) }}
