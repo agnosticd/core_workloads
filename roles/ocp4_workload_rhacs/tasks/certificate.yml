@@ -37,13 +37,18 @@
     retries: 5
     delay: 5
 
-  - name: Filter to Ready ClusterIssuers only
+  - name: Filter to Ready ClusterIssuers only (exclude Google Trust Services if reencrypt enabled)
     ansible.builtin.set_fact:
       _ready_cluster_issuers: >-
         {{
-          r_cluster_issuers.resources
+          (r_cluster_issuers.resources
           | json_query("[?status.conditions[?type=='Ready' && status=='True']]")
-          | default([])
+          | rejectattr('spec.acme.server', 'search', '/acme/google/')
+          | list)
+          if ocp4_workload_rhacs_enable_reencrypt_route | bool
+          else (r_cluster_issuers.resources
+          | json_query("[?status.conditions[?type=='Ready' && status=='True']]")
+          | list)
         }}
 
   - name: Fail if no ClusterIssuer is found but certificates are requested
