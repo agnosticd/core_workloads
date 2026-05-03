@@ -1,0 +1,54 @@
+---
+# Pre-create a CNAME record for the central route before ACME cert issuance.
+#
+# Problem: When cert-manager runs a DNS-01 ACME challenge for the central route,
+# it creates a _acme-challenge TXT record which creates a DNS Empty Non-Terminal (ENT).
+# The ENT causes the wildcard *.apps.* to stop matching the central hostname,
+# resulting in NODATA and a failed ACME challenge regardless of which issuer is used.
+#
+# Fix: Pre-create a specific CNAME for the central hostname before cert issuance.
+# The CNAME and the _acme-challenge record coexist as siblings — no ENT problem.
+#
+# This task is issuer-agnostic: it finds any ready ClusterIssuer configured with
+# a DDNS webhook and uses its credentials. Silently skips on non-DDNS clusters.
+
+- name: Find ClusterIssuer with DDNS webhook solver
+  kubernetes.core.k8s_info:
+    api_version: cert-manager.io/v1
+    kind: ClusterIssuer
+  register: r_pre_cert_cluster_issuers
+
+- name: Set DDNS issuer fact
+  ansible.builtin.set_fact:
+    _ocp4_workload_rhacs_pre_cert_ddns_issuer: >-
+      {{
+        r_pre_cert_cluster_issuers.resources
+        | json_query("[?spec.acme.solvers[?dns01.webhook.config.ddnsServer]]")
+        | first | default({})
+      }}
+
+- name: Pre-create CNAME record to prevent DNS ENT issue during ACME challenge
+  when: _ocp4_workload_rhacs_pre_cert_ddns_issuer | length > 0
+  vars:
+    _solver: "{{ _ocp4_workload_rhacs_pre_cert_ddns_issuer.spec.acme.solvers[0].dns01.webhook.config }}"
+  block:
+  - name: Get TSIG secret from cert-manager namespace
+    kubernetes.core.k8s_info:
+      api_version: v1
+      kind: Secret
+      name: "{{ _solver.tsigSecretRef.name }}"
+      namespace: cert-manager
+    register: r_pre_cert_tsig_secret
+
+  - name: Create CNAME record for central route
+    community.general.nsupdate:
+      server: "{{ _solver.ddnsServer }}"
+      zone: "{{ _solver.ddnsZone }}"
+      record: "central-{{ ocp4_workload_rhacs_central_namespace }}.{{ openshift_cluster_ingress_domain | regex_replace('\\.' + _solver.ddnsZone + '$', '') }}"
+      type: CNAME
+      ttl: 30
+      value: "console-openshift-console.{{ openshift_cluster_ingress_domain }}."
+      key_name: "{{ _solver.tsigKeyName }}"
+      key_secret: "{{ r_pre_cert_tsig_secret.resources[0].data[_solver.tsigSecretRef.key] | b64decode }}"
+      key_algorithm: "{{ _solver.tsigAlgorithm }}"
+      state: present
