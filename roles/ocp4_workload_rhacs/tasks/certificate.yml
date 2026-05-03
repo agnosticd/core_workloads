@@ -42,7 +42,11 @@
       _ready_cluster_issuers: >-
         {{
           (r_cluster_issuers.resources
-          | json_query("[?status.conditions[?type=='Ready' && status=='True'] && (spec.acme.server == null || !contains(spec.acme.server, '/acme/google/'))]")
+          | json_query(
+              "[?status.conditions[?type=='Ready' && status=='True']
+              && (spec.acme.server == null
+              || !contains(spec.acme.server, '/acme/google/'))]"
+            )
           | list)
           if ocp4_workload_rhacs_enable_reencrypt_route | bool
           else (r_cluster_issuers.resources
@@ -55,12 +59,11 @@
     ansible.builtin.fail:
       msg: "No Ready ClusterIssuer found to issue certificates for Central"
 
-  - name: Build list of ClusterIssuers to try (fallback issuers last)
+  - name: Build list of ClusterIssuers to try (alphabetical order)
     ansible.builtin.set_fact:
       _cluster_issuers_to_try: >-
         {{
-          (_ready_cluster_issuers | map(attribute='metadata.name') | list | reject('search', 'fallback') | list)
-          + (_ready_cluster_issuers | map(attribute='metadata.name') | list | select('search', 'fallback') | list)
+          _ready_cluster_issuers | map(attribute='metadata.name') | list | sort
         }}
 
   - name: Try each ClusterIssuer until certificate is issued successfully
