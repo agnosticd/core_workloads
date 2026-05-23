@@ -88,7 +88,8 @@
   delay: 10
   until: r_keycloak_instance is not failed
 
-- name: Create Openshift auth resources
+- name: Create OpenShift auth resources (OAuth CRD)
+  when: _ocp4_workload_authentication_auth_method != 'rosa'
   kubernetes.core.k8s:
     state: present
     template: "{{ item }}"
@@ -99,6 +100,30 @@
   retries: 5
   delay: 10
   until: r_openshift_auth is success
+
+- name: Create OpenShift identity provider (ROSA)
+  when: _ocp4_workload_authentication_auth_method == 'rosa'
+  delegate_to: "{{ groups['bastions'][0] }}"
+  block:
+  - name: Delete existing ROSA IdP if present
+    ansible.builtin.command: >-
+      rosa delete idp {{ ocp4_workload_authentication_keycloak_default_realm }}
+      --cluster {{ ocp4_workload_authentication_rosa_cluster_name | default('rosa-' ~ guid) }}
+      --yes
+    failed_when: false
+
+  - name: Create ROSA OpenID identity provider
+    ansible.builtin.command: >-
+      rosa create idp
+      --cluster {{ ocp4_workload_authentication_rosa_cluster_name | default('rosa-' ~ guid) }}
+      --type openid
+      --name {{ ocp4_workload_authentication_keycloak_default_realm }}
+      --client-id {{ ocp4_workload_authentication_keycloak_openshift_client_id }}
+      --client-secret {{ _ocp4_workload_authentication_keycloak_openshift_client_secret }}
+      --issuer-url https://sso.{{ openshift_cluster_ingress_domain }}/realms/{{ ocp4_workload_authentication_keycloak_default_realm }}
+      --email-claims email
+      --name-claims name
+      --username-claims preferred_username
 
 - name: Retrieve Keycloak admin credentials
   kubernetes.core.k8s_info:

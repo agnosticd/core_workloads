@@ -1,4 +1,35 @@
 ---
+- name: Detect ROSA cluster
+  block:
+  - name: Get cluster infrastructure info
+    kubernetes.core.k8s_info:
+      api_version: config.openshift.io/v1
+      kind: Infrastructure
+      name: cluster
+    register: r_cluster_infrastructure
+
+  - name: Set auth method based on cluster type
+    vars:
+      _resource_tags: >-
+        {{ r_cluster_infrastructure.resources[0].status.platformStatus[
+          r_cluster_infrastructure.resources[0].status.platformStatus.type | lower
+        ].resourceTags | default([]) }}
+      _cluster_type: >-
+        {{ _resource_tags | selectattr('key', 'equalto', 'red-hat-clustertype')
+          | map(attribute='value') | first | default('') }}
+    ansible.builtin.set_fact:
+      _ocp4_workload_authentication_auth_method: >-
+        {{ 'rosa' if _cluster_type == 'rosa' else '' }}
+
+- name: Fail if htpasswd is selected on ROSA
+  when:
+  - _ocp4_workload_authentication_auth_method == 'rosa'
+  - ocp4_workload_authentication_provider == 'htpasswd'
+  ansible.builtin.fail:
+    msg: >-
+      HTPasswd authentication is not supported on ROSA clusters.
+      Set ocp4_workload_authentication_provider to 'keycloak'.
+
 - name: Setup passwords
   ansible.builtin.include_tasks: setup_passwords.yml
 
@@ -14,8 +45,21 @@
   ansible.builtin.include_tasks: setup_cluster_role_bindings.yml
 
 - name: Remove kubeadmin user
-  when: ocp4_workload_authentication_remove_kubeadmin | bool
+  when:
+  - ocp4_workload_authentication_remove_kubeadmin | bool
+  - _ocp4_workload_authentication_auth_method != 'rosa'
   ansible.builtin.include_tasks: remove_kubeadmin_user.yml
+
+- name: Remove ROSA cluster-admin user
+  when:
+  - ocp4_workload_authentication_remove_kubeadmin | bool
+  - _ocp4_workload_authentication_auth_method == 'rosa'
+  delegate_to: "{{ groups['bastions'][0] }}"
+  ansible.builtin.command: >-
+    rosa delete admin
+    --cluster {{ ocp4_workload_authentication_rosa_cluster_name | default('rosa-' ~ guid) }}
+    --yes
+  failed_when: false
 
 - name: Report provision data and messages
   ansible.builtin.include_tasks: report_data_and_messages.yml
