@@ -32,6 +32,39 @@
   delay: 10
   until: r_crd_storageclusters.resources | default([]) | list | length == 1
 
+  - name: Create CephBlockPoolRadosNamespace
+    kubernetes.core.k8s:
+      state: present
+      definition: "{{ lookup('template', 'cephblockoolradosnamespace.yaml.j2') | from_yaml }}"
+    register: r_cbprn
+    until: r_cbprn is success
+    retries: 5
+    delay: 30
+    when: ocp4_workload_external_odf_use_rados_namespace | default(false)
+
+- name: Get CephBlockPoolRadosNamespace
+  kubernetes.core.k8s_info:
+    api_version: ceph.rook.io/v1
+    kind: CephBlockPoolRadosNamespace
+    name: "{{ sandbox_openshift_namespace }}"
+    namespace: openshift-storage
+  register: r_cbprn_info
+  retries: 30
+  delay: 10
+  ignore_errors: true
+  when: ocp4_workload_external_odf_use_rados_namespace | default(false)
+  until:
+  - r_cbprn_info.resources is defined
+  - r_cbprn_info.resources | length > 0
+  - r_cbprn_info.resources[0].status is defined
+  - r_cbprn_info.resources[0].status.info is defined
+  - r_cbprn_info.resources[0].status.info.clusterID is defined
+
+- name: Set odf_cluster_id to CephBlockPoolRadosNamespace id
+  set_fact:
+    odf_cluster_id: "{{ r_cbprn_info.resources[0].status.info.clusterID }}"
+  when: ocp4_workload_external_odf_use_rados_namespace | default(false)
+
 - name: Set up StorageCluster
   kubernetes.core.k8s:
     state: present
