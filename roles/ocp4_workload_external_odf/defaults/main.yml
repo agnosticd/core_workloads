@@ -33,3 +33,6 @@ ocp4_workload_external_odf_operator_starting_csv: ""
 ocp4_workload_external_odf_operator_use_catalog_snapshot: false
 ocp4_workload_external_odf_operator_catalog_source_image: quay.io/rhpds/olm_snapshot_redhat_catalog
 ocp4_workload_external_odf_operator_catalog_source_tag: "v4.18_2025_10_23"
+
+odf_cluster_id: openshift-storage
+ocp4_workload_external_odf_use_rados_namespace: true
