@@ -32,6 +32,18 @@
   delay: 10
   until: r_crd_storageclusters.resources | default([]) | list | length == 1
 
+- name: Set up StorageCluster
+  kubernetes.core.k8s:
+    state: present
+    template: "{{ item }}"
+  register: r_storagecluster
+  until: r_storagecluster is success
+  retries: 30
+  delay: 5
+  loop:
+  - storageclass.yaml.j2
+  - secret.yaml.j2
+
 - name: Create CephBlockPoolRadosNamespace
   kubernetes.core.k8s:
     state: present
@@ -40,7 +52,7 @@
   until: r_cbprn is success
   retries: 5
   delay: 30
-  when: ocp4_workload_external_odf_use_rados_namespace | default(false)
+  when: ocp4_workload_external_odf_use_rados_namespace | default(true)
 
 - name: Get CephBlockPoolRadosNamespace
   kubernetes.core.k8s_info:
@@ -52,7 +64,7 @@
   retries: 30
   delay: 10
   ignore_errors: true
-  when: ocp4_workload_external_odf_use_rados_namespace | default(false)
+  when: ocp4_workload_external_odf_use_rados_namespace | default(true)
   until:
   - r_cbprn_info.resources is defined
   - r_cbprn_info.resources | length > 0
@@ -65,20 +77,19 @@
     odf_cluster_id: "{{ r_cbprn_info.resources[0].status.info.clusterID }}"
   when: ocp4_workload_external_odf_use_rados_namespace | default(false)
 
+- name: Remove StorageClass
+  kubernetes.core.k8s:
+    state: absent
+    template: "{{ item }}"
+  loop:
+  - storageclass.yaml.j2
 
-- name: Set up StorageCluster
+- name: Set up StorageClass
   kubernetes.core.k8s:
     state: present
     template: "{{ item }}"
-  register: r_storagecluster
-  until: r_storagecluster is success
-  retries: 30
-  delay: 5
   loop:
   - storageclass.yaml.j2
-  - secret.yaml.j2
-  - storagecluster.yaml.j2
-
 
 - name: Add a immediate SC if default volume_binding_mode is default value
   when: ocp4_workload_external_odf_volume_binding_mode == "WaitForFirstConsumer"
