@@ -41,7 +41,6 @@
   retries: 30
   delay: 5
   loop:
-  - storageclass.yaml.j2
   - storagecluster.yaml.j2
   - secret.yaml.j2
 
@@ -96,19 +95,15 @@
     odf_cluster_id: "{{ r_cbprn_info.resources[0].status.info.clusterID }}"
   when: ocp4_workload_external_odf_use_rados_namespace | default(false)
 
-- name: Remove StorageClass
-  kubernetes.core.k8s:
-    state: absent
-    template: "{{ item }}"
-  loop:
-  - storageclass.yaml.j2
-
 - name: Set up StorageClass
   kubernetes.core.k8s:
     state: present
     template: "{{ item }}"
   loop:
   - storageclass.yaml.j2
+  until: r_storagecluster is success
+  retries: 30
+  delay: 5
 
 - name: Add a immediate SC if default volume_binding_mode is default value
   when: ocp4_workload_external_odf_volume_binding_mode == "WaitForFirstConsumer"
@@ -119,6 +114,19 @@
   until: r_storagecluster is success
   retries: 30
   delay: 5
+
+- name: Configure reconcile
+  kubernetes.core.k8s:
+    state: patched
+    api_version: ocs.openshift.io/v1
+    kind: StorageCluster
+    name: ocs-external-storagecluster
+    namespace: openshift-storage
+    definition:
+      spec:
+        managedResources:
+          cephBlockPools:
+            reconcileStrategy: init
 
 - name: Create PVC for image registry
   kubernetes.core.k8s:
