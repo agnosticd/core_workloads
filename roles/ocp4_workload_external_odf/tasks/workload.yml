@@ -41,8 +41,26 @@
   retries: 30
   delay: 5
   loop:
-  - storageclass.yaml.j2
+  - storagecluster.yaml.j2
   - secret.yaml.j2
+
+- name: Wait for StorageCluster to be available
+  kubernetes.core.k8s_info:
+    api_version: ocs.openshift.io/v1
+    kind: StorageCluster
+    name: ocs-external-storagecluster
+    namespace: openshift-storage
+    wait: true
+    wait_sleep: 10
+    wait_timeout: "{{ ocp4_workload_external_odf_ceph_storage_system_deploy_timeout }}"
+    wait_condition:
+      reason: ReconcileCompleted
+      status: "True"
+      type: ReconcileComplete
+  register: r_storage_cluster_info
+  until: r_storage_cluster_info is success
+  retries: 3
+  delay: 5
 
 - name: Create CephBlockPoolRadosNamespace
   kubernetes.core.k8s:
@@ -99,24 +117,6 @@
   register: r_storagecluster
   until: r_storagecluster is success
   retries: 30
-  delay: 5
-
-- name: Wait for StorageCluster to be available
-  kubernetes.core.k8s_info:
-    api_version: ocs.openshift.io/v1
-    kind: StorageCluster
-    name: ocs-external-storagecluster
-    namespace: openshift-storage
-    wait: true
-    wait_sleep: 10
-    wait_timeout: "{{ ocp4_workload_external_odf_ceph_storage_system_deploy_timeout }}"
-    wait_condition:
-      reason: ReconcileCompleted
-      status: "True"
-      type: ReconcileComplete
-  register: r_storage_cluster_info
-  until: r_storage_cluster_info is success
-  retries: 3
   delay: 5
 
 - name: Create PVC for image registry
