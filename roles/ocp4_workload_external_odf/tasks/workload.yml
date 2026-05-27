@@ -41,6 +41,7 @@
   retries: 30
   delay: 5
   loop:
+  - storageclass.yaml.j2
   - storagecluster.yaml.j2
   - secret.yaml.j2
 
