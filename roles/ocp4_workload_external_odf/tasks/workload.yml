@@ -32,15 +32,15 @@
   delay: 10
   until: r_crd_storageclusters.resources | default([]) | list | length == 1
 
-  - name: Create CephBlockPoolRadosNamespace
-    kubernetes.core.k8s:
-      state: present
-      definition: "{{ lookup('template', 'cephblockoolradosnamespace.yaml.j2') | from_yaml }}"
-    register: r_cbprn
-    until: r_cbprn is success
-    retries: 5
-    delay: 30
-    when: ocp4_workload_external_odf_use_rados_namespace | default(false)
+- name: Create CephBlockPoolRadosNamespace
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'cephblockoolradosnamespace.yaml.j2') | from_yaml }}"
+  register: r_cbprn
+  until: r_cbprn is success
+  retries: 5
+  delay: 30
+  when: ocp4_workload_external_odf_use_rados_namespace | default(false)
 
 - name: Get CephBlockPoolRadosNamespace
   kubernetes.core.k8s_info:
