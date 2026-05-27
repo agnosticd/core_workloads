@@ -65,6 +65,7 @@
     odf_cluster_id: "{{ r_cbprn_info.resources[0].status.info.clusterID }}"
   when: ocp4_workload_external_odf_use_rados_namespace | default(false)
 
+
 - name: Set up StorageCluster
   kubernetes.core.k8s:
     state: present
