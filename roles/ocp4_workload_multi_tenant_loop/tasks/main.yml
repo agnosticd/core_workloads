@@ -1,0 +1,13 @@
+---
+# --------------------------------------------------
+# Standard AgnosticD v2 dispatcher.
+# Routes to workload.yml (provision) or
+# remove_workload.yml (destroy) based on ACTION.
+# --------------------------------------------------
+- name: Running workload provision tasks
+  when: ACTION == "provision"
+  ansible.builtin.include_tasks: workload.yml
+
+- name: Running workload removal tasks
+  when: ACTION == "destroy"
+  ansible.builtin.include_tasks: remove_workload.yml

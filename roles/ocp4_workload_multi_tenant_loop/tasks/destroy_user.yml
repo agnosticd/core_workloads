@@ -1,0 +1,32 @@
+---
+# =================================================================
+# Destroy all tenant workloads for a single user.
+#
+# Mirrors provision_user.yml but uses tenant_remove_workloads
+# (the explicit destroy order defined in the catalog item).
+#
+# The password lookup returns the same password that was generated
+# during provisioning — needed by tenant workload destroy tasks
+# that reference common_password (e.g. to delete Keycloak users).
+# =================================================================
+
+- name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
+  ansible.builtin.set_fact:
+    _tenant_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
+    _tenant_password: >-
+      {{ lookup('password',
+           output_dir ~ '/tenant_user_' ~ _tenant_user_num ~ '_password',
+           length=tenant_password_length | int,
+           chars=['ascii_letters', 'digits']
+         ) }}
+
+- name: "Remove {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
+  ansible.builtin.include_role:
+    name: "{{ _tenant_workload }}"
+  loop: "{{ tenant_remove_workloads }}"
+  loop_control:
+    loop_var: _tenant_workload
+    label: "{{ _tenant_workload | split('.') | last }}"
+  vars:
+    ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
+    common_password: "{{ _tenant_password }}"

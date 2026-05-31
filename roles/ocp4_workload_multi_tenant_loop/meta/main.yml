@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  role_name: ocp4_workload_multi_tenant_loop
+  author: Red Hat, Prakhar Srivastava (psrivast@redhat.com)
+  description: |
+    Generic multi-tenant loop workload. Provisions a list of
+    tenant workloads for N users on a shared OpenShift cluster.
+    Used in combined catalog items that merge cluster and tenant
+    provisioning into a single order.
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms: []
+  galaxy_tags:
+  - ocp
+  - openshift
+  - multi-tenant
+dependencies: []

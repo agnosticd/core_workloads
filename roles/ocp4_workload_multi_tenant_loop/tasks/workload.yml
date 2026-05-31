@@ -1,0 +1,54 @@
+---
+# =================================================================
+# Provision: loop tenant workloads for each user
+#
+# This is the bridge between cluster-level workloads (which run
+# once via the normal workloads: list) and tenant-level workloads
+# (which run N times, once per user).
+#
+# The catalog item defines:
+#   workloads:         [..., ocp4_workload_multi_tenant_loop]
+#   tenant_workloads:  [list of per-user workloads]
+#   num_users:         16
+#
+# This role reads tenant_workloads and loops it num_users times,
+# overriding ocp4_workload_tenant_keycloak_username and
+# common_password per iteration. All other tenant vars cascade
+# via Jinja2 lazy evaluation.
+# =================================================================
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+    - num_users is defined
+    - num_users | int > 0
+    - tenant_workloads is defined
+    - tenant_workloads | length > 0
+    fail_msg: >-
+      num_users (int > 0) and tenant_workloads (non-empty list)
+      must be defined in the AgnosticV catalog item.
+
+- name: Display tenant loop configuration
+  ansible.builtin.debug:
+    msg:
+    - "Tenant loop: provisioning {{ num_users }} user(s)"
+    - "Username pattern: {{ tenant_user_prefix }}{{ tenant_user_offset }}..{{ tenant_user_prefix }}{{ (tenant_user_offset | int) + (num_users | int) - 1 }}"
+    - "Tenant workloads ({{ tenant_workloads | length }}): {{ tenant_workloads | map('split', '.') | map('last') | list }}"
+
+# Loop over user numbers sequentially.
+# Each iteration calls provision_user.yml which sets the per-user
+# identity and runs all tenant workloads for that user.
+- name: Provision tenant for each user
+  ansible.builtin.include_tasks: provision_user.yml
+  loop: >-
+    {{ range(
+         tenant_user_offset | int,
+         (tenant_user_offset | int) + (num_users | int)
+       ) | list }}
+  loop_control:
+    loop_var: _tenant_user_num
+    label: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
+
+- name: Tenant loop provisioning complete
+  ansible.builtin.debug:
+    msg: "All {{ num_users }} tenant(s) provisioned successfully."
