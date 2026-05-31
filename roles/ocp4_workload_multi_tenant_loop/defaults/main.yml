@@ -26,3 +26,8 @@ tenant_user_offset: 1
 # Length of auto-generated per-user passwords.
 # Stored at: {{ output_dir }}/tenant_user_{{ N }}_password
 tenant_password_length: 8
+
+# Seconds to wait before starting the tenant loop.
+# Gives async cluster resources (ArgoCD apps, operator CRDs, etc.)
+# time to settle after cluster workloads complete.
+tenant_pre_loop_delay: 0

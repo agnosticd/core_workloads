@@ -18,6 +18,15 @@
     - "Tenant loop: provisioning {{ num_users }} user(s)"
     - "Username pattern: {{ tenant_user_prefix }}{{ tenant_user_offset }}..{{ tenant_user_prefix }}{{ (tenant_user_offset | int) + (num_users | int) - 1 }}"
     - "Tenant workloads ({{ tenant_workloads | length }}): {{ tenant_workloads | map('split', '.') | map('last') | list }}"
+    - "Pre-loop delay: {{ tenant_pre_loop_delay }}s"
+
+# Give async cluster resources time to settle (ArgoCD syncs,
+# operator CRDs, Keycloak realm init, etc.)
+- name: Wait for cluster workloads to settle
+  when: tenant_pre_loop_delay | int > 0
+  ansible.builtin.pause:
+    seconds: "{{ tenant_pre_loop_delay | int }}"
+    prompt: "Waiting {{ tenant_pre_loop_delay }}s for async cluster resources to settle..."
 
 - name: Provision tenant for each user
   ansible.builtin.include_tasks: provision_user.yml
