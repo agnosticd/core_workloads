@@ -1,27 +1,20 @@
 ---
 # -------------------------------------------------------------------------
 # Destroy tenant workloads for each user (reverse user order).
-# The catalog item's remove_workloads handles cluster-level teardown;
-# this role handles tenant-level teardown only.
+# All errors are ignored — destroy must never block cluster teardown.
 # -------------------------------------------------------------------------
-
-- name: Validate required variables for destroy
-  ansible.builtin.assert:
-    that:
-    - num_users | int > 0
-    - tenant_remove_workloads | length > 0
-    fail_msg: >-
-      num_users (int > 0) and tenant_remove_workloads (non-empty list)
-      must be defined for tenant destroy.
 
 - name: Display tenant loop destroy configuration
   ansible.builtin.debug:
     msg:
     - "Tenant loop: destroying {{ num_users }} user(s)"
-    - "Destroy order: {{ tenant_remove_workloads | map('split', '.') | map('last') | list }}"
+    - "Destroy order: {{ tenant_remove_workloads | default([]) | map('split', '.') | map('last') | list }}"
 
-# Destroy last user first (LIFO) — safe default for cross-user dependencies.
+# Skip entirely if nothing to clean up
 - name: Destroy tenant for each user (reverse order)
+  when:
+  - num_users | int > 0
+  - tenant_remove_workloads | default([]) | length > 0
   ansible.builtin.include_tasks: destroy_user.yml
   loop: >-
     {{ range(
@@ -35,4 +28,4 @@
 
 - name: Tenant loop destroy complete
   ansible.builtin.debug:
-    msg: "All {{ num_users }} tenant(s) destroyed successfully."
+    msg: "Tenant destroy finished (errors ignored — cluster teardown continues)."

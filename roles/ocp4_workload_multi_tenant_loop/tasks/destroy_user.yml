@@ -1,7 +1,7 @@
 ---
 # -------------------------------------------------------------------------
 # Destroy all tenant workloads for a single user.
-# Password lookup returns the same value generated during provisioning.
+# Wrapped in block/rescue — errors are logged but never block teardown.
 # -------------------------------------------------------------------------
 
 - name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
@@ -14,13 +14,21 @@
            chars=['ascii_letters', 'digits']
          ) }}
 
-- name: "Remove {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
-  ansible.builtin.include_role:
-    name: "{{ _tenant_workload }}"
-  loop: "{{ tenant_remove_workloads }}"
-  loop_control:
-    loop_var: _tenant_workload
-    label: "{{ _tenant_workload | split('.') | last }}"
-  vars:
-    ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
-    common_password: "{{ _tenant_password }}"
+- name: "Destroy workloads for {{ _tenant_username }}"
+  block:
+  - name: "Remove {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
+    ansible.builtin.include_role:
+      name: "{{ _tenant_workload }}"
+    loop: "{{ tenant_remove_workloads }}"
+    loop_control:
+      loop_var: _tenant_workload
+      label: "{{ _tenant_workload | split('.') | last }}"
+    vars:
+      ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
+      common_password: "{{ _tenant_password }}"
+  rescue:
+  - name: "Destroy failed for {{ _tenant_username }} — continuing"
+    ansible.builtin.debug:
+      msg: >-
+        Tenant destroy failed for {{ _tenant_username }}.
+        Error ignored — cluster teardown will clean up remaining resources.
