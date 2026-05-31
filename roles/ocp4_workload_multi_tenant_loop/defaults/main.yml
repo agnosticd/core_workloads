@@ -1,34 +1,28 @@
 ---
 # =================================================================
 # ocp4_workload_multi_tenant_loop — default variables
-# =================================================================
 #
-# This role is a generic bridge between cluster-level and
-# tenant-level workloads in a combined catalog item.
-#
-# Required variables (must be set in AgnosticV, no defaults):
-#   num_users              - int, number of tenant users to provision
-#   tenant_workloads       - list, workload FQCNs to run per user
-#   tenant_remove_workloads - list, workload FQCNs for destroy
-#
-# The role overrides two "root" vars per user iteration:
-#   ocp4_workload_tenant_keycloak_username
-#   common_password
-#
-# Every other tenant variable in the catalog item should be a
-# Jinja2 expression that derives from these two roots. Ansible's
-# lazy evaluation ensures they resolve correctly per user.
+# Generic bridge between cluster-level and tenant-level workloads
+# in a combined catalog item. Overrides two root variables per
+# user iteration (ocp4_workload_tenant_keycloak_username and
+# common_password); all other tenant vars cascade via Jinja2.
 # =================================================================
 
-# Username prefix. Users are named {prefix}{number}.
-# Examples: user1, user2, ... or lab-user1, lab-user2, ...
+# Number of tenant users to provision. Must be > 0 when used.
+num_users: 0
+
+# Workload FQCNs to run per user (provision order). Must be non-empty.
+tenant_workloads: []
+
+# Workload FQCNs for destroy (explicit order). Must be non-empty.
+tenant_remove_workloads: []
+
+# Username prefix. Users are named {prefix}{number}: user1, user2, ...
 tenant_user_prefix: user
 
-# First user number. Useful when user numbering must start
-# at something other than 1 (e.g. user0 or user100).
+# First user number.
 tenant_user_offset: 1
 
-# Length of the auto-generated per-user password.
-# Each user gets a unique password stored at:
-#   {{ output_dir }}/tenant_user_{{ N }}_password
+# Length of auto-generated per-user passwords.
+# Stored at: {{ output_dir }}/tenant_user_{{ N }}_password
 tenant_password_length: 8

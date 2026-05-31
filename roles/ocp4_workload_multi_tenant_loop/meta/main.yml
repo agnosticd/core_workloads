@@ -13,5 +13,6 @@ galaxy_info:
   galaxy_tags:
   - ocp
   - openshift
-  - multi-tenant
+  - multitenant
+  - loop
 dependencies: []

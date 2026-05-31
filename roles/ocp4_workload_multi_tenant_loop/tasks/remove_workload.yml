@@ -1,29 +1,14 @@
 ---
-# =================================================================
-# Destroy: loop tenant remove workloads for each user (reverse)
-#
-# Mirrors workload.yml but:
-#   - Reads tenant_remove_workloads (explicit destroy order)
-#   - Loops users in reverse order (last user destroyed first)
-#
-# The catalog item's remove_workloads list handles cluster-level
-# destroy. This role handles tenant-level destroy only:
-#
-#   remove_workloads:
-#   - agnosticd.core_workloads.ocp4_workload_multi_tenant_loop  <-- us
-#   - agnosticd.core_workloads.ocp4_workload_devspaces          <-- cluster
-#   - agnosticd.core_workloads.ocp4_workload_authentication     <-- cluster
-#
-# Clean separation: tenant cleanup = this role, cluster cleanup
-# = the config's remove_workloads list.
-# =================================================================
+# -------------------------------------------------------------------------
+# Destroy tenant workloads for each user (reverse user order).
+# The catalog item's remove_workloads handles cluster-level teardown;
+# this role handles tenant-level teardown only.
+# -------------------------------------------------------------------------
 
 - name: Validate required variables for destroy
   ansible.builtin.assert:
     that:
-    - num_users is defined
     - num_users | int > 0
-    - tenant_remove_workloads is defined
     - tenant_remove_workloads | length > 0
     fail_msg: >-
       num_users (int > 0) and tenant_remove_workloads (non-empty list)
@@ -35,9 +20,7 @@
     - "Tenant loop: destroying {{ num_users }} user(s)"
     - "Destroy order: {{ tenant_remove_workloads | map('split', '.') | map('last') | list }}"
 
-# Destroy in reverse user order: user16 first, user1 last.
-# This is a convention — tenant workloads with cross-user
-# dependencies (rare) should be cleaned up last-in-first-out.
+# Destroy last user first (LIFO) — safe default for cross-user dependencies.
 - name: Destroy tenant for each user (reverse order)
   ansible.builtin.include_tasks: destroy_user.yml
   loop: >-

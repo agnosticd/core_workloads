@@ -1,31 +1,12 @@
 ---
-# =================================================================
-# Provision all tenant workloads for a single user.
-#
-# Called by workload.yml for each user number (_tenant_user_num).
-#
-# How variable override works:
-#   The include_role vars: block overrides two "root" variables:
-#     - ocp4_workload_tenant_keycloak_username
-#     - common_password
-#
-#   These have the highest Ansible precedence within the role
-#   execution. All other tenant vars in the catalog item are
-#   Jinja2 expressions that reference these roots, e.g.:
-#
-#     ocp4_workload_tenant_namespace_username:
-#       "{{ ocp4_workload_tenant_keycloak_username }}"
-#     ocp4_workload_showroom_namespace:
-#       "{{ ocp4_workload_tenant_keycloak_username }}-showroom"
-#
-#   Ansible evaluates Jinja2 lazily at use time, so overriding
-#   the root causes the entire variable tree to resolve correctly
-#   for this user. No need to remap every variable.
-# =================================================================
+# -------------------------------------------------------------------------
+# Run all tenant workloads for a single user.
+# Overrides ocp4_workload_tenant_keycloak_username and common_password
+# via include_role vars: — all other tenant vars cascade via Jinja2.
+# -------------------------------------------------------------------------
 
-# Generate a deterministic per-user password.
-# The password lookup writes to a file on first call and returns
-# the same value on subsequent calls — safe for re-runs.
+# Password lookup writes to a file on first call and returns the
+# same value on re-runs — safe for idempotent re-provisioning.
 - name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
   ansible.builtin.set_fact:
     _tenant_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
@@ -36,9 +17,6 @@
            chars=['ascii_letters', 'digits']
          ) }}
 
-# Run each tenant workload for this user.
-# The vars: block scopes the overrides to this include_role call.
-# The next user iteration will set new values.
 - name: "Run {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
   ansible.builtin.include_role:
     name: "{{ _tenant_workload }}"

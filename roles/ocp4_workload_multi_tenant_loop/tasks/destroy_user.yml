@@ -1,14 +1,8 @@
 ---
-# =================================================================
+# -------------------------------------------------------------------------
 # Destroy all tenant workloads for a single user.
-#
-# Mirrors provision_user.yml but uses tenant_remove_workloads
-# (the explicit destroy order defined in the catalog item).
-#
-# The password lookup returns the same password that was generated
-# during provisioning — needed by tenant workload destroy tasks
-# that reference common_password (e.g. to delete Keycloak users).
-# =================================================================
+# Password lookup returns the same value generated during provisioning.
+# -------------------------------------------------------------------------
 
 - name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
   ansible.builtin.set_fact:

@@ -1,8 +1,6 @@
 ---
 # --------------------------------------------------
-# Standard AgnosticD v2 dispatcher.
-# Routes to workload.yml (provision) or
-# remove_workload.yml (destroy) based on ACTION.
+# Do not modify this file
 # --------------------------------------------------
 - name: Running workload provision tasks
   when: ACTION == "provision"
