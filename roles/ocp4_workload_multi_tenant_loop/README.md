@@ -19,9 +19,10 @@ workloads:                              # run once by openshift-workloads config
         ├── tenant_keycloak_user  (user1)
         ├── tenant_namespace      (user1)
         ├── tenant_showroom       (user1)
+        ├── >> register user1 with Babylon
         ├── tenant_keycloak_user  (user2)
         ├── ...
-        └── tenant_showroom       (userN)
+        └── >> register userN with Babylon
 ```
 
 For each user, the role overrides two variables via `include_role vars:`:
@@ -32,6 +33,8 @@ For each user, the role overrides two variables via `include_role vars:`:
 | `common_password` | Auto-generated per user |
 
 All other tenant variables in the catalog item should be Jinja2 expressions that derive from these two roots. Ansible evaluates Jinja2 lazily, so overriding the root causes the entire variable tree to resolve correctly for each user.
+
+After all tenant workloads complete for a user, the bridge registers the user with Babylon via `agnosticd_user_info`. This is the **only** per-user data source for `workshop_user_mode: multi`.
 
 ## Required variables
 
@@ -50,6 +53,22 @@ Set these in the AgnosticV catalog item:
 | `tenant_user_prefix` | `user` | Username prefix (users: user1, user2, ...) |
 | `tenant_user_offset` | `1` | Starting user number |
 | `tenant_password_length` | `8` | Per-user password length |
+| `tenant_pre_loop_delay` | `0` | Seconds to wait before starting tenant loop |
+| `tenant_user_info_data` | `{}` | Per-user data dict reported to Babylon (lab-specific) |
+| `tenant_user_info_msg` | `""` | Per-user message (empty = auto-generated) |
+
+## Per-user data for workshops
+
+The bridge reports per-user data to Babylon for `workshop_user_mode: multi`. Base data (`user`, `password`) is always included. Lab-specific data is defined in `tenant_user_info_data`:
+
+```yaml
+# In agnosticv common.yaml:
+tenant_user_info_data:
+  lab_ui_url: >-
+    https://showroom-{{ ocp4_workload_tenant_keycloak_username }}-showroom.{{ openshift_cluster_ingress_domain }}
+```
+
+Jinja2 expressions in `tenant_user_info_data` are evaluated per user — `ocp4_workload_tenant_keycloak_username` resolves to the current user's name.
 
 ## Example: AgnosticV catalog item
 
@@ -69,25 +88,24 @@ tenant_workloads:
 - agnosticd.showroom.ocp4_workload_showroom
 
 tenant_remove_workloads:
-- agnosticd.showroom.ocp4_workload_showroom
-- agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace
-- agnosticd.namespaced_workloads.ocp4_workload_tenant_keycloak_user
+- rhpds.litellm_virtual_keys.ocp4_workload_litellm_virtual_keys
 
 remove_workloads:
 - agnosticd.core_workloads.ocp4_workload_multi_tenant_loop
-- agnosticd.core_workloads.ocp4_workload_pipelines
-- agnosticd.core_workloads.ocp4_workload_authentication
 
-# Tenant vars — all derive from ocp4_workload_tenant_keycloak_username
-ocp4_workload_tenant_namespace_username: >-
-  {{ ocp4_workload_tenant_keycloak_username }}
-ocp4_workload_showroom_namespace: >-
-  {{ ocp4_workload_tenant_keycloak_username }}-showroom
+tenant_user_info_data:
+  lab_ui_url: >-
+    https://showroom-{{ ocp4_workload_tenant_keycloak_username }}-showroom.{{ openshift_cluster_ingress_domain }}
+
+__meta__:
+  catalog:
+    workshop_user_mode: multi
+    workshopLabUiRedirect: true
 ```
 
 ## Destroy behavior
 
-On destroy, the config's `remove_workloads` calls this role first. The role reads `tenant_remove_workloads` and loops users in reverse order (last user destroyed first). After all tenants are cleaned up, the config continues destroying cluster-level workloads.
+On destroy, the config's `remove_workloads` calls this role first. The role reads `tenant_remove_workloads` and loops users in reverse order (last user destroyed first). All errors are caught and logged — destroy never blocks cluster teardown.
 
 ## Passwords
 
@@ -97,4 +115,4 @@ Each user gets a unique password written to `{{ output_dir }}/tenant_user_{{ N }
 
 - Provisioning is sequential (user1 completes all workloads before user2 starts)
 - If a user fails, subsequent users are not provisioned
-- No parallel provisioning in v1 — can be added as a follow-up if needed
+- No parallel provisioning in v1 — can be added as a follow-up

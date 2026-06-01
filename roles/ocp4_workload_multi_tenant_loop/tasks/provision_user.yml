@@ -6,10 +6,10 @@
 # common_password per user via include_role vars:. All other tenant
 # vars cascade via Jinja2 lazy evaluation.
 #
-# Per-user data for Babylon (workshop_user_mode: multi) is handled
-# by the bridge's own agnosticd_user_info call at the end — NOT by
-# module_defaults injection. Tenant workloads write to global data
-# which is fine — the bridge call is the authoritative per-user source.
+# Per-user data for Babylon (workshop_user_mode: multi) comes from
+# the bridge's own agnosticd_user_info call at the end. Lab-specific
+# data (showroom URL, etc.) is defined in agnosticv via
+# tenant_user_info_data. The bridge is fully generic.
 # -------------------------------------------------------------------------
 
 - name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
@@ -33,17 +33,19 @@
     ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
     common_password: "{{ _tenant_password }}"
 
-# Authoritative per-user data for Babylon.
-# This is the ONLY agnosticd_user_info call with user: set.
-# Provides everything the workshop attendee needs.
+# Report per-user data to Babylon.
+# Base data (user + password) is always included.
+# Lab-specific data comes from tenant_user_info_data (defined in agnosticv).
 - name: "Register {{ _tenant_username }} with Babylon"
-  agnosticd.core.agnosticd_user_info:
-    user: "{{ _tenant_username }}"
-    data:
+  vars:
+    _base_data:
       user: "{{ _tenant_username }}"
       password: "{{ _tenant_password }}"
-      lab_ui_url: >-
-        https://showroom-{{ _tenant_username }}-showroom.{{ openshift_cluster_ingress_domain }}
-    msg: >-
-      Lab: https://showroom-{{ _tenant_username }}-showroom.{{ openshift_cluster_ingress_domain }}
+    _user_data: >-
+      {{ _base_data | combine(tenant_user_info_data | default({})) }}
+    _default_msg: >-
       User: {{ _tenant_username }} / {{ _tenant_password }}
+  agnosticd.core.agnosticd_user_info:
+    user: "{{ _tenant_username }}"
+    data: "{{ _user_data }}"
+    msg: "{{ tenant_user_info_msg | default(_default_msg, true) }}"

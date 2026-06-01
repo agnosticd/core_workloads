@@ -31,3 +31,20 @@ tenant_password_length: 8
 # Gives async cluster resources (ArgoCD apps, operator CRDs, etc.)
 # time to settle after cluster workloads complete.
 tenant_pre_loop_delay: 0
+
+# Per-user data reported to Babylon via agnosticd_user_info.
+# Define in agnosticv with lab-specific data (showroom URL, etc.).
+# Jinja2 expressions are evaluated per user — use
+# ocp4_workload_tenant_keycloak_username for the current username.
+#
+# Example (in agnosticv common.yaml):
+#   tenant_user_info_data:
+#     lab_ui_url: "https://showroom-{{ ocp4_workload_tenant_keycloak_username }}-showroom.{{ openshift_cluster_ingress_domain }}"
+#
+# The bridge always adds 'user' and 'password' automatically.
+tenant_user_info_data: {}
+
+# Per-user message reported to Babylon via agnosticd_user_info.
+# Jinja2 expressions evaluated per user.
+# If empty, the bridge generates a default message with user/password.
+tenant_user_info_msg: ""
