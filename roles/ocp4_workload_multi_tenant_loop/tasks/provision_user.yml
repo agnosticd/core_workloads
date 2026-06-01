@@ -3,6 +3,10 @@
 # Run all tenant workloads for a single user.
 # Overrides ocp4_workload_tenant_keycloak_username and common_password
 # via include_role vars: — all other tenant vars cascade via Jinja2.
+#
+# module_defaults injects user: into every agnosticd_user_info call
+# inside the tenant workloads, so each user's data and messages are
+# stored separately in provision_data without modifying the workloads.
 # -------------------------------------------------------------------------
 
 # Password lookup writes to a file on first call and returns the
@@ -20,6 +24,10 @@
 - name: "Run {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
   ansible.builtin.include_role:
     name: "{{ _tenant_workload }}"
+    apply:
+      module_defaults:
+        agnosticd.core.agnosticd_user_info:
+          user: "{{ _tenant_username }}"
   loop: "{{ tenant_workloads }}"
   loop_control:
     loop_var: _tenant_workload
