@@ -35,3 +35,14 @@
   vars:
     ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
     common_password: "{{ _tenant_password }}"
+
+# Register this user with Babylon so workshop_user_mode: multi
+# has the base credentials. Lab-specific data (showroom URLs etc)
+# comes from tenant workloads' own agnosticd_user_info calls.
+- name: "Register {{ _tenant_username }} with Babylon"
+  agnosticd.core.agnosticd_user_info:
+    user: "{{ _tenant_username }}"
+    data:
+      user: "{{ _tenant_username }}"
+      password: "{{ _tenant_password }}"
+    msg: "{{ _tenant_username }} / {{ _tenant_password }}"
