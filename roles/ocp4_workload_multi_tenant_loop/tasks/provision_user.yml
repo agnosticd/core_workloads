@@ -1,21 +1,17 @@
 ---
 # -------------------------------------------------------------------------
 # Run all tenant workloads for a single user.
-# Overrides ocp4_workload_tenant_keycloak_username and common_password
-# via include_role vars: — all other tenant vars cascade via Jinja2.
 #
-# module_defaults injects user: into every agnosticd_user_info call
-# inside the tenant workloads, so each user's data and messages are
-# stored separately in provision_data.
+# The bridge overrides ocp4_workload_tenant_keycloak_username and
+# common_password per user via include_role vars:. All other tenant
+# vars cascade via Jinja2 lazy evaluation.
 #
-# NOTE: Do NOT pass _showroom_user — it triggers the showroom role's
-# multi-user path which appends the username to the namespace.
-# The bridge's own agnosticd_user_info call at the end sets the
-# correct lab_ui_url per user.
+# Per-user data for Babylon (workshop_user_mode: multi) is handled
+# by the bridge's own agnosticd_user_info call at the end — NOT by
+# module_defaults injection. Tenant workloads write to global data
+# which is fine — the bridge call is the authoritative per-user source.
 # -------------------------------------------------------------------------
 
-# Password lookup writes to a file on first call and returns the
-# same value on re-runs — safe for idempotent re-provisioning.
 - name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
   ansible.builtin.set_fact:
     _tenant_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
@@ -29,10 +25,6 @@
 - name: "Run {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
   ansible.builtin.include_role:
     name: "{{ _tenant_workload }}"
-    apply:
-      module_defaults:
-        agnosticd.core.agnosticd_user_info:
-          user: "{{ _tenant_username }}"
   loop: "{{ tenant_workloads }}"
   loop_control:
     loop_var: _tenant_workload
@@ -41,10 +33,9 @@
     ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
     common_password: "{{ _tenant_password }}"
 
-# Register this user with Babylon so workshop_user_mode: multi
-# has credentials and showroom URL for each user.
-# This is the authoritative source for lab_ui_url — the showroom
-# role writes to global (omit), this call writes per-user.
+# Authoritative per-user data for Babylon.
+# This is the ONLY agnosticd_user_info call with user: set.
+# Provides everything the workshop attendee needs.
 - name: "Register {{ _tenant_username }} with Babylon"
   agnosticd.core.agnosticd_user_info:
     user: "{{ _tenant_username }}"

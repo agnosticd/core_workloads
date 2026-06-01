@@ -19,10 +19,6 @@
   - name: "Remove {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
     ansible.builtin.include_role:
       name: "{{ _tenant_workload }}"
-      apply:
-        module_defaults:
-          agnosticd.core.agnosticd_user_info:
-            user: "{{ _tenant_username }}"
     loop: "{{ tenant_remove_workloads }}"
     loop_control:
       loop_var: _tenant_workload
