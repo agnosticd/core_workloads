@@ -6,11 +6,12 @@
 #
 # module_defaults injects user: into every agnosticd_user_info call
 # inside the tenant workloads, so each user's data and messages are
-# stored separately in provision_data without modifying the workloads.
+# stored separately in provision_data.
 #
-# _showroom_user is passed explicitly because the showroom role uses
-# user: {{ _showroom_user | default(omit) }} — omit overrides
-# module_defaults, so we must set it directly.
+# NOTE: Do NOT pass _showroom_user — it triggers the showroom role's
+# multi-user path which appends the username to the namespace.
+# The bridge's own agnosticd_user_info call at the end sets the
+# correct lab_ui_url per user.
 # -------------------------------------------------------------------------
 
 # Password lookup writes to a file on first call and returns the
@@ -39,10 +40,11 @@
   vars:
     ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
     common_password: "{{ _tenant_password }}"
-    _showroom_user: "{{ _tenant_username }}"
 
 # Register this user with Babylon so workshop_user_mode: multi
 # has credentials and showroom URL for each user.
+# This is the authoritative source for lab_ui_url — the showroom
+# role writes to global (omit), this call writes per-user.
 - name: "Register {{ _tenant_username }} with Babylon"
   agnosticd.core.agnosticd_user_info:
     user: "{{ _tenant_username }}"
