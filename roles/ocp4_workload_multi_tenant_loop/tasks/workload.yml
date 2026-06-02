@@ -1,7 +1,39 @@
 ---
-# -------------------------------------------------------------------------
-# Provision tenant workloads for each user
-# -------------------------------------------------------------------------
+# =========================================================================
+# PROVISION: Two-phase tenant provisioning
+#
+# This role is a generic bridge between cluster-level workloads (which
+# run once via the config's workloads: list) and tenant-level workloads
+# (which need to run once per user).
+#
+# The catalog item defines:
+#   workloads:         [..., ocp4_workload_multi_tenant_loop]  (cluster)
+#   tenant_workloads:  [keycloak, namespace, gitea, ...]       (per-user)
+#   num_users:         3
+#
+# Phase 1 — Provision:
+#   Loop all users sequentially. For each user, run every workload in
+#   tenant_workloads via include_role, overriding two root variables:
+#     - ocp4_workload_tenant_keycloak_username (e.g. user1)
+#     - common_password (auto-generated per user)
+#   All other tenant vars in the catalog item are Jinja2 expressions
+#   that derive from these two roots. Ansible evaluates them lazily,
+#   so the override cascades automatically.
+#
+# Phase 2 — Register:
+#   AFTER all users' workloads complete, loop again and call
+#   agnosticd_user_info per user. This registers each user with
+#   Babylon for workshop_user_mode: multi.
+#
+# WHY two phases?
+#   The showroom role reads user-data.yaml via agnosticd_user_data
+#   lookup. If per-user data exists (from agnosticd_user_info calls
+#   with user: set), the showroom role detects a 'users' dict and
+#   switches to multi-user mode — which appends the username to the
+#   namespace, creating wrong namespaces like user2-showroom-user1.
+#   By deferring all agnosticd_user_info calls to phase 2, the
+#   user-data.yaml stays clean during showroom deployment.
+# =========================================================================
 
 - name: Validate required variables
   ansible.builtin.assert:
@@ -20,18 +52,20 @@
     - "Tenant workloads ({{ tenant_workloads | length }}): {{ tenant_workloads | map('split', '.') | map('last') | list }}"
     - "Pre-loop delay: {{ tenant_pre_loop_delay }}s"
 
-# Give async cluster resources time to settle (ArgoCD syncs,
-# operator CRDs, Keycloak realm init, etc.)
+# Some cluster workloads kick off async operations (ArgoCD syncs,
+# operator CRDs, Keycloak realm init) that aren't finished when
+# their Ansible tasks return. This pause gives them time to settle.
+# Set tenant_pre_loop_delay in the catalog item (default: 0).
 - name: Wait for cluster workloads to settle
   when: tenant_pre_loop_delay | int > 0
   ansible.builtin.pause:
     seconds: "{{ tenant_pre_loop_delay | int }}"
     prompt: "Waiting {{ tenant_pre_loop_delay }}s for async cluster resources to settle..."
 
-# Phase 1: Run all tenant workloads for each user.
-# No agnosticd_user_info calls here — showroom reads user-data.yaml
-# via agnosticd_user_data lookup. If per-user data exists at that
-# point, showroom triggers multi-user mode and creates wrong namespaces.
+# -----------------------------------------------------------------------
+# PHASE 1: Run tenant workloads for each user.
+# No agnosticd_user_info calls happen here — see note above.
+# -----------------------------------------------------------------------
 - name: "Phase 1: Provision tenant workloads"
   ansible.builtin.include_tasks: provision_user.yml
   loop: >-
@@ -43,8 +77,10 @@
     loop_var: _tenant_user_num
     label: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
 
-# Phase 2: Register all users with Babylon AFTER all workloads complete.
-# Now it's safe to write per-user data — showroom has already deployed.
+# -----------------------------------------------------------------------
+# PHASE 2: Register all users with Babylon.
+# Now safe to write per-user data — all showroom pods are deployed.
+# -----------------------------------------------------------------------
 - name: "Phase 2: Register users with Babylon"
   ansible.builtin.include_tasks: register_user.yml
   loop: >-

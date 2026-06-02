@@ -1,8 +1,25 @@
 ---
-# -------------------------------------------------------------------------
-# Register a single user with Babylon (phase 2).
+# =========================================================================
+# Register a single user with Babylon (Phase 2).
+#
 # Called AFTER all tenant workloads complete for ALL users.
-# -------------------------------------------------------------------------
+# This is the ONLY agnosticd_user_info call with user: set.
+#
+# The catalog item defines tenant_user_info_data with lab-specific
+# data (e.g. showroom URL pattern). Jinja2 expressions in that dict
+# are evaluated per user. The bridge always adds 'user' and 'password'.
+#
+# Example tenant_user_info_data (in agnosticv common.yaml):
+#   tenant_user_info_data:
+#     lab_ui_url: >-
+#       https://showroom-{{ ocp4_workload_tenant_keycloak_username }}-showroom.{{ openshift_cluster_ingress_domain }}
+#
+# WHY set ocp4_workload_tenant_keycloak_username here?
+#   tenant_user_info_data references it via Jinja2. In phase 1
+#   it's set via include_role vars: (scoped to the role). Here
+#   we need it as a fact so the Jinja2 in tenant_user_info_data
+#   resolves correctly.
+# =========================================================================
 
 - name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
   ansible.builtin.set_fact:

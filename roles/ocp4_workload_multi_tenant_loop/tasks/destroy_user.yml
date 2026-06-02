@@ -1,8 +1,14 @@
 ---
-# -------------------------------------------------------------------------
-# Destroy all tenant workloads for a single user.
-# Wrapped in block/rescue — errors are logged but never block teardown.
-# -------------------------------------------------------------------------
+# =========================================================================
+# Destroy external resources for a single user.
+#
+# Wrapped in block/rescue — errors are logged but NEVER block teardown.
+# The cluster is about to be destroyed; blocking here wastes time.
+#
+# Password lookup returns the same value generated during provisioning.
+# Some destroy roles need the password (e.g. to authenticate and
+# delete resources).
+# =========================================================================
 
 - name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
   ansible.builtin.set_fact:

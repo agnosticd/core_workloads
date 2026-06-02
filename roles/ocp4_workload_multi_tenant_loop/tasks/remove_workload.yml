@@ -1,8 +1,22 @@
 ---
-# -------------------------------------------------------------------------
-# Destroy tenant workloads for each user (reverse user order).
-# All errors are ignored — destroy must never block cluster teardown.
-# -------------------------------------------------------------------------
+# =========================================================================
+# DESTROY: Clean up external resources per user.
+#
+# In a combined CI, the OCP cluster is destroyed after this role runs.
+# Everything inside the cluster (namespaces, pods, operators) is wiped
+# when the cluster goes away. Only EXTERNAL resources need explicit
+# cleanup — e.g. LiteMaaS virtual keys that live outside the cluster.
+#
+# The catalog item defines tenant_remove_workloads with only those
+# external cleanup roles. In-cluster workloads are NOT listed.
+#
+# Errors are caught and logged — destroy must NEVER block cluster
+# teardown. If LiteMaaS cleanup fails (key expired, API down),
+# the cluster still gets destroyed and the keys expire on their own.
+#
+# Users are destroyed in reverse order (LIFO) as a convention for
+# any cross-user dependencies.
+# =========================================================================
 
 - name: Display tenant loop destroy configuration
   ansible.builtin.debug:
@@ -10,7 +24,6 @@
     - "Tenant loop: destroying {{ num_users }} user(s)"
     - "Destroy order: {{ tenant_remove_workloads | default([]) | map('split', '.') | map('last') | list }}"
 
-# Skip entirely if nothing to clean up
 - name: Destroy tenant for each user (reverse order)
   when:
   - num_users | int > 0

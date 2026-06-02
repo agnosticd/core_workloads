@@ -1,9 +1,39 @@
 ---
-# -------------------------------------------------------------------------
-# Run all tenant workloads for a single user.
-# No agnosticd_user_info calls — registration happens in phase 2.
-# -------------------------------------------------------------------------
+# =========================================================================
+# Run all tenant workloads for a single user (Phase 1).
+#
+# HOW VARIABLE OVERRIDE WORKS:
+#   include_role vars: sets ocp4_workload_tenant_keycloak_username and
+#   common_password for each role invocation. These have the highest
+#   Ansible precedence within the role execution.
+#
+#   All other tenant vars in the catalog item are Jinja2 expressions
+#   that reference these roots, e.g.:
+#     ocp4_workload_tenant_namespace_username:
+#       "{{ ocp4_workload_tenant_keycloak_username }}"
+#     ocp4_workload_showroom_namespace:
+#       "{{ ocp4_workload_tenant_keycloak_username }}-showroom"
+#
+#   Ansible evaluates Jinja2 lazily at use time, so overriding the
+#   root causes the entire variable tree to resolve correctly for
+#   this user. No need to remap every variable.
+#
+# WHAT NOT TO PASS:
+#   Do NOT pass _showroom_user — it triggers the showroom role's
+#   multi-user path which appends the username to the namespace,
+#   creating user1-showroom-user1 instead of user1-showroom.
+#
+#   Do NOT use module_defaults to inject user: into
+#   agnosticd_user_info — the showroom role uses
+#   user: {{ _showroom_user | default(omit) }} and omit overrides
+#   module_defaults, causing last-user-wins on lab_ui_url.
+#
+# No agnosticd_user_info calls here — registration is in phase 2.
+# =========================================================================
 
+# Password is deterministic per user number. The password lookup
+# writes to a file on first call and returns the same value on
+# re-runs — safe for idempotent re-provisioning.
 - name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
   ansible.builtin.set_fact:
     _tenant_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
