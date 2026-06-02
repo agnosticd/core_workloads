@@ -1,0 +1,33 @@
+---
+# =========================================================================
+# Run a single tenant workload for the current user.
+#
+# If tenant_workload_vars has overrides for this workload, apply them
+# via set_fact before include_role. This handles cases like
+# gitops_bootstrap which uses different repo_path, application_name,
+# and helm_values at cluster vs tenant level.
+#
+# set_fact overrides persist across workloads in the same user
+# iteration. This is safe because:
+#   - AgnosticD workloads use role-prefixed variable names
+#   - Overrides for gitops_bootstrap won't affect showroom vars
+#   - Each user iteration re-sets ocp4_workload_tenant_keycloak_username
+# =========================================================================
+
+# Apply per-workload variable overrides if defined in agnosticv.
+# These override the top-level (cluster) values for this workload.
+- name: "Apply overrides for {{ _tenant_workload | split('.') | last }}"
+  when: _tenant_workload in (tenant_workload_vars | default({}))
+  ansible.builtin.set_fact:
+    "{{ _override_item.key }}": "{{ _override_item.value }}"
+  loop: "{{ (tenant_workload_vars[_tenant_workload]) | dict2items }}"
+  loop_control:
+    loop_var: _override_item
+    label: "{{ _override_item.key }}"
+
+- name: "Run {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
+  ansible.builtin.include_role:
+    name: "{{ _tenant_workload }}"
+  vars:
+    ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
+    common_password: "{{ _tenant_password }}"
