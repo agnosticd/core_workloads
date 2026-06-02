@@ -13,6 +13,7 @@
            length=tenant_password_length | int,
            chars=['ascii_letters', 'digits']
          ) }}
+    ocp4_workload_tenant_keycloak_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
 
 - name: "Register {{ _tenant_username }} with Babylon"
   vars:
