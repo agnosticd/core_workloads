@@ -1,0 +1,29 @@
+---
+# -------------------------------------------------------------------------
+# Register a single user with Babylon (phase 2).
+# Called AFTER all tenant workloads complete for ALL users.
+# -------------------------------------------------------------------------
+
+- name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
+  ansible.builtin.set_fact:
+    _tenant_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
+    _tenant_password: >-
+      {{ lookup('password',
+           output_dir ~ '/tenant_user_' ~ _tenant_user_num ~ '_password',
+           length=tenant_password_length | int,
+           chars=['ascii_letters', 'digits']
+         ) }}
+
+- name: "Register {{ _tenant_username }} with Babylon"
+  vars:
+    _base_data:
+      user: "{{ _tenant_username }}"
+      password: "{{ _tenant_password }}"
+    _user_data: >-
+      {{ _base_data | combine(tenant_user_info_data | default({})) }}
+    _default_msg: >-
+      User: {{ _tenant_username }} / {{ _tenant_password }}
+  agnosticd.core.agnosticd_user_info:
+    user: "{{ _tenant_username }}"
+    data: "{{ _user_data }}"
+    msg: "{{ tenant_user_info_msg | default(_default_msg, true) }}"

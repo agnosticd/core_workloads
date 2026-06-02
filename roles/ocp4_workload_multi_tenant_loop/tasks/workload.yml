@@ -28,8 +28,25 @@
     seconds: "{{ tenant_pre_loop_delay | int }}"
     prompt: "Waiting {{ tenant_pre_loop_delay }}s for async cluster resources to settle..."
 
-- name: Provision tenant for each user
+# Phase 1: Run all tenant workloads for each user.
+# No agnosticd_user_info calls here — showroom reads user-data.yaml
+# via agnosticd_user_data lookup. If per-user data exists at that
+# point, showroom triggers multi-user mode and creates wrong namespaces.
+- name: "Phase 1: Provision tenant workloads"
   ansible.builtin.include_tasks: provision_user.yml
+  loop: >-
+    {{ range(
+         tenant_user_offset | int,
+         (tenant_user_offset | int) + (num_users | int)
+       ) | list }}
+  loop_control:
+    loop_var: _tenant_user_num
+    label: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
+
+# Phase 2: Register all users with Babylon AFTER all workloads complete.
+# Now it's safe to write per-user data — showroom has already deployed.
+- name: "Phase 2: Register users with Babylon"
+  ansible.builtin.include_tasks: register_user.yml
   loop: >-
     {{ range(
          tenant_user_offset | int,
@@ -41,4 +58,4 @@
 
 - name: Tenant loop provisioning complete
   ansible.builtin.debug:
-    msg: "All {{ num_users }} tenant(s) provisioned successfully."
+    msg: "All {{ num_users }} tenant(s) provisioned and registered."

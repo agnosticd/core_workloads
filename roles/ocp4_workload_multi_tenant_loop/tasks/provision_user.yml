@@ -1,15 +1,7 @@
 ---
 # -------------------------------------------------------------------------
 # Run all tenant workloads for a single user.
-#
-# The bridge overrides ocp4_workload_tenant_keycloak_username and
-# common_password per user via include_role vars:. All other tenant
-# vars cascade via Jinja2 lazy evaluation.
-#
-# Per-user data for Babylon (workshop_user_mode: multi) comes from
-# the bridge's own agnosticd_user_info call at the end. Lab-specific
-# data (showroom URL, etc.) is defined in agnosticv via
-# tenant_user_info_data. The bridge is fully generic.
+# No agnosticd_user_info calls — registration happens in phase 2.
 # -------------------------------------------------------------------------
 
 - name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
@@ -32,20 +24,3 @@
   vars:
     ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
     common_password: "{{ _tenant_password }}"
-
-# Report per-user data to Babylon.
-# Base data (user + password) is always included.
-# Lab-specific data comes from tenant_user_info_data (defined in agnosticv).
-- name: "Register {{ _tenant_username }} with Babylon"
-  vars:
-    _base_data:
-      user: "{{ _tenant_username }}"
-      password: "{{ _tenant_password }}"
-    _user_data: >-
-      {{ _base_data | combine(tenant_user_info_data | default({})) }}
-    _default_msg: >-
-      User: {{ _tenant_username }} / {{ _tenant_password }}
-  agnosticd.core.agnosticd_user_info:
-    user: "{{ _tenant_username }}"
-    data: "{{ _user_data }}"
-    msg: "{{ tenant_user_info_msg | default(_default_msg, true) }}"
