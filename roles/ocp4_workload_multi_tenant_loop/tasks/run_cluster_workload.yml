@@ -2,11 +2,36 @@
 # =========================================================================
 # Run a single cluster workload inside the bridge (Phase 0).
 #
-# Uses set_fact to apply per-workload overrides. These vars are NOT
-# at the AgnosticV top level, so they're NOT extra_vars. set_fact
-# CAN override role defaults (just not extra_vars).
+# WHY THIS EXISTS:
+#   Some workloads (e.g. gitops_bootstrap) run at BOTH cluster and
+#   tenant level with different variable values. If you define either
+#   set of values at the AgnosticV top level, they become extra_vars
+#   (passed to AAP job template). Extra_vars have the HIGHEST
+#   precedence in Ansible (#22 of 22) — nothing can override them.
+#   Not set_fact (#19), not include_role vars (#20), nothing.
+#
+#   By moving the workload OUT of the config's workloads: list and
+#   running it HERE inside the bridge, the conflicting vars are
+#   defined only in tenant_cluster_workloads_vars (a nested dict).
+#   The individual keys inside that dict are NOT extra_vars.
+#   set_fact (#19) CAN override role defaults (#2), so it works.
+#
+# WHY set_fact AND NOT include_role vars:
+#   We tried `include_role vars: "{{ dict_var }}"` first.
+#   AAP/Ansible rejects it: "Vars in a IncludeRole must be specified
+#   as a dictionary" — it does not accept Jinja2 expressions that
+#   evaluate to a dict. Only static YAML mappings are allowed.
+#   So we use set_fact per key, then plain include_role.
+#
+# WHY set_fact WORKS HERE:
+#   Ansible precedence: extra_vars (#22) > set_fact (#19) > role
+#   defaults (#2). The conflicting vars are NOT at the top level,
+#   so they're NOT extra_vars. set_fact overrides role defaults.
 # =========================================================================
 
+# Apply per-workload overrides from tenant_cluster_workloads_vars.
+# Each key is set as a fact individually (dict2items loop).
+# Skipped entirely if this workload has no overrides defined.
 - name: "Apply cluster overrides for {{ _cluster_workload | split('.') | last }}"
   when: _cluster_workload in (tenant_cluster_workloads_vars | default({}))
   ansible.builtin.set_fact:
