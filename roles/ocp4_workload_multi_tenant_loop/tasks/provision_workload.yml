@@ -1,13 +1,27 @@
 ---
 # =========================================================================
 # Run a single tenant workload for the current user.
+#
+# Uses set_fact for per-workload overrides + include_role vars: for
+# the two root vars (username + password). The root vars MUST go
+# through include_role vars: because they change per user and per
+# workload invocation. The overrides use set_fact because they
+# persist for the user's iteration (which is fine — role-prefixed
+# var names don't collide across workloads).
 # =========================================================================
 
-- name: "Build vars for {{ _tenant_workload | split('.') | last }}"
+- name: "Apply tenant overrides for {{ _tenant_workload | split('.') | last }}"
+  when: _tenant_workload in (tenant_workload_vars | default({}))
   ansible.builtin.set_fact:
-    _role_vars: "{{ {'ocp4_workload_tenant_keycloak_username': _tenant_username, 'common_password': _tenant_password} | combine((tenant_workload_vars | default({}))[_tenant_workload] | default({})) }}"
+    "{{ _tw_item.key }}": "{{ _tw_item.value }}"
+  loop: "{{ (tenant_workload_vars[_tenant_workload]) | dict2items }}"
+  loop_control:
+    loop_var: _tw_item
+    label: "{{ _tw_item.key }}"
 
 - name: "Run {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
   ansible.builtin.include_role:
     name: "{{ _tenant_workload }}"
-  vars: "{{ _role_vars }}"
+  vars:
+    ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
+    common_password: "{{ _tenant_password }}"

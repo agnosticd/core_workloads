@@ -1,13 +1,21 @@
 ---
 # =========================================================================
 # Run a single cluster workload inside the bridge (Phase 0).
+#
+# Uses set_fact to apply per-workload overrides. These vars are NOT
+# at the AgnosticV top level, so they're NOT extra_vars. set_fact
+# CAN override role defaults (just not extra_vars).
 # =========================================================================
 
-- name: "Build vars for {{ _cluster_workload | split('.') | last }}"
+- name: "Apply cluster overrides for {{ _cluster_workload | split('.') | last }}"
+  when: _cluster_workload in (tenant_cluster_workloads_vars | default({}))
   ansible.builtin.set_fact:
-    _cluster_role_vars: "{{ (tenant_cluster_workloads_vars | default({}))[_cluster_workload] | default({}) }}"
+    "{{ _cw_item.key }}": "{{ _cw_item.value }}"
+  loop: "{{ (tenant_cluster_workloads_vars[_cluster_workload]) | dict2items }}"
+  loop_control:
+    loop_var: _cw_item
+    label: "{{ _cw_item.key }}"
 
 - name: "Run cluster workload: {{ _cluster_workload | split('.') | last }}"
   ansible.builtin.include_role:
     name: "{{ _cluster_workload }}"
-  vars: "{{ _cluster_role_vars }}"
