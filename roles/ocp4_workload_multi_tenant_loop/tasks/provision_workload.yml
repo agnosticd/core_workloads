@@ -2,24 +2,12 @@
 # =========================================================================
 # Run a single tenant workload for the current user.
 #
-# ANSIBLE PRECEDENCE FIX:
-#   AgnosticV vars are passed to AAP as extra_vars (highest precedence).
-#   set_fact CANNOT override extra_vars.
-#   include_role vars: CAN override extra_vars.
-#
-#   So we merge tenant_workload_vars overrides into the include_role
-#   vars: dict. This ensures tenant values (bootstrap-tenant) override
-#   cluster values (bootstrap-infra) even though both are extra_vars.
-#
-# HOW IT WORKS:
-#   1. Build base vars dict (username + password)
-#   2. Lookup per-workload overrides from tenant_workload_vars
-#   3. Combine them (overrides win)
-#   4. Pass merged dict via include_role vars:
+# Merges base vars (username + password) with per-workload overrides
+# from tenant_workload_vars. Passes everything via include_role vars:
+# which overrides role defaults (but not extra_vars — so the
+# conflicting vars must NOT be at the AgnosticV top level).
 # =========================================================================
 
-# Build the merged vars dict as a fact so Jinja2 in the override
-# values resolves now (using facts set in provision_user.yml).
 - name: "Build vars for {{ _tenant_workload | split('.') | last }}"
   ansible.builtin.set_fact:
     _role_vars: >-
@@ -32,9 +20,6 @@
         )
       }}
 
-# include_role vars: has higher precedence than extra_vars.
-# This is the ONLY way to override top-level vars that AAP
-# passes as extra_vars.
 - name: "Run {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
   ansible.builtin.include_role:
     name: "{{ _tenant_workload }}"

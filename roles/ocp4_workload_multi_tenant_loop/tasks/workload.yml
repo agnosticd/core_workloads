@@ -1,38 +1,15 @@
 ---
 # =========================================================================
-# PROVISION: Two-phase tenant provisioning
+# PROVISION: Three-phase tenant provisioning
 #
-# This role is a generic bridge between cluster-level workloads (which
-# run once via the config's workloads: list) and tenant-level workloads
-# (which need to run once per user).
+# Phase 0: Run cluster workloads that can't be in the config's
+#          workloads: list (e.g. gitops_bootstrap when it also runs
+#          per-tenant with different vars — extra_vars conflict).
 #
-# The catalog item defines:
-#   workloads:         [..., ocp4_workload_multi_tenant_loop]  (cluster)
-#   tenant_workloads:  [keycloak, namespace, gitea, ...]       (per-user)
-#   num_users:         3
+# Phase 1: Loop all users, run tenant_workloads per user.
+#          No agnosticd_user_info calls (showroom compatibility).
 #
-# Phase 1 — Provision:
-#   Loop all users sequentially. For each user, run every workload in
-#   tenant_workloads via include_role, overriding two root variables:
-#     - ocp4_workload_tenant_keycloak_username (e.g. user1)
-#     - common_password (auto-generated per user)
-#   All other tenant vars in the catalog item are Jinja2 expressions
-#   that derive from these two roots. Ansible evaluates them lazily,
-#   so the override cascades automatically.
-#
-# Phase 2 — Register:
-#   AFTER all users' workloads complete, loop again and call
-#   agnosticd_user_info per user. This registers each user with
-#   Babylon for workshop_user_mode: multi.
-#
-# WHY two phases?
-#   The showroom role reads user-data.yaml via agnosticd_user_data
-#   lookup. If per-user data exists (from agnosticd_user_info calls
-#   with user: set), the showroom role detects a 'users' dict and
-#   switches to multi-user mode — which appends the username to the
-#   namespace, creating wrong namespaces like user2-showroom-user1.
-#   By deferring all agnosticd_user_info calls to phase 2, the
-#   user-data.yaml stays clean during showroom deployment.
+# Phase 2: Loop all users again, register each with Babylon.
 # =========================================================================
 
 - name: Validate required variables
@@ -49,13 +26,25 @@
     msg:
     - "Tenant loop: provisioning {{ num_users }} user(s)"
     - "Username pattern: {{ tenant_user_prefix }}{{ tenant_user_offset }}..{{ tenant_user_prefix }}{{ (tenant_user_offset | int) + (num_users | int) - 1 }}"
+    - "Cluster workloads: {{ tenant_cluster_workloads | default([]) | map('split', '.') | map('last') | list }}"
     - "Tenant workloads ({{ tenant_workloads | length }}): {{ tenant_workloads | map('split', '.') | map('last') | list }}"
     - "Pre-loop delay: {{ tenant_pre_loop_delay }}s"
 
-# Some cluster workloads kick off async operations (ArgoCD syncs,
-# operator CRDs, Keycloak realm init) that aren't finished when
-# their Ansible tasks return. This pause gives them time to settle.
-# Set tenant_pre_loop_delay in the catalog item (default: 0).
+# -----------------------------------------------------------------------
+# PHASE 0: Run cluster workloads inside the bridge.
+#
+# These workloads can't be in the config's workloads: list because
+# their vars conflict with tenant invocations. Running them here
+# via include_role vars: avoids the extra_vars precedence issue.
+# -----------------------------------------------------------------------
+- name: "Phase 0: Run cluster workloads inside bridge"
+  when: tenant_cluster_workloads | default([]) | length > 0
+  ansible.builtin.include_tasks: run_cluster_workload.yml
+  loop: "{{ tenant_cluster_workloads }}"
+  loop_control:
+    loop_var: _cluster_workload
+    label: "{{ _cluster_workload | split('.') | last }}"
+
 - name: Wait for cluster workloads to settle
   when: tenant_pre_loop_delay | int > 0
   ansible.builtin.pause:
@@ -64,7 +53,6 @@
 
 # -----------------------------------------------------------------------
 # PHASE 1: Run tenant workloads for each user.
-# No agnosticd_user_info calls happen here — see note above.
 # -----------------------------------------------------------------------
 - name: "Phase 1: Provision tenant workloads"
   ansible.builtin.include_tasks: provision_user.yml
@@ -79,7 +67,6 @@
 
 # -----------------------------------------------------------------------
 # PHASE 2: Register all users with Babylon.
-# Now safe to write per-user data — all showroom pods are deployed.
 # -----------------------------------------------------------------------
 - name: "Phase 2: Register users with Babylon"
   ansible.builtin.include_tasks: register_user.yml

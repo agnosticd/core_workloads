@@ -1,0 +1,21 @@
+---
+# =========================================================================
+# Run a single cluster workload inside the bridge (Phase 0).
+#
+# These workloads can't be in the config's workloads: list because
+# their vars would become extra_vars and conflict with the tenant
+# invocation of the same role.
+#
+# By running them here via include_role vars:, the vars are NOT
+# extra_vars and include_role vars: overrides role defaults.
+# =========================================================================
+
+- name: "Build vars for {{ _cluster_workload | split('.') | last }}"
+  ansible.builtin.set_fact:
+    _cluster_role_vars: >-
+      {{ (tenant_cluster_workloads_vars | default({}))[_cluster_workload] | default({}) }}
+
+- name: "Run cluster workload: {{ _cluster_workload | split('.') | last }}"
+  ansible.builtin.include_role:
+    name: "{{ _cluster_workload }}"
+  vars: "{{ _cluster_role_vars }}"

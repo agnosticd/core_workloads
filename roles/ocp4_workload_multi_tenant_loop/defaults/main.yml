@@ -24,27 +24,34 @@ tenant_user_prefix: user
 tenant_user_offset: 1
 
 # Length of auto-generated per-user passwords.
-# Stored at: {{ output_dir }}/tenant_user_{{ N }}_password
 tenant_password_length: 8
 
 # Seconds to wait before starting the tenant loop.
-# Gives async cluster resources (ArgoCD apps, operator CRDs, etc.)
-# time to settle after cluster workloads complete.
 tenant_pre_loop_delay: 0
 
 # Per-user data reported to Babylon via agnosticd_user_info.
-# Define in agnosticv with lab-specific data (showroom URL, etc.).
-# Jinja2 expressions are evaluated per user — use
-# ocp4_workload_tenant_keycloak_username for the current username.
-#
-# Example (in agnosticv common.yaml):
-#   tenant_user_info_data:
-#     lab_ui_url: "https://showroom-{{ ocp4_workload_tenant_keycloak_username }}-showroom.{{ openshift_cluster_ingress_domain }}"
-#
-# The bridge always adds 'user' and 'password' automatically.
 tenant_user_info_data: {}
 
-# Per-user message reported to Babylon via agnosticd_user_info.
-# Jinja2 expressions evaluated per user.
-# If empty, the bridge generates a default message with user/password.
+# Per-user message reported to Babylon.
 tenant_user_info_msg: ""
+
+# Per-workload variable overrides for tenant workloads.
+# Keys are workload FQCNs, values are dicts merged into include_role vars.
+tenant_workload_vars: {}
+
+# ---------------------------------------------------------------
+# Cluster workloads run ONCE inside the bridge, before the user loop.
+#
+# WHY: When the same role (e.g. gitops_bootstrap) runs at both
+# cluster and tenant level with different vars, defining either
+# set at the AgnosticV top level makes them extra_vars (highest
+# Ansible precedence — nothing can override them). By running
+# both invocations inside the bridge via include_role vars:,
+# we avoid the extra_vars conflict entirely.
+#
+# Workloads listed here are NOT in the config's workloads: list.
+# ---------------------------------------------------------------
+tenant_cluster_workloads: []
+
+# Per-workload variable overrides for cluster workloads.
+tenant_cluster_workloads_vars: {}
