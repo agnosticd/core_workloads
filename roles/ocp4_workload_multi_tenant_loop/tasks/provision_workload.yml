@@ -2,30 +2,40 @@
 # =========================================================================
 # Run a single tenant workload for the current user.
 #
-# If tenant_workload_vars has overrides for this workload, apply them
-# via set_fact before include_role. This handles cases like
-# gitops_bootstrap which uses different repo_path, application_name,
-# and helm_values at cluster vs tenant level.
+# ANSIBLE PRECEDENCE FIX:
+#   AgnosticV vars are passed to AAP as extra_vars (highest precedence).
+#   set_fact CANNOT override extra_vars.
+#   include_role vars: CAN override extra_vars.
+#
+#   So we merge tenant_workload_vars overrides into the include_role
+#   vars: dict. This ensures tenant values (bootstrap-tenant) override
+#   cluster values (bootstrap-infra) even though both are extra_vars.
+#
+# HOW IT WORKS:
+#   1. Build base vars dict (username + password)
+#   2. Lookup per-workload overrides from tenant_workload_vars
+#   3. Combine them (overrides win)
+#   4. Pass merged dict via include_role vars:
 # =========================================================================
 
-# Apply per-workload variable overrides if defined in agnosticv.
-# Safe for workloads not in tenant_workload_vars — default({}) returns
-# empty dict, dict2items returns empty list, loop runs zero iterations.
-- name: "Apply overrides for {{ _tenant_workload | split('.') | last }}"
-  when: _tenant_workload_overrides | length > 0
+# Build the merged vars dict as a fact so Jinja2 in the override
+# values resolves now (using facts set in provision_user.yml).
+- name: "Build vars for {{ _tenant_workload | split('.') | last }}"
   ansible.builtin.set_fact:
-    "{{ _override_item.key }}": "{{ _override_item.value }}"
-  loop: "{{ _tenant_workload_overrides | dict2items }}"
-  loop_control:
-    loop_var: _override_item
-    label: "{{ _override_item.key }}"
-  vars:
-    _tenant_workload_overrides: >-
-      {{ (tenant_workload_vars | default({}))[_tenant_workload] | default({}) }}
+    _role_vars: >-
+      {{
+        {
+          'ocp4_workload_tenant_keycloak_username': _tenant_username,
+          'common_password': _tenant_password
+        } | combine(
+          (tenant_workload_vars | default({}))[_tenant_workload] | default({})
+        )
+      }}
 
+# include_role vars: has higher precedence than extra_vars.
+# This is the ONLY way to override top-level vars that AAP
+# passes as extra_vars.
 - name: "Run {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
   ansible.builtin.include_role:
     name: "{{ _tenant_workload }}"
-  vars:
-    ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
-    common_password: "{{ _tenant_password }}"
+  vars: "{{ _role_vars }}"

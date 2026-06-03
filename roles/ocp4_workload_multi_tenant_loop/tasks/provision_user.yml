@@ -2,14 +2,9 @@
 # =========================================================================
 # Run all tenant workloads for a single user (Phase 1).
 #
-# Sets ocp4_workload_tenant_keycloak_username as a FACT (not just
-# include_role vars:) so Jinja2 expressions in tenant_workload_vars
-# resolve correctly when constructing the override dict.
-#
-# For each workload, applies per-workload overrides from
-# tenant_workload_vars (if defined) via set_fact before include_role.
-# This handles cases like gitops_bootstrap which runs at both cluster
-# and tenant level with different vars.
+# Sets root variables as FACTS so they're available for Jinja2
+# resolution in tenant_workload_vars (which is evaluated outside
+# include_role context).
 #
 # No agnosticd_user_info calls here — registration is in phase 2.
 # =========================================================================
@@ -23,12 +18,17 @@
            length=tenant_password_length | int,
            chars=['ascii_letters', 'digits']
          ) }}
-    # Set as fact so tenant_workload_vars Jinja2 expressions can
-    # reference it (e.g. bootstrap-tenant-{{ ocp4_workload_tenant_keycloak_username }})
+    # These must be facts (not just include_role vars:) so that
+    # Jinja2 expressions in tenant_workload_vars can reference them
+    # when building the merged vars dict.
     ocp4_workload_tenant_keycloak_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
+    common_password: >-
+      {{ lookup('password',
+           output_dir ~ '/tenant_user_' ~ _tenant_user_num ~ '_password',
+           length=tenant_password_length | int,
+           chars=['ascii_letters', 'digits']
+         ) }}
 
-# Loop workloads via include_tasks (not direct include_role loop)
-# so we can apply per-workload set_fact overrides.
 - name: "Provision workloads for {{ _tenant_username }}"
   ansible.builtin.include_tasks: provision_workload.yml
   loop: "{{ tenant_workloads }}"
