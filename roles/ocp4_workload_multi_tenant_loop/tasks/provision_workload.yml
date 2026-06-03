@@ -1,24 +1,11 @@
 ---
 # =========================================================================
 # Run a single tenant workload for the current user.
-#
-# Merges base vars (username + password) with per-workload overrides
-# from tenant_workload_vars. Passes everything via include_role vars:
-# which overrides role defaults (but not extra_vars — so the
-# conflicting vars must NOT be at the AgnosticV top level).
 # =========================================================================
 
 - name: "Build vars for {{ _tenant_workload | split('.') | last }}"
   ansible.builtin.set_fact:
-    _role_vars: >-
-      {{
-        {
-          'ocp4_workload_tenant_keycloak_username': _tenant_username,
-          'common_password': _tenant_password
-        } | combine(
-          (tenant_workload_vars | default({}))[_tenant_workload] | default({})
-        )
-      }}
+    _role_vars: "{{ {'ocp4_workload_tenant_keycloak_username': _tenant_username, 'common_password': _tenant_password} | combine((tenant_workload_vars | default({}))[_tenant_workload] | default({})) }}"
 
 - name: "Run {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
   ansible.builtin.include_role:
