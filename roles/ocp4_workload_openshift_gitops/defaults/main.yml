@@ -193,3 +193,4 @@ ocp4_workload_openshift_gitops_catalog_snapshot_image_tag: v4.19_2025_07_21
 #   env:
 #   - name: ARGOCD_CLUSTER_CONFIG_NAMESPACES
 #     value: "openshift-gitops,custom-namespace"
+ocp4_workload_openshift_gitops_subscription_config: {}
