@@ -182,3 +182,15 @@ ocp4_workload_openshift_gitops_catalog_snapshot_image: quay.io/rhpds/olm_snapsho
 
 # Catalog snapshot image tag
 ocp4_workload_openshift_gitops_catalog_snapshot_image_tag: v4.19_2025_07_21
+
+# ----------------------------------
+# Subscription Configuration
+# ----------------------------------
+# Additional subscription configuration to pass to the operator
+# This is useful for setting environment variables like ARGOCD_CLUSTER_CONFIG_NAMESPACES
+# Example:
+# ocp4_workload_openshift_gitops_subscription_config:
+#   env:
+#   - name: ARGOCD_CLUSTER_CONFIG_NAMESPACES
+#     value: "openshift-gitops,custom-namespace"
+ocp4_workload_openshift_gitops_subscription_config: {}
