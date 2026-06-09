@@ -94,7 +94,7 @@
       name: v1alpha1.bifrost.demo.redhat.com
     register: r_webhook_apiservice
     until:
-    - r_webhook_apiservice.resources | length > 0
+    - r_webhook_apiservice.resources | default([]) | length > 0
     - >-
       r_webhook_apiservice.resources[0].status.conditions
       | selectattr('type', 'equalto', 'Available')
