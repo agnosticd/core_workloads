@@ -19,7 +19,7 @@
 # See workload.yml header for why two-phase is necessary.
 # =========================================================================
 
-- name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
+- name: "Set identity: {{ tenant_user_prefix }}{{ _tenant_user_num }}"
   ansible.builtin.set_fact:
     _tenant_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
     _tenant_password: >-
@@ -36,7 +36,7 @@
            chars=['ascii_letters', 'digits']
          ) }}
 
-- name: "Provision workloads for {{ _tenant_username }}"
+- name: "Provision workloads: {{ _tenant_username }}"
   ansible.builtin.include_tasks: provision_workload.yml
   loop: "{{ tenant_workloads }}"
   loop_control:

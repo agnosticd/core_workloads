@@ -16,7 +16,7 @@
 #   we need it as a fact so the Jinja2 resolves correctly.
 # =========================================================================
 
-- name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
+- name: "Set identity: {{ tenant_user_prefix }}{{ _tenant_user_num }}"
   ansible.builtin.set_fact:
     _tenant_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
     _tenant_password: >-
@@ -27,7 +27,7 @@
          ) }}
     ocp4_workload_tenant_keycloak_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
 
-- name: "Register {{ _tenant_username }} with Babylon"
+- name: "Register with Babylon: {{ _tenant_username }}"
   vars:
     _base_data:
       user: "{{ _tenant_username }}"

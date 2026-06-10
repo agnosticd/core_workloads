@@ -8,7 +8,7 @@
 # override role defaults.
 # =========================================================================
 
-- name: "Apply tenant overrides for {{ _tenant_workload }}"
+- name: "Apply tenant overrides: {{ _tenant_workload }}"
   when: _tenant_workload in tenant_workload_vars
   ansible.builtin.set_fact:
     "{{ _tw_item.key }}": "{{ _tw_item.value }}"
@@ -17,7 +17,7 @@
     loop_var: _tw_item
     label: "{{ _tw_item.key }}"
 
-- name: "Run {{ _tenant_workload }} for {{ _tenant_username }}"
+- name: "Run workload: {{ _tenant_workload }}"
   ansible.builtin.include_role:
     name: "{{ _tenant_workload }}"
   vars:

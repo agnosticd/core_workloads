@@ -25,7 +25,10 @@
   ansible.builtin.debug:
     msg:
     - "Tenant loop: provisioning {{ num_users }} user(s)"
-    - "Username pattern: {{ tenant_user_prefix }}{{ tenant_user_offset }}..{{ tenant_user_prefix }}{{ (tenant_user_offset | int) + (num_users | int) - 1 }}"
+    - >-
+        Username pattern:
+        {{ tenant_user_prefix }}{{ tenant_user_offset }}..
+        {{ tenant_user_prefix }}{{ (tenant_user_offset | int) + (num_users | int) - 1 }}
     - "Cluster workloads: {{ tenant_cluster_workloads | default([]) }}"
     - "Tenant workloads ({{ tenant_workloads | length }}): {{ tenant_workloads }}"
     - "Pre-loop delay: {{ tenant_pre_loop_delay }}s"

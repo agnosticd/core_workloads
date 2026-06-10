@@ -7,7 +7,7 @@
 # (e.g. LiteMaaS virtual keys) need explicit cleanup here.
 # =========================================================================
 
-- name: "Set identity for {{ tenant_user_prefix }}{{ _tenant_user_num }}"
+- name: "Set identity: {{ tenant_user_prefix }}{{ _tenant_user_num }}"
   ansible.builtin.set_fact:
     _tenant_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
     _tenant_password: >-
@@ -19,7 +19,7 @@
 
 - name: "Destroy workloads for {{ _tenant_username }}"
   block:
-  - name: "Remove {{ _tenant_workload }} for {{ _tenant_username }}"
+  - name: "Remove workload: {{ _tenant_workload }}"
     ansible.builtin.include_role:
       name: "{{ _tenant_workload }}"
     loop: "{{ tenant_remove_workloads }}"
@@ -30,7 +30,7 @@
       ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
       common_password: "{{ _tenant_password }}"
   rescue:
-  - name: "Destroy failed for {{ _tenant_username }} — continuing"
+  - name: "Destroy failed — continuing: {{ _tenant_username }}"
     ansible.builtin.debug:
       msg: >-
         Tenant destroy failed for {{ _tenant_username }}.
