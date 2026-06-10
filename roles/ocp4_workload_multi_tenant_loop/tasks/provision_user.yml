@@ -4,19 +4,16 @@
 #
 # VARIABLE SCOPING:
 #   ocp4_workload_tenant_keycloak_username and common_password are set
-#   as FACTS here (not just via include_role vars:) because:
+#   as facts here (not just via include_role vars:) because:
 #
 #   1. tenant_workload_vars values may contain Jinja2 expressions that
-#      reference them (e.g. "bootstrap-tenant-{{ ocp4_workload_tenant_
-#      keycloak_username }}"). These expressions are evaluated when
-#      provision_workload.yml applies the set_fact overrides — which
-#      happens OUTSIDE include_role context. Without the fact, the
-#      Jinja2 reference would be undefined.
+#      reference them. These expressions are evaluated when
+#      provision_workload.yml applies the set_fact overrides — outside
+#      include_role scope. Without facts, the references are undefined.
 #
-#   2. common_password is not a top-level var in the catalog item.
-#      It only exists via include_role vars: inside the role. The
-#      Jinja2 chain (ocp4_workload_user_password → common_password)
-#      needs common_password to be resolvable at set_fact time.
+#   2. common_password needs to be resolvable at set_fact time for
+#      the Jinja2 chain in catalog vars (e.g. ocp4_workload_user_password
+#      → common_password) to resolve correctly.
 #
 # No agnosticd_user_info calls here — registration is in Phase 2.
 # See workload.yml header for why two-phase is necessary.
@@ -31,7 +28,6 @@
            length=tenant_password_length | int,
            chars=['ascii_letters', 'digits']
          ) }}
-    # Must be facts for Jinja2 resolution in tenant_workload_vars
     ocp4_workload_tenant_keycloak_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
     common_password: >-
       {{ lookup('password',
@@ -40,11 +36,9 @@
            chars=['ascii_letters', 'digits']
          ) }}
 
-# Loop via include_tasks (not direct include_role) so we can apply
-# per-workload set_fact overrides before each include_role call.
 - name: "Provision workloads for {{ _tenant_username }}"
   ansible.builtin.include_tasks: provision_workload.yml
   loop: "{{ tenant_workloads }}"
   loop_control:
     loop_var: _tenant_workload
-    label: "{{ _tenant_workload | split('.') | last }}"
+    label: "{{ _tenant_workload }}"

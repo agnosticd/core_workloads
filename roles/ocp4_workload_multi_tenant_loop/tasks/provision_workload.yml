@@ -2,46 +2,22 @@
 # =========================================================================
 # Run a single tenant workload for the current user.
 #
-# TWO MECHANISMS FOR PASSING VARS:
-#
-# 1. set_fact (for per-workload overrides from tenant_workload_vars)
-#    - Applied BEFORE include_role
-#    - Facts persist across workloads in the same user iteration
-#    - Safe because AgnosticD workloads use role-prefixed var names
-#      (gitops_bootstrap vars don't collide with showroom vars)
-#    - Works because these vars are NOT extra_vars (not at top level)
-#
-# 2. include_role vars: (for the two root vars)
-#    - ocp4_workload_tenant_keycloak_username and common_password
-#    - These MUST go through include_role vars: because they're the
-#      per-user identity that changes each iteration
-#    - All other tenant vars in the catalog item are Jinja2 expressions
-#      that derive from these two roots via lazy evaluation
-#
-# WHY NOT use include_role vars: for EVERYTHING:
-#   AAP rejects `include_role vars: "{{ dict_expression }}"` with
-#   "Vars in a IncludeRole must be specified as a dictionary".
-#   Only static YAML key: value mappings are accepted.
-#   So overrides go through set_fact, root vars through include_role.
+# Per-workload overrides from tenant_workload_vars are applied via
+# set_fact before include_role. This works because the vars are NOT
+# at the AgnosticV top level (not extra_vars), so set_fact can
+# override role defaults.
 # =========================================================================
 
-# Apply per-workload overrides if this workload has entries in
-# tenant_workload_vars. Each key is set as a fact individually.
-# Example: gitops_bootstrap gets repo_path, app_name, helm_values
-# overridden from cluster values to tenant values.
-- name: "Apply tenant overrides for {{ _tenant_workload | split('.') | last }}"
-  when: _tenant_workload in (tenant_workload_vars | default({}))
+- name: "Apply tenant overrides for {{ _tenant_workload }}"
+  when: _tenant_workload in tenant_workload_vars
   ansible.builtin.set_fact:
     "{{ _tw_item.key }}": "{{ _tw_item.value }}"
-  loop: "{{ (tenant_workload_vars[_tenant_workload]) | dict2items }}"
+  loop: "{{ tenant_workload_vars[_tenant_workload] | dict2items }}"
   loop_control:
     loop_var: _tw_item
     label: "{{ _tw_item.key }}"
 
-# Run the workload with the two root vars.
-# All other vars come from facts (set above or in provision_user.yml)
-# or from the catalog item's playbook-level vars (via Jinja2 cascade).
-- name: "Run {{ _tenant_workload | split('.') | last }} for {{ _tenant_username }}"
+- name: "Run {{ _tenant_workload }} for {{ _tenant_username }}"
   ansible.builtin.include_role:
     name: "{{ _tenant_workload }}"
   vars:

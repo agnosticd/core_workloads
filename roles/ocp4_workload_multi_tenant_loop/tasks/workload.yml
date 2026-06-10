@@ -26,16 +26,12 @@
     msg:
     - "Tenant loop: provisioning {{ num_users }} user(s)"
     - "Username pattern: {{ tenant_user_prefix }}{{ tenant_user_offset }}..{{ tenant_user_prefix }}{{ (tenant_user_offset | int) + (num_users | int) - 1 }}"
-    - "Cluster workloads: {{ tenant_cluster_workloads | default([]) | map('split', '.') | map('last') | list }}"
-    - "Tenant workloads ({{ tenant_workloads | length }}): {{ tenant_workloads | map('split', '.') | map('last') | list }}"
+    - "Cluster workloads: {{ tenant_cluster_workloads | default([]) }}"
+    - "Tenant workloads ({{ tenant_workloads | length }}): {{ tenant_workloads }}"
     - "Pre-loop delay: {{ tenant_pre_loop_delay }}s"
 
 # -----------------------------------------------------------------------
 # PHASE 0: Run cluster workloads inside the bridge.
-#
-# These workloads can't be in the config's workloads: list because
-# their vars conflict with tenant invocations. Running them here
-# via include_role vars: avoids the extra_vars precedence issue.
 # -----------------------------------------------------------------------
 - name: "Phase 0: Run cluster workloads inside bridge"
   when: tenant_cluster_workloads | default([]) | length > 0
@@ -43,7 +39,7 @@
   loop: "{{ tenant_cluster_workloads }}"
   loop_control:
     loop_var: _cluster_workload
-    label: "{{ _cluster_workload | split('.') | last }}"
+    label: "{{ _cluster_workload }}"
 
 - name: Wait for cluster workloads to settle
   when: tenant_pre_loop_delay | int > 0

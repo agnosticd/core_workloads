@@ -17,22 +17,13 @@
 #   set_fact (#19) CAN override role defaults (#2), so it works.
 #
 # WHY set_fact AND NOT include_role vars:
-#   We tried `include_role vars: "{{ dict_var }}"` first.
-#   AAP/Ansible rejects it: "Vars in a IncludeRole must be specified
-#   as a dictionary" — it does not accept Jinja2 expressions that
-#   evaluate to a dict. Only static YAML mappings are allowed.
+#   AAP/Ansible rejects `include_role vars: "{{ dict_var }}"`:
+#   "Vars in a IncludeRole must be specified as a dictionary".
+#   Only static YAML mappings are allowed, not Jinja2 expressions.
 #   So we use set_fact per key, then plain include_role.
-#
-# WHY set_fact WORKS HERE:
-#   Ansible precedence: extra_vars (#22) > set_fact (#19) > role
-#   defaults (#2). The conflicting vars are NOT at the top level,
-#   so they're NOT extra_vars. set_fact overrides role defaults.
 # =========================================================================
 
-# Apply per-workload overrides from tenant_cluster_workloads_vars.
-# Each key is set as a fact individually (dict2items loop).
-# Skipped entirely if this workload has no overrides defined.
-- name: "Apply cluster overrides for {{ _cluster_workload | split('.') | last }}"
+- name: "Apply cluster overrides for {{ _cluster_workload }}"
   when: _cluster_workload in (tenant_cluster_workloads_vars | default({}))
   ansible.builtin.set_fact:
     "{{ _cw_item.key }}": "{{ _cw_item.value }}"
@@ -41,6 +32,6 @@
     loop_var: _cw_item
     label: "{{ _cw_item.key }}"
 
-- name: "Run cluster workload: {{ _cluster_workload | split('.') | last }}"
+- name: "Run cluster workload: {{ _cluster_workload }}"
   ansible.builtin.include_role:
     name: "{{ _cluster_workload }}"

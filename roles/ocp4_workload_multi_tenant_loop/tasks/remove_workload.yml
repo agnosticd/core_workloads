@@ -14,15 +14,14 @@
 # teardown. If LiteMaaS cleanup fails (key expired, API down),
 # the cluster still gets destroyed and the keys expire on their own.
 #
-# Users are destroyed in reverse order (LIFO) as a convention for
-# any cross-user dependencies.
+# Users are destroyed in reverse order (LIFO) as a convention.
 # =========================================================================
 
 - name: Display tenant loop destroy configuration
   ansible.builtin.debug:
     msg:
     - "Tenant loop: destroying {{ num_users }} user(s)"
-    - "Destroy order: {{ tenant_remove_workloads | default([]) | map('split', '.') | map('last') | list }}"
+    - "Destroy order: {{ tenant_remove_workloads | default([]) | list }}"
 
 - name: Destroy tenant for each user (reverse order)
   when:

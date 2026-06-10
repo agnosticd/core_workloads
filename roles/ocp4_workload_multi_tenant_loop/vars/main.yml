@@ -1,0 +1,7 @@
+---
+# Computed per-user identity vars.
+# These are overwritten by set_fact in each user iteration but
+# defined here so they are available in all execution contexts
+# (provision, destroy) without requiring explicit initialization.
+_tenant_username: ""
+_tenant_password: ""

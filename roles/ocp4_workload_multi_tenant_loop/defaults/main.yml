@@ -20,13 +20,17 @@
 #   Phase 2: Loop users again, register each with Babylon
 #
 # WHY THREE PHASES (not two):
-#   The showroom role reads user-data.yaml via the
-#   agnosticd_user_data lookup. If per-user data exists at that
-#   point (from agnosticd_user_info calls with user: set),
-#   showroom detects a 'users' dict and switches to multi-user
-#   mode — which appends the username to the namespace, creating
-#   wrong namespaces like user1-showroom-user1.
-#   Phase 2 (registration) happens AFTER all showroom deployments.
+#   agnosticd_user_info with user: set writes per-user entries to
+#   user-data.yaml. The showroom role reads user-data.yaml at deploy
+#   time. If it finds a 'users' dict, it switches to multi-user mode
+#   and appends the username to the namespace (user1-showroom becomes
+#   user1-showroom-user1). This is correct behavior for labs that
+#   provision all users in a single play — but conflicts with our
+#   pattern where each user gets their own showroom pod in Phase 1.
+#   Phase 2 defers all agnosticd_user_info calls until after all
+#   showroom pods are deployed, so user-data.yaml is empty when
+#   showroom runs. Fixing showroom's multi-user detection would change
+#   behavior for all existing multi-user labs that rely on it.
 # =================================================================
 
 # Number of tenant users to provision. Must be > 0 when used.
@@ -68,8 +72,12 @@ tenant_pre_loop_delay: 0
 #       https://showroom-{{ ocp4_workload_tenant_keycloak_username }}-showroom.{{ openshift_cluster_ingress_domain }}
 tenant_user_info_data: {}
 
-# Per-user message for Babylon. Empty = auto-generated.
-tenant_user_info_msg: ""
+# Per-user message for Babylon.
+# Default uses the bridge-generated per-user password.
+# Override in agnosticv if the actual Keycloak password differs
+# (e.g. when common_password is a top-level extra_var).
+# Set to "" or omit to suppress the message entirely.
+tenant_user_info_msg: "User: {{ _tenant_username }} / {{ _tenant_password }}"
 
 # Per-workload variable overrides for TENANT workloads.
 # Keys are workload FQCNs, values are dicts of var overrides.
