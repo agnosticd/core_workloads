@@ -1,0 +1,83 @@
+---
+# =========================================================================
+# PROVISION: Three-phase tenant provisioning
+#
+# Phase 0: Run cluster workloads that can't be in the config's
+#          workloads: list (e.g. gitops_bootstrap when it also runs
+#          per-tenant with different vars — extra_vars conflict).
+#
+# Phase 1: Loop all users, run tenant_workloads per user.
+#          No agnosticd_user_info calls (showroom compatibility).
+#
+# Phase 2: Loop all users again, register each with Babylon.
+# =========================================================================
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+    - num_users | int > 0
+    - tenant_workloads | length > 0
+    fail_msg: >-
+      num_users (int > 0) and tenant_workloads (non-empty list)
+      must be defined in the AgnosticV catalog item.
+
+- name: Display tenant loop configuration
+  ansible.builtin.debug:
+    msg:
+    - "Tenant loop: provisioning {{ num_users }} user(s)"
+    - >-
+        Username pattern:
+        {{ tenant_user_prefix }}{{ tenant_user_offset }}..
+        {{ tenant_user_prefix }}{{ (tenant_user_offset | int) + (num_users | int) - 1 }}
+    - "Cluster workloads: {{ tenant_cluster_workloads | default([]) }}"
+    - "Tenant workloads ({{ tenant_workloads | length }}): {{ tenant_workloads }}"
+    - "Pre-loop delay: {{ tenant_pre_loop_delay }}s"
+
+# -----------------------------------------------------------------------
+# PHASE 0: Run cluster workloads inside the bridge.
+# -----------------------------------------------------------------------
+- name: "Phase 0: Run cluster workloads inside bridge"
+  when: tenant_cluster_workloads | default([]) | length > 0
+  ansible.builtin.include_tasks: run_cluster_workload.yml
+  loop: "{{ tenant_cluster_workloads }}"
+  loop_control:
+    loop_var: _cluster_workload
+    label: "{{ _cluster_workload }}"
+
+- name: Wait for cluster workloads to settle
+  when: tenant_pre_loop_delay | int > 0
+  ansible.builtin.pause:
+    seconds: "{{ tenant_pre_loop_delay | int }}"
+    prompt: "Waiting {{ tenant_pre_loop_delay }}s for async cluster resources to settle..."
+
+# -----------------------------------------------------------------------
+# PHASE 1: Run tenant workloads for each user.
+# -----------------------------------------------------------------------
+- name: "Phase 1: Provision tenant workloads"
+  ansible.builtin.include_tasks: provision_user.yml
+  loop: >-
+    {{ range(
+         tenant_user_offset | int,
+         (tenant_user_offset | int) + (num_users | int)
+       ) | list }}
+  loop_control:
+    loop_var: _tenant_user_num
+    label: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
+
+# -----------------------------------------------------------------------
+# PHASE 2: Register all users with Babylon.
+# -----------------------------------------------------------------------
+- name: "Phase 2: Register users with Babylon"
+  ansible.builtin.include_tasks: register_user.yml
+  loop: >-
+    {{ range(
+         tenant_user_offset | int,
+         (tenant_user_offset | int) + (num_users | int)
+       ) | list }}
+  loop_control:
+    loop_var: _tenant_user_num
+    label: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
+
+- name: Tenant loop provisioning complete
+  ansible.builtin.debug:
+    msg: "All {{ num_users }} tenant(s) provisioned and registered."

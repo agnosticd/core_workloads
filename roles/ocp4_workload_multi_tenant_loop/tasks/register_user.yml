@@ -1,0 +1,39 @@
+---
+# =========================================================================
+# Register a single user with Babylon (Phase 2).
+#
+# Called AFTER all tenant workloads complete for ALL users.
+# This is the ONLY agnosticd_user_info call with user: set.
+#
+# The catalog item defines tenant_user_info_data with lab-specific
+# data (e.g. showroom URL pattern). Jinja2 expressions in that dict
+# are evaluated per user. tenant_user_info_data is combined on top of
+# the base {user, password} so catalog values take precedence.
+#
+# WHY set ocp4_workload_tenant_keycloak_username here?
+#   tenant_user_info_data may reference it via Jinja2. In phase 1
+#   it's passed via include_role vars: (scoped to the role). Here
+#   we need it as a fact so the Jinja2 resolves correctly.
+# =========================================================================
+
+- name: "Set identity: {{ tenant_user_prefix ~ _tenant_user_num }}"
+  ansible.builtin.set_fact:
+    _tenant_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
+    _tenant_password: >-
+      {{ lookup('password',
+           output_dir ~ '/tenant_user_' ~ _tenant_user_num ~ '_password',
+           length=tenant_password_length | int,
+           chars=['ascii_letters', 'digits']
+         ) }}
+    ocp4_workload_tenant_keycloak_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
+
+- name: "Register with Babylon: {{ _tenant_username }}"
+  vars:
+    _base_data:
+      user: "{{ _tenant_username }}"
+      password: "{{ _tenant_password }}"
+    _user_data: "{{ _base_data | combine(tenant_user_info_data) }}"
+  agnosticd.core.agnosticd_user_info:
+    user: "{{ _tenant_username }}"
+    data: "{{ _user_data }}"
+    msg: "{{ tenant_user_info_msg | default(omit, true) }}"

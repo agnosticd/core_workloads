@@ -1,0 +1,25 @@
+---
+# =========================================================================
+# Run a single tenant workload for the current user.
+#
+# Per-workload overrides from tenant_workload_vars are applied via
+# set_fact before include_role. This works because the vars are NOT
+# at the AgnosticV top level (not extra_vars), so set_fact can
+# override role defaults.
+# =========================================================================
+
+- name: "Apply tenant overrides: {{ _tenant_workload }}"
+  when: _tenant_workload in tenant_workload_vars
+  ansible.builtin.set_fact:
+    "{{ _tw_item.key }}": "{{ _tw_item.value }}"
+  loop: "{{ tenant_workload_vars[_tenant_workload] | dict2items }}"
+  loop_control:
+    loop_var: _tw_item
+    label: "{{ _tw_item.key }}"
+
+- name: "Run workload: {{ _tenant_workload }}"
+  ansible.builtin.include_role:
+    name: "{{ _tenant_workload }}"
+  vars:
+    ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
+    common_password: "{{ _tenant_password }}"

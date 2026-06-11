@@ -1,0 +1,121 @@
+---
+# =================================================================
+# ocp4_workload_multi_tenant_loop — default variables
+#
+# Generic bridge between cluster-level and tenant-level workloads
+# in a combined catalog item.
+#
+# HOW IT WORKS:
+#   The bridge overrides two root variables per user iteration:
+#     - ocp4_workload_tenant_keycloak_username (e.g. user1)
+#     - common_password (auto-generated per user)
+#   All other tenant vars in the catalog item should be Jinja2
+#   expressions that derive from these roots. Ansible evaluates
+#   Jinja2 lazily, so the entire variable tree resolves correctly
+#   per user without remapping every variable.
+#
+# THREE PHASES:
+#   Phase 0: Run tenant_cluster_workloads once (cluster-level)
+#   Phase 1: Loop users, run tenant_workloads per user
+#   Phase 2: Loop users again, register each with Babylon
+#
+# WHY THREE PHASES (not two):
+#   agnosticd_user_info with user: set writes per-user entries to
+#   user-data.yaml. The showroom role reads user-data.yaml at deploy
+#   time. If it finds a 'users' dict, it switches to multi-user mode
+#   and appends the username to the namespace (user1-showroom becomes
+#   user1-showroom-user1). This is correct behavior for labs that
+#   provision all users in a single play — but conflicts with our
+#   pattern where each user gets their own showroom pod in Phase 1.
+#   Phase 2 defers all agnosticd_user_info calls until after all
+#   showroom pods are deployed, so user-data.yaml is empty when
+#   showroom runs. Fixing showroom's multi-user detection would change
+#   behavior for all existing multi-user labs that rely on it.
+# =================================================================
+
+# Number of tenant users to provision. Must be > 0 when used.
+num_users: 0
+
+# Workload FQCNs to run per user (provision order). Must be non-empty.
+tenant_workloads: []
+
+# Workload FQCNs for destroy (explicit order).
+# Only EXTERNAL resources need cleanup — everything inside the
+# cluster dies when the cluster is destroyed.
+tenant_remove_workloads: []
+
+# Username prefix. Users are named {prefix}{number}: user1, user2, ...
+tenant_user_prefix: user
+
+# First user number.
+tenant_user_offset: 1
+
+# Length of auto-generated per-user passwords.
+# Each user gets a unique password stored at:
+#   {{ output_dir }}/tenant_user_{{ N }}_password
+# The password lookup is deterministic — safe for re-runs.
+tenant_password_length: 8
+
+# Seconds to wait after Phase 0 before starting Phase 1.
+# Gives async cluster resources (ArgoCD syncs, operator CRDs,
+# Keycloak realm init) time to settle.
+tenant_pre_loop_delay: 0
+
+# Per-user data reported to Babylon via agnosticd_user_info.
+# Define in agnosticv with lab-specific data (showroom URL, etc.).
+# Jinja2 expressions are evaluated per user.
+# The bridge always adds 'user' and 'password' automatically.
+#
+# Example:
+#   tenant_user_info_data:
+#     lab_ui_url: >-
+#       https://showroom-{{ ocp4_workload_tenant_keycloak_username }}-showroom.{{ openshift_cluster_ingress_domain }}
+tenant_user_info_data: {}
+
+# Per-user message for Babylon.
+# Default uses the bridge-generated per-user password.
+# Override in agnosticv if the actual Keycloak password differs
+# (e.g. when common_password is a top-level extra_var).
+# Set to "" or omit to suppress the message entirely.
+tenant_user_info_msg: "User: {{ _tenant_username }} / {{ _tenant_password }}"
+
+# Per-workload variable overrides for TENANT workloads.
+# Keys are workload FQCNs, values are dicts of var overrides.
+# Applied via set_fact before each include_role call.
+#
+# USE CASE: When the same workload runs at cluster and tenant level
+# with different vars (e.g. gitops_bootstrap with bootstrap-infra
+# vs bootstrap-tenant).
+#
+# NOTE: These overrides use set_fact, NOT include_role vars:,
+# because AAP rejects Jinja2 dict expressions in include_role vars:.
+# set_fact works here because the conflicting vars are NOT at the
+# AgnosticV top level (not extra_vars).
+tenant_workload_vars: {}
+
+# ---------------------------------------------------------------
+# Cluster workloads run ONCE inside the bridge (Phase 0).
+#
+# WHY THIS EXISTS:
+#   When a workload (e.g. gitops_bootstrap) runs at BOTH cluster
+#   and tenant level with different vars for the SAME variable
+#   names, you can't define either set at the AgnosticV top level.
+#   Top-level vars become extra_vars in AAP, and extra_vars have
+#   the HIGHEST Ansible precedence (#22 of 22). Nothing inside
+#   the playbook can override them — not set_fact, not
+#   include_role vars, nothing.
+#
+#   Solution: move the workload OUT of the config's workloads:
+#   list. Run it inside the bridge where both invocations use
+#   set_fact to apply their respective overrides. Since the
+#   conflicting vars are NOT at the top level, they're NOT
+#   extra_vars, and set_fact overrides role defaults.
+#
+# Workloads listed here must NOT also appear in the config's
+# workloads: list.
+# ---------------------------------------------------------------
+tenant_cluster_workloads: []
+
+# Per-workload variable overrides for cluster workloads.
+# Same mechanism as tenant_workload_vars but for Phase 0.
+tenant_cluster_workloads_vars: {}

@@ -1,0 +1,37 @@
+---
+# =========================================================================
+# Destroy external resources for a single user.
+#
+# Wrapped in block/rescue — errors are logged but NEVER block teardown.
+# The cluster is about to be destroyed; only EXTERNAL resources
+# (e.g. LiteMaaS virtual keys) need explicit cleanup here.
+# =========================================================================
+
+- name: "Set identity: {{ tenant_user_prefix ~ _tenant_user_num }}"
+  ansible.builtin.set_fact:
+    _tenant_username: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
+    _tenant_password: >-
+      {{ lookup('password',
+           output_dir ~ '/tenant_user_' ~ _tenant_user_num ~ '_password',
+           length=tenant_password_length | int,
+           chars=['ascii_letters', 'digits']
+         ) }}
+
+- name: "Destroy workloads for {{ _tenant_username }}"
+  block:
+  - name: "Remove workload: {{ _tenant_workload }}"
+    ansible.builtin.include_role:
+      name: "{{ _tenant_workload }}"
+    loop: "{{ tenant_remove_workloads }}"
+    loop_control:
+      loop_var: _tenant_workload
+      label: "{{ _tenant_workload }}"
+    vars:
+      ocp4_workload_tenant_keycloak_username: "{{ _tenant_username }}"
+      common_password: "{{ _tenant_password }}"
+  rescue:
+  - name: "Destroy failed — continuing: {{ _tenant_username }}"
+    ansible.builtin.debug:
+      msg: >-
+        Tenant destroy failed for {{ _tenant_username }}.
+        Error ignored — cluster teardown will clean up remaining resources.
