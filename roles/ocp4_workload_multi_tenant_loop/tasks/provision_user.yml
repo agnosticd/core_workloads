@@ -49,14 +49,16 @@
 
 - name: "Scope user-info.yaml: strip users key so showroom runs in single-user mode"
   when: _bridge_user_info_before.content is defined
+  vars:
+    _raw: "{{ _bridge_user_info_before.content | b64decode | from_yaml | default({}, true) }}"
   ansible.builtin.copy:
     content: >-
       {{
-        (_bridge_user_info_before.content | b64decode | from_yaml | default({}, true))
-        | dict2items
-        | rejectattr('key', 'equalto', 'users')
-        | list
-        | items2dict
+        (
+          (_raw | dict2items | rejectattr('key', 'equalto', 'users') | list | items2dict)
+          if _raw is mapping
+          else _raw
+        )
         | to_nice_yaml
       }}
     dest: "{{ output_dir }}/user-info.yaml"
@@ -77,14 +79,17 @@
 
 - name: "Merge user Phase 1 data back into full user-info.yaml: {{ _tenant_username }}"
   when: _bridge_user_info_before.content is defined
+  vars:
+    _before: "{{ _bridge_user_info_before.content | b64decode | from_yaml | default({}, true) }}"
+    _after: "{{ _bridge_user_info_after.content | b64decode | from_yaml | default({}, true) }}"
   ansible.builtin.copy:
     content: >-
       {{
-        (_bridge_user_info_before.content | b64decode | from_yaml | default({}, true))
-        | combine(
-            _bridge_user_info_after.content | b64decode | from_yaml | default({}, true),
-            recursive=True
-          )
+        (
+          (_before | combine(_after, recursive=True))
+          if (_before is mapping and _after is mapping)
+          else (_after if _after else _before)
+        )
         | to_nice_yaml
       }}
     dest: "{{ output_dir }}/user-info.yaml"
