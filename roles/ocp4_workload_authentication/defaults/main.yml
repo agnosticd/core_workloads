@@ -135,6 +135,9 @@ ocp4_workload_authentication_keycloak_openshift_client_id: idp-4-ocp
 #   - standardFlowEnabled: true/false (optional, defaults to true)
 #   - directAccessGrantsEnabled: true/false (optional, defaults to true)
 #   - serviceAccountsEnabled: true/false (optional, defaults to true)
+#   - serviceAccountRoles: dict of client-name → role list (optional)
+#     Assigns client roles to the service account user created by Keycloak.
+#     Only used when serviceAccountsEnabled is true.
 
 ocp4_workload_authentication_keycloak_clients: []
 
@@ -158,5 +161,19 @@ ocp4_workload_authentication_keycloak_clients: []
 #   redirectUris:
 #   - "https://grafana.{{ openshift_cluster_ingress_domain }}/login/generic_oauth"
 #   description: "Grafana OAuth Client"
+
+# Example: RHDH Keycloak Plugin with service account roles
+# The keycloakOrg catalog provider requires realm-management roles
+# to sync users and groups into the Developer Hub catalog.
+# ocp4_workload_authentication_keycloak_clients:
+# - clientId: backstage-plugin
+#   secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=32') }}"
+#   standardFlowEnabled: false
+#   serviceAccountsEnabled: true
+#   serviceAccountRoles:
+#     realm-management:
+#       - query-users
+#       - view-users
+#       - query-groups
 
 ocp4_workload_authentication_keycloak_enable_user_info_messages: true
