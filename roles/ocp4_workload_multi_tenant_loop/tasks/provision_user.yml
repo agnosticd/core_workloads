@@ -40,9 +40,51 @@
     # _showroom_user | default('') to empty, leaving ${USER} blank in the pod.
     _showroom_user: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
 
+- name: "Read full user-info.yaml before tenant workloads: {{ _tenant_username }}"
+  ansible.builtin.slurp:
+    src: "{{ output_dir }}/user-info.yaml"
+  register: _bridge_user_info_before
+  ignore_errors: true
+  failed_when: false
+
+- name: "Scope user-info.yaml: strip users key so showroom runs in single-user mode"
+  when: _bridge_user_info_before.content is defined
+  ansible.builtin.copy:
+    content: >-
+      {{
+        (_bridge_user_info_before.content | b64decode | from_yaml | default({}, true))
+        | dict2items
+        | rejectattr('key', 'equalto', 'users')
+        | list
+        | items2dict
+        | to_nice_yaml
+      }}
+    dest: "{{ output_dir }}/user-info.yaml"
+
 - name: "Provision workloads: {{ _tenant_username }}"
   ansible.builtin.include_tasks: provision_workload.yml
   loop: "{{ tenant_workloads }}"
   loop_control:
     loop_var: _tenant_workload
     label: "{{ _tenant_workload }}"
+
+- name: "Read user Phase 1 data after tenant workloads: {{ _tenant_username }}"
+  ansible.builtin.slurp:
+    src: "{{ output_dir }}/user-info.yaml"
+  register: _bridge_user_info_after
+  ignore_errors: true
+  failed_when: false
+
+- name: "Merge user Phase 1 data back into full user-info.yaml: {{ _tenant_username }}"
+  when: _bridge_user_info_before.content is defined
+  ansible.builtin.copy:
+    content: >-
+      {{
+        (_bridge_user_info_before.content | b64decode | from_yaml | default({}, true))
+        | combine(
+            _bridge_user_info_after.content | b64decode | from_yaml | default({}, true),
+            recursive=True
+          )
+        | to_nice_yaml
+      }}
+    dest: "{{ output_dir }}/user-info.yaml"
