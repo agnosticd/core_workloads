@@ -35,6 +35,10 @@
            length=tenant_password_length | int,
            chars=['ascii_letters', 'digits']
          ) }}
+    # Set _showroom_user so the showroom role populates the USER env var in
+    # single-user mode. Without this, showroom's deploy_showroom.yaml resolves
+    # _showroom_user | default('') to empty, leaving ${USER} blank in the pod.
+    _showroom_user: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
 
 - name: "Provision workloads: {{ _tenant_username }}"
   ansible.builtin.include_tasks: provision_workload.yml
