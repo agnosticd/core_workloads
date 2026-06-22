@@ -59,8 +59,23 @@ spec:
           description: "Default user role"
         - name: admin
           description: "Administrator role"
-{% if ocp4_workload_authentication_num_users | int > 0 or _ocp4_workload_authentication_cluster_accounts | length > 0 %}
+{% set _has_service_account_roles = ocp4_workload_authentication_keycloak_clients | selectattr('serviceAccountRoles', 'defined') | list | length > 0 %}
+{% if ocp4_workload_authentication_num_users | int > 0 or _ocp4_workload_authentication_cluster_accounts | length > 0 or _has_service_account_roles %}
     users:
+{% for client in ocp4_workload_authentication_keycloak_clients %}
+{% if client.serviceAccountRoles is defined %}
+      - username: service-account-{{ client.clientId }}
+        enabled: true
+        serviceAccountClientId: {{ client.clientId }}
+        clientRoles:
+{% for client_name, roles in client.serviceAccountRoles.items() %}
+          {{ client_name }}:
+{% for role in roles %}
+            - {{ role }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% endfor %}
 {% for _account in _ocp4_workload_authentication_cluster_accounts %}
       - username: {{ _account.name }}
         enabled: true
