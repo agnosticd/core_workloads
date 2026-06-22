@@ -81,7 +81,30 @@
   when: _bridge_user_info_before.content is defined
   vars:
     _before: "{{ _bridge_user_info_before.content | b64decode | from_yaml | default({}, true) }}"
-    _after: "{{ _bridge_user_info_after.content | b64decode | from_yaml | default({}, true) }}"
+    _after_raw: "{{ _bridge_user_info_after.content | b64decode | from_yaml | default({}, true) }}"
+    # Strip msgs from the current user's Phase 1 entry — workload messages
+    # (e.g. "Lab instructions: URL" from the showroom role) are noisy and
+    # duplicate the cleaner "Lab:" message written by register_user in Phase 2.
+    # Keeping only data (credentials, URLs) from Phase 1; msgs come from Phase 2.
+    _after: >-
+      {{
+        _after_raw
+        if not (_after_raw is mapping and _after_raw.users is defined and _tenant_username in _after_raw.users)
+        else (
+          _after_raw
+          | combine({
+              'users': {
+                _tenant_username: (
+                  _after_raw.users[_tenant_username]
+                  | dict2items
+                  | rejectattr('key', 'equalto', 'msgs')
+                  | list
+                  | items2dict
+                )
+              }
+            }, recursive=True)
+        )
+      }}
   ansible.builtin.copy:
     content: >-
       {{
