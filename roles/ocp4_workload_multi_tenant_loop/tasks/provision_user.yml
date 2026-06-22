@@ -47,20 +47,10 @@
   ignore_errors: true
   failed_when: false
 
-- name: "Scope user-info.yaml: strip users key so showroom runs in single-user mode"
+- name: "Scope user-info.yaml: write empty so showroom lookup finds no users (single-user mode)"
   when: _bridge_user_info_before.content is defined
-  vars:
-    _raw: "{{ _bridge_user_info_before.content | b64decode | from_yaml | default({}, true) }}"
   ansible.builtin.copy:
-    content: >-
-      {{
-        (
-          (_raw | dict2items | rejectattr('key', 'equalto', 'users') | list | items2dict)
-          if _raw is mapping
-          else _raw
-        )
-        | to_nice_yaml
-      }}
+    content: "{}\n"
     dest: "{{ output_dir }}/user-info.yaml"
 
 - name: "Provision workloads: {{ _tenant_username }}"
