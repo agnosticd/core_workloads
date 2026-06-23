@@ -105,6 +105,9 @@
     label: "{{ _tenant_workload }}"
 
 - name: "Read provision-user-data.yaml after tenant workloads: {{ _tenant_username }}"
+  # Capture what Phase 1 wrote — this user's data is now under users.<username>.
+  # We combine it with _pud_before (which still holds all prior users) in the
+  # next task so the file ends up with globals + ALL users accumulated so far.
   ansible.builtin.slurp:
     src: "{{ output_dir }}/provision-user-data.yaml"
   register: _bridge_pud_after
@@ -112,6 +115,11 @@
   failed_when: false
 
 - name: "Merge provision-user-data.yaml back (restore prior users + add current user): {{ _tenant_username }}"
+  # _pud_before: full file as it was before this user's Phase 1 (all prior users + globals).
+  # _pud_after:  file as Phase 1 left it (only this user under users.*, plus globals).
+  # combine(recursive=True) merges dicts at every level:
+  #   result.users = prior_users merged with this_user — accumulates correctly over the loop.
+  # This is the symmetric restore of the strip done before Phase 1.
   when: _bridge_pud_before.content is defined
   vars:
     _pud_before: "{{ _bridge_pud_before.content | b64decode | from_yaml | default({}, true) }}"
