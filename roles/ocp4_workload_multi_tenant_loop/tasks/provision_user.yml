@@ -52,6 +52,7 @@
   ansible.builtin.copy:
     content: "{}\n"
     dest: "{{ output_dir }}/user-info.yaml"
+    mode: '0644'
 
 # ─── provision-user-data.yaml scoping ────────────────────────────────────────
 # The agnosticd.core.agnosticd_user_data lookup (used in the showroom role's
@@ -91,6 +92,7 @@
         | to_nice_yaml
       }}
     dest: "{{ output_dir }}/provision-user-data.yaml"
+    mode: '0644'
 
 - name: "Reset _showroom_user_data fact to prevent dirty in-memory combine: {{ _tenant_username }}"
   ansible.builtin.set_fact:
@@ -135,6 +137,7 @@
         | to_nice_yaml
       }}
     dest: "{{ output_dir }}/provision-user-data.yaml"
+    mode: '0644'
 
 - name: "Read user Phase 1 data after tenant workloads: {{ _tenant_username }}"
   ansible.builtin.slurp:
@@ -182,3 +185,4 @@
         | to_nice_yaml
       }}
     dest: "{{ output_dir }}/user-info.yaml"
+    mode: '0644'
