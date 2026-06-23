@@ -35,6 +35,69 @@
            length=tenant_password_length | int,
            chars=['ascii_letters', 'digits']
          ) }}
+    # Set _showroom_user so the showroom role populates the USER env var in
+    # single-user mode. Without this, showroom's deploy_showroom.yaml resolves
+    # _showroom_user | default('') to empty, leaving ${USER} blank in the pod.
+    _showroom_user: "{{ tenant_user_prefix }}{{ _tenant_user_num }}"
+
+- name: "Read full user-info.yaml before tenant workloads: {{ _tenant_username }}"
+  ansible.builtin.slurp:
+    src: "{{ output_dir }}/user-info.yaml"
+  register: _bridge_user_info_before
+  ignore_errors: true
+  failed_when: false
+
+- name: "Scope user-info.yaml: write empty so showroom lookup finds no users (single-user mode)"
+  when: _bridge_user_info_before.content is defined
+  ansible.builtin.copy:
+    content: "{}\n"
+    dest: "{{ output_dir }}/user-info.yaml"
+    mode: '0644'
+
+# ─── provision-user-data.yaml scoping ────────────────────────────────────────
+# The agnosticd.core.agnosticd_user_data lookup (used in the showroom role's
+# prepare_variables.yaml) reads provision-user-data.yaml, not user-info.yaml.
+# If a prior user's Phase 1 wrote users.<username> into that file, the showroom
+# role sees _showroom_user_data.users defined and enters multi-user mode,
+# creating the wrong namespace (e.g. user2-showroom-user1 instead of user2-showroom).
+#
+# Two-part fix:
+# 1. Strip the `users` key from provision-user-data.yaml before Phase 1 so the
+#    lookup returns only global data → _showroom_user_data.users undefined → single-user mode.
+#    (Global keys like cluster credentials are preserved — only per-user entries removed.)
+# 2. Reset _showroom_user_data fact to {} — set_fact persists across include_role
+#    calls in the same play. Without this, the combine() in prepare_variables.yaml
+#    merges onto dirty in-memory data even after the file is clean.
+# Merge-back after Phase 1 restores all prior users + adds this user's new data.
+
+- name: "Read provision-user-data.yaml before tenant workloads: {{ _tenant_username }}"
+  ansible.builtin.slurp:
+    src: "{{ output_dir }}/provision-user-data.yaml"
+  register: _bridge_pud_before
+  ignore_errors: true
+  failed_when: false
+
+- name: "Scope provision-user-data.yaml: remove users key so showroom enters single-user mode"
+  when: _bridge_pud_before.content is defined
+  vars:
+    _pud: "{{ _bridge_pud_before.content | b64decode | from_yaml | default({}, true) }}"
+  ansible.builtin.copy:
+    content: >-
+      {{
+        _pud
+        | dict2items
+        | rejectattr('key', 'equalto', 'users')
+        | list
+        | items2dict
+        | to_nice_yaml
+      }}
+    dest: "{{ output_dir }}/provision-user-data.yaml"
+    mode: '0644'
+
+- name: "Reset _showroom_user_data fact to prevent dirty in-memory combine: {{ _tenant_username }}"
+  ansible.builtin.set_fact:
+    _showroom_user_data: {}
+# ─────────────────────────────────────────────────────────────────────────────
 
 - name: "Provision workloads: {{ _tenant_username }}"
   ansible.builtin.include_tasks: provision_workload.yml
@@ -42,3 +105,84 @@
   loop_control:
     loop_var: _tenant_workload
     label: "{{ _tenant_workload }}"
+
+- name: "Read provision-user-data.yaml after tenant workloads: {{ _tenant_username }}"
+  # Capture what Phase 1 wrote — this user's data is now under users.<username>.
+  # We combine it with _pud_before (which still holds all prior users) in the
+  # next task so the file ends up with globals + ALL users accumulated so far.
+  ansible.builtin.slurp:
+    src: "{{ output_dir }}/provision-user-data.yaml"
+  register: _bridge_pud_after
+  ignore_errors: true
+  failed_when: false
+
+- name: "Merge provision-user-data.yaml back (restore prior users + add current user): {{ _tenant_username }}"
+  # _pud_before: full file as it was before this user's Phase 1 (all prior users + globals).
+  # _pud_after:  file as Phase 1 left it (only this user under users.*, plus globals).
+  # combine(recursive=True) merges dicts at every level:
+  #   result.users = prior_users merged with this_user — accumulates correctly over the loop.
+  # This is the symmetric restore of the strip done before Phase 1.
+  when: _bridge_pud_before.content is defined
+  vars:
+    _pud_before: "{{ _bridge_pud_before.content | b64decode | from_yaml | default({}, true) }}"
+    _pud_after: "{{ _bridge_pud_after.content | b64decode | from_yaml | default({}, true) }}"
+  ansible.builtin.copy:
+    content: >-
+      {{
+        (
+          (_pud_before | combine(_pud_after, recursive=True))
+          if (_pud_before is mapping and _pud_after is mapping)
+          else (_pud_after if _pud_after else _pud_before)
+        )
+        | to_nice_yaml
+      }}
+    dest: "{{ output_dir }}/provision-user-data.yaml"
+    mode: '0644'
+
+- name: "Read user Phase 1 data after tenant workloads: {{ _tenant_username }}"
+  ansible.builtin.slurp:
+    src: "{{ output_dir }}/user-info.yaml"
+  register: _bridge_user_info_after
+  ignore_errors: true
+  failed_when: false
+
+- name: "Merge user Phase 1 data back into full user-info.yaml: {{ _tenant_username }}"
+  when: _bridge_user_info_before.content is defined
+  vars:
+    _before: "{{ _bridge_user_info_before.content | b64decode | from_yaml | default({}, true) }}"
+    _after_raw: "{{ _bridge_user_info_after.content | b64decode | from_yaml | default({}, true) }}"
+    # Strip msgs from the current user's Phase 1 entry — workload messages
+    # (e.g. "Lab instructions: URL" from the showroom role) are noisy and
+    # duplicate the cleaner "Lab:" message written by register_user in Phase 2.
+    # Keeping only data (credentials, URLs) from Phase 1; msgs come from Phase 2.
+    _after: >-
+      {{
+        _after_raw
+        if not (_after_raw is mapping and _after_raw.users is defined and _tenant_username in _after_raw.users)
+        else (
+          _after_raw
+          | combine({
+              'users': {
+                _tenant_username: (
+                  _after_raw.users[_tenant_username]
+                  | dict2items
+                  | rejectattr('key', 'equalto', 'msgs')
+                  | list
+                  | items2dict
+                )
+              }
+            }, recursive=True)
+        )
+      }}
+  ansible.builtin.copy:
+    content: >-
+      {{
+        (
+          (_before | combine(_after, recursive=True))
+          if (_before is mapping and _after is mapping)
+          else (_after if _after else _before)
+        )
+        | to_nice_yaml
+      }}
+    dest: "{{ output_dir }}/user-info.yaml"
+    mode: '0644'
