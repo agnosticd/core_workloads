@@ -1,5 +1,4 @@
 ---
-# =========================================================================
 # Run all tenant workloads for a single user (Phase 1).
 #
 # VARIABLE SCOPING:
@@ -17,7 +16,6 @@
 #
 # No agnosticd_user_info calls here — registration is in Phase 2.
 # See workload.yml header for why two-phase is necessary.
-# =========================================================================
 
 - name: "Set identity: {{ tenant_user_prefix ~ _tenant_user_num }}"
   ansible.builtin.set_fact:
