@@ -65,6 +65,10 @@
   retries: 30
   delay: 5
 
+- name: Pre-create CNAME record before ACME cert issuance
+  when: ocp4_workload_rhacs_enable_route_certs | bool
+  ansible.builtin.include_tasks: dns_cname_pre_cert.yml
+
 - name: Set up Certificate for Central
   when: ocp4_workload_rhacs_enable_route_certs | bool
   ansible.builtin.include_tasks: certificate.yml
