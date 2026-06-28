@@ -1,5 +1,4 @@
 ---
-# =========================================================================
 # Run all tenant workloads for a single user (Phase 1).
 #
 # VARIABLE SCOPING:
@@ -17,7 +16,6 @@
 #
 # No agnosticd_user_info calls here — registration is in Phase 2.
 # See workload.yml header for why two-phase is necessary.
-# =========================================================================
 
 - name: "Set identity: {{ tenant_user_prefix ~ _tenant_user_num }}"
   ansible.builtin.set_fact:
@@ -94,9 +92,25 @@
     dest: "{{ output_dir }}/provision-user-data.yaml"
     mode: '0644'
 
-- name: "Reset _showroom_user_data fact to prevent dirty in-memory combine: {{ _tenant_username }}"
+- name: "Strip users key from _showroom_user_data fact to prevent dirty in-memory combine: {{ _tenant_username }}"
+  # Remove ONLY the users key — resetting to {} would wipe role defaults such as
+  # bastion_public_hostname: 'test_hostname' (from showroom vars/main.yml), breaking
+  # labs without a bastion (e.g. DevSpaces-only labs). Stripping just the users key
+  # is sufficient: combine() in prepare_variables.yaml then merges from a clean slate
+  # that still carries role-level defaults.
+  when:
+  - _showroom_user_data is defined
+  - _showroom_user_data is mapping
+  - _showroom_user_data.users is defined
   ansible.builtin.set_fact:
-    _showroom_user_data: {}
+    _showroom_user_data: >-
+      {{
+        _showroom_user_data
+        | dict2items
+        | rejectattr('key', 'equalto', 'users')
+        | list
+        | items2dict
+      }}
 # ─────────────────────────────────────────────────────────────────────────────
 
 - name: "Provision workloads: {{ _tenant_username }}"
